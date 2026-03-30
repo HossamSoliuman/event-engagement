@@ -1,0 +1,4 @@
+how to use file uploading:
+1- add form in view with enctype and file with name="file" and id "file"
+2- add action route upload
+3- in form submitted method add moveing file from storage to public by using method moveTempFile in managesfiles trait
