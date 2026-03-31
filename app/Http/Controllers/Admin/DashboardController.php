@@ -33,7 +33,7 @@ class DashboardController extends Controller
 
         // Recent activity
         $recentActivity = ActivityLog::with('user','event')
-            ->latest()->limit(15)->get();
+            ->latest()->limit(7)->get();
 
         // Hourly upload activity (last 24h)
         $uploadActivity = FotoUpload::selectRaw("HOUR(created_at) as hour, COUNT(*) as total")

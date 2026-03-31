@@ -29,13 +29,15 @@ Route::post('/e/{slug}/membership',  [MembershipController::class, 'signup'])->n
 Route::get('/screen/{slug}',      [VidiwallController::class, 'show'])->name('vidiwall.show');
 Route::get('/screen/{slug}/feed', [VidiwallController::class, 'feed'])->name('vidiwall.feed');
 
+Route::get('login',   [AdminAuthController::class, 'showLogin'])->name('login');
+
 // ── Admin Auth ────────────────────────────────────────────────────────────────
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('login',   [AdminAuthController::class, 'showLogin'])->name('login');
     Route::post('login',  [AdminAuthController::class, 'login'])->name('login.post');
     Route::post('logout', [AdminAuthController::class, 'logout'])->name('logout');
 
-    Route::middleware(['auth','admin'])->group(function () {
+    Route::middleware(['auth', 'admin'])->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
         // Events
@@ -94,4 +96,4 @@ Route::prefix('api/v1')->middleware('auth:sanctum')->group(function () {
 Route::post('api/v1/login',  [\App\Http\Controllers\Api\MobileApiController::class, 'login']);
 Route::post('api/v1/logout', [\App\Http\Controllers\Api\MobileApiController::class, 'logout'])->middleware('auth:sanctum');
 
-Route::get('/', fn () => redirect()->route('admin.dashboard'));
+Route::get('/', fn() => redirect()->route('admin.dashboard'));
