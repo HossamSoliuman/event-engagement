@@ -1,17 +1,9 @@
-<?php // app/Models/LotteryEntry.php
-
+<?php
 namespace App\Models;
-
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-
 class LotteryEntry extends Model
 {
-    protected $fillable = ['event_id', 'name', 'phone', 'email', 'is_winner'];
-    protected $casts    = ['is_winner' => 'boolean'];
-
-    public function event(): BelongsTo
-    {
-        return $this->belongsTo(Event::class);
-    }
+    protected $fillable = ['event_id','name','phone','email','is_winner','won_at','entry_token'];
+    protected $casts = ['is_winner'=>'boolean','won_at'=>'datetime'];
+    public function event() { return $this->belongsTo(Event::class); }
 }

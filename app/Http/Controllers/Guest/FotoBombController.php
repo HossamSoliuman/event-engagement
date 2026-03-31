@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Guest;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use App\Models\Event;
 use App\Models\FotoUpload;
 use Illuminate\Http\Request;
@@ -13,10 +14,7 @@ class FotoBombController extends Controller
 {
     public function upload(Request $request, string $slug)
     {
-        $event = Event::where('slug', $slug)
-            ->where('is_active', true)
-            ->where('module_fotobomb', true)
-            ->firstOrFail();
+        $event = Event::where('slug', $slug)->where('is_active', true)->where('module_fotobomb', true)->firstOrFail();
 
         $request->validate([
             'photo'          => 'required|image|mimes:jpeg,png,jpg,webp|max:10240',
@@ -26,36 +24,31 @@ class FotoBombController extends Controller
 
         $file      = $request->file('photo');
         $directory = "fotos/event-{$event->id}";
-
-        // Store original
-        $path = $file->store($directory, 'public');
-
-        // Create thumbnail using Intervention Image
+        $path      = $file->store($directory, 'public');
         $thumbPath = null;
+
         try {
             $thumb = Image::make(Storage::disk('public')->path($path))
-                ->fit(400, 400)
-                ->encode('jpg', 80);
-
+                ->fit(500, 500)->encode('jpg', 80);
             $thumbPath = $directory . '/thumb_' . basename($path);
             Storage::disk('public')->put($thumbPath, $thumb);
-        } catch (\Exception $e) {
-            // thumbnail generation failed — not critical
-        }
+        } catch (\Exception $e) {}
 
         $foto = FotoUpload::create([
-            'event_id'       => $event->id,
-            'file_path'      => $path,
-            'thumbnail_path' => $thumbPath,
-            'uploader_name'  => $request->input('uploader_name'),
-            'uploader_phone' => $request->input('uploader_phone'),
-            'status'         => 'pending',
+            'event_id'         => $event->id,
+            'file_path'        => $path,
+            'thumbnail_path'   => $thumbPath,
+            'original_filename'=> $file->getClientOriginalName(),
+            'file_size'        => $file->getSize(),
+            'mime_type'        => $file->getMimeType(),
+            'uploader_name'    => $request->input('uploader_name'),
+            'uploader_phone'   => $request->input('uploader_phone'),
+            'uploader_session' => $request->cookie("eb_session_{$event->id}"),
+            'status'           => 'pending',
         ]);
 
-        return response()->json([
-            'success'   => true,
-            'message'   => 'Your photo has been submitted! 🎉',
-            'foto_id'   => $foto->id,
-        ]);
+        ActivityLog::record('foto.uploaded', ['uploader' => $foto->uploader_name], $event->id);
+
+        return response()->json(['success' => true, 'message' => "🎉 Photo submitted! Watch the big screen.", 'foto_id' => $foto->id]);
     }
 }

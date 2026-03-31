@@ -1,148 +1,139 @@
 @extends('layouts.admin')
-@section('page-title', 'Foto Moderation — ' . $event->name)
+@section('title','Foto Queue — '.$event->name)
+@section('page-title','Foto Queue')
 
 @section('topbar-actions')
-    @if ($onScreen)
-        <span class="badge badge-on-screen">📺 Live on Screen:
-            {{ Str::limit($onScreen->uploader_name ?? 'Guest', 20) }}</span>
+    @if($onScreen)
+        <span class="badge badge-on-screen">📺 Live: {{ Str::limit($onScreen->uploader_name??'Guest',16) }}</span>
     @endif
-    <a href="{{ route('vidiwall.show', $event->slug) }}" target="_blank" class="btn btn-gold btn-sm">Open Vidiwall ↗</a>
+    <a href="{{ route('vidiwall.show',$event->slug) }}" target="_blank" class="btn btn-gold btn-sm">📺 Vidiwall ↗</a>
+    <a href="{{ route('admin.fotos.export',$event) }}" class="btn btn-ghost btn-sm">⬇ CSV</a>
 @endsection
 
 @section('content')
 
-    <!-- Status Tabs -->
-    <div style="display:flex; gap:4px; margin-bottom:24px; border-bottom: 1px solid var(--eb-border); padding-bottom: 1px;">
-        @foreach (['pending' => '⏳ Pending', 'approved' => '✅ Approved', 'rejected' => '✗ Rejected'] as $s => $label)
-            <a href="{{ route('admin.fotos.index', [$event, 'status' => $s]) }}"
-                style="padding:10px 20px; font-size:14px; font-weight:600; text-decoration:none; border-bottom: 2px solid {{ $status === $s ? 'var(--eb-red)' : 'transparent' }}; color: {{ $status === $s ? 'var(--eb-red)' : 'var(--eb-muted)' }}; transition: color .15s;">
-                {{ $label }} <span style="font-size:12px;">({{ $counts[$s] }})</span>
-            </a>
-        @endforeach
+{{-- Tabs --}}
+<div class="tabs">
+    @foreach(['pending'=>'⏳ Pending','approved'=>'✅ Approved','rejected'=>'✗ Rejected'] as $s=>$lbl)
+    <a href="{{ route('admin.fotos.index',[$event,'status'=>$s]) }}" class="tab {{ $status===$s?'active':'' }}">
+        {{ $lbl }} <span class="tab-count">{{ $counts[$s] }}</span>
+    </a>
+    @endforeach
+</div>
+
+{{-- On-screen banner --}}
+@if($onScreen && $status==='approved')
+<div class="card mb-3" style="border-color:var(--gold);background:rgba(255,215,0,.04)">
+    <div class="card-body" style="display:flex;align-items:center;gap:14px;padding:14px 18px">
+        <img src="{{ $onScreen->thumbnail_url }}" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:2px solid var(--gold)">
+        <div style="flex:1">
+            <div style="color:var(--gold);font-weight:700;font-size:13px;margin-bottom:2px">📺 Currently Live on Vidiwall</div>
+            <div>{{ $onScreen->uploader_name ?? 'Anonymous' }}</div>
+            <div class="text-muted text-xs">Displayed {{ $onScreen->displayed_at?->diffForHumans() }}</div>
+        </div>
+        <form method="POST" action="{{ route('admin.fotos.remove-from-screen',$onScreen) }}">
+            @csrf <button class="btn btn-danger btn-sm">Remove</button>
+        </form>
     </div>
+</div>
+@endif
 
-    @if ($onScreen && $status === 'approved')
-        <!-- On Screen Banner -->
-        <div class="card mb-3" style="border-color: var(--eb-gold); background: rgba(255,215,0,.05);">
-            <div class="card-body" style="display:flex; align-items:center; gap:20px;">
-                <img src="{{ $onScreen->thumbnail_url }}" alt=""
-                    style="width:80px; height:80px; object-fit:cover; border-radius:8px; border:2px solid var(--eb-gold);">
-                <div style="flex:1;">
-                    <div style="color:var(--eb-gold); font-weight:700; margin-bottom:4px;">📺 Currently on Vidiwall</div>
-                    <div>{{ $onScreen->uploader_name ?? 'Anonymous' }}</div>
-                    <div class="text-muted text-sm">Displayed {{ $onScreen->displayed_at?->diffForHumans() }}</div>
-                </div>
-                <form method="POST" action="{{ route('admin.fotos.remove-from-screen', $onScreen) }}">
-                    @csrf
-                    <button class="btn btn-danger btn-sm">Remove from Screen</button>
+{{-- Pending auto-refresh notice --}}
+@if($status==='pending')
+<div class="alert alert-info" style="margin-bottom:16px">
+    ℹ Page auto-refreshes every 10 seconds to show new uploads. <span id="refreshCountdown" style="font-weight:700">10</span>s
+</div>
+@endif
+
+{{-- Photo Grid --}}
+@if($fotos->count())
+<div class="foto-grid">
+    @foreach($fotos as $foto)
+    <div class="foto-card {{ $foto->on_screen ? 'on-screen' : '' }}" id="foto-{{ $foto->id }}">
+
+        @if($foto->on_screen)
+        <div style="background:var(--gold);color:#0A0A18;text-align:center;font-size:10px;font-weight:800;padding:4px;letter-spacing:1px">📺 ON SCREEN</div>
+        @endif
+
+        <a href="{{ $foto->file_url }}" target="_blank">
+            <img src="{{ $foto->thumbnail_url }}" alt="Photo by {{ $foto->uploader_name }}" loading="lazy">
+        </a>
+
+        <div class="foto-meta">
+            <strong>{{ $foto->uploader_name ?? 'Anonymous' }}</strong>
+            <span>{{ $foto->uploader_phone }}</span>
+            <div style="margin-top:3px;color:var(--muted);font-size:11px">{{ $foto->created_at->diffForHumans() }}</div>
+            @if($foto->admin_note)
+            <div style="margin-top:4px;color:var(--red);font-size:11px">Note: {{ $foto->admin_note }}</div>
+            @endif
+        </div>
+
+        <div class="foto-actions">
+            @if($foto->isPending())
+                <form method="POST" action="{{ route('admin.fotos.approve',$foto) }}">
+                    @csrf <button class="btn btn-success btn-sm">✓ Approve</button>
                 </form>
-            </div>
+                <form method="POST" action="{{ route('admin.fotos.reject',$foto) }}">
+                    @csrf <button class="btn btn-danger btn-sm">✕ Reject</button>
+                </form>
+            @endif
+
+            @if($foto->isApproved() && !$foto->on_screen)
+                <form method="POST" action="{{ route('admin.fotos.push-to-screen',$foto) }}">
+                    @csrf <button class="btn btn-gold btn-sm" style="width:100%">📺 Push Live</button>
+                </form>
+            @endif
+
+            @if($foto->on_screen)
+                <form method="POST" action="{{ route('admin.fotos.remove-from-screen',$foto) }}">
+                    @csrf <button class="btn btn-secondary btn-sm">Remove</button>
+                </form>
+            @endif
+
+            @if($foto->isRejected())
+                <form method="POST" action="{{ route('admin.fotos.approve',$foto) }}">
+                    @csrf <button class="btn btn-success btn-sm">↩ Restore</button>
+                </form>
+            @endif
+
+            <form method="POST" action="{{ route('admin.fotos.destroy',$foto) }}"
+                  onsubmit="return confirm('Delete permanently?')" style="margin-left:auto">
+                @csrf @method('DELETE')
+                <button class="btn btn-ghost btn-sm" style="color:var(--red)" title="Delete">🗑</button>
+            </form>
         </div>
-    @endif
+    </div>
+    @endforeach
+</div>
+<div style="margin-top:20px">{{ $fotos->appends(['status'=>$status])->links() }}</div>
 
-    <!-- Photo Grid -->
-    @if ($fotos->count())
-        <div class="foto-grid">
-            @foreach ($fotos as $foto)
-                <div class="foto-card {{ $foto->on_screen ? 'on-screen' : '' }}">
-                    @if ($foto->on_screen)
-                        <div
-                            style="background:var(--eb-gold); color:#000; text-align:center; font-size:11px; font-weight:700; padding:4px; letter-spacing:1px;">
-                            📺 ON SCREEN</div>
-                    @endif
-
-                    <a href="{{ $foto->file_url }}" target="_blank">
-                        <img src="{{ $foto->thumbnail_url }}" alt="Foto by {{ $foto->uploader_name }}">
-                    </a>
-
-                    <div class="foto-card-body">
-                        <div style="font-weight:600; font-size:14px;">{{ $foto->uploader_name ?? 'Anonymous' }}</div>
-                        <div class="text-muted text-sm">{{ $foto->created_at->diffForHumans() }}</div>
-                        <div class="text-muted text-sm">{{ $foto->uploader_phone }}</div>
-                    </div>
-
-                    <div class="foto-actions">
-                        @if ($foto->isPending())
-                            <form method="POST" action="{{ route('admin.fotos.approve', $foto) }}">
-                                @csrf
-                                <button class="btn btn-success btn-sm">✓ Approve</button>
-                            </form>
-                            <form method="POST" action="{{ route('admin.fotos.reject', $foto) }}">
-                                @csrf
-                                <button class="btn btn-danger btn-sm">✗ Reject</button>
-                            </form>
-                        @endif
-
-                        @if ($foto->isApproved() && !$foto->on_screen)
-                            <form method="POST" action="{{ route('admin.fotos.push-to-screen', $foto) }}">
-                                @csrf
-                                <button class="btn btn-gold btn-sm">📺 Push Live</button>
-                            </form>
-                        @endif
-
-                        @if ($foto->on_screen)
-                            <form method="POST" action="{{ route('admin.fotos.remove-from-screen', $foto) }}">
-                                @csrf
-                                <button class="btn btn-secondary btn-sm">Remove</button>
-                            </form>
-                        @endif
-
-                        @if ($foto->isRejected())
-                            <form method="POST" action="{{ route('admin.fotos.approve', $foto) }}">
-                                @csrf
-                                <button class="btn btn-success btn-sm">↩ Restore</button>
-                            </form>
-                        @endif
-
-                        <form method="POST" action="{{ route('admin.fotos.destroy', $foto) }}"
-                            onsubmit="return confirm('Delete this photo permanently?')">
-                            @csrf @method('DELETE')
-                            <button class="btn btn-outline btn-sm" style="color:#f87171; border-color:#f87171;">🗑</button>
-                        </form>
-                    </div>
-                </div>
-            @endforeach
-        </div>
-
-        <div style="margin-top:24px;">{{ $fotos->appends(['status' => $status])->links() }}</div>
-    @else
-        <div style="text-align:center; padding:80px 20px; color:var(--eb-muted);">
-            <div style="font-size:48px; margin-bottom:16px;">
-                @if ($status === 'pending')
-                    ⏳
-                @elseif($status === 'approved')
-                    ✅
-                @else
-                    ✗
-                @endif
-            </div>
-            <div style="font-size:18px; font-weight:600;">No {{ $status }} photos</div>
-            <div style="margin-top:8px; font-size:14px;">
-                @if ($status === 'pending')
-                    Guests haven't uploaded yet, or all photos have been moderated.
-                @elseif($status === 'approved')
-                    Approve photos from the pending queue to push them live.
-                @else
-                    No photos have been rejected.
-                @endif
-            </div>
-        </div>
-    @endif
+@else
+<div class="empty-state">
+    <div class="empty-icon">
+        @if($status==='pending') ⏳ @elseif($status==='approved') ✅ @else ✕ @endif
+    </div>
+    <h3>No {{ $status }} photos</h3>
+    <p>
+        @if($status==='pending') Guests haven't uploaded yet — or all photos are moderated.
+        @elseif($status==='approved') Approve photos from the pending tab to display them.
+        @else No photos have been rejected.
+        @endif
+    </p>
+</div>
+@endif
 
 @endsection
 
 @push('scripts')
-    <script>
-        // Auto-refresh pending count every 15 seconds
-        @if ($status === 'pending')
-            setInterval(() => {
-                fetch(window.location.href, {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                // Simple polling — in production replace with Pusher/Echo real-time events
-            }, 15000);
-        @endif
-    </script>
+@if($status==='pending')
+<script>
+let countdown = 10;
+const cd = document.getElementById('refreshCountdown');
+const timer = setInterval(() => {
+    countdown--;
+    if (cd) cd.textContent = countdown;
+    if (countdown <= 0) { window.location.reload(); }
+}, 1000);
+</script>
+@endif
 @endpush

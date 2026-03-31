@@ -35,7 +35,7 @@ return [
     'aws' => [
         'bucket'        => env('AWS_BUCKET', ''),
         'region'        => env('AWS_DEFAULT_REGION', 'us-east-1'),
-        'cloudfront_url' => env('CLOUDFRONT_URL', ''),
+        'cloudfront_url'=> env('CLOUDFRONT_URL', ''),
     ],
 
     /*

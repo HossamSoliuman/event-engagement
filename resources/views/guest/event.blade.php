@@ -5,22 +5,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="{{ $event->primary_color }}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>{{ $event->name }}</title>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap"
+    <link
+        href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap"
         rel="stylesheet">
-
     <style>
         :root {
-            --primary: {{ $event->primary_color }};
+            --p: {{ $event->primary_color }};
             --bg: {{ $event->secondary_color }};
-            --accent: {{ $event->accent_color }};
-            --surface: color-mix(in srgb, var(--primary) 8%, var(--bg));
+            --acc: {{ $event->accent_color }};
+            --surface: color-mix(in srgb, var(--p) 7%, var(--bg));
+            --card: color-mix(in srgb, #fff 5%, var(--bg));
+            --border: rgba(255, 255, 255, .1);
             --text: #f0f0f8;
-            --muted: rgba(240, 240, 248, .55);
-            --border: rgba(240, 240, 248, .1);
-            --radius: 16px;
+            --muted: rgba(240, 240, 248, .5);
+            --r: 14px;
         }
 
         *,
@@ -28,11 +29,12 @@
         *::after {
             box-sizing: border-box;
             margin: 0;
-            padding: 0;
+            padding: 0
         }
 
         html {
             scroll-behavior: smooth;
+            -webkit-tap-highlight-color: transparent
         }
 
         body {
@@ -41,71 +43,98 @@
             color: var(--text);
             min-height: 100vh;
             overflow-x: hidden;
+            background-image: radial-gradient(ellipse at 0% 0%, color-mix(in srgb, var(--p) 12%, transparent), transparent 50%)
         }
 
         /* Header */
-        .event-header {
-            background: linear-gradient(160deg, color-mix(in srgb, var(--primary) 30%, var(--bg)) 0%, var(--bg) 100%);
-            padding: 40px 20px 28px;
+        .hdr {
+            background: linear-gradient(180deg, color-mix(in srgb, var(--p) 20%, var(--bg)), var(--bg));
+            padding: env(safe-area-inset-top, 0) 0 0;
             text-align: center;
-            border-bottom: 1px solid var(--border);
             position: relative;
-            overflow: hidden;
+            overflow: hidden
         }
 
-        .event-header::before {
+        .hdr::after {
             content: '';
             position: absolute;
             inset: 0;
-            background: radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--primary) 20%, transparent), transparent 70%);
+            background: radial-gradient(ellipse at 50% -20%, color-mix(in srgb, var(--p) 25%, transparent), transparent 70%);
+            pointer-events: none
         }
 
-        .logo-wrap {
+        .hdr-inner {
+            padding: 32px 20px 20px;
             position: relative;
-            z-index: 1;
+            z-index: 1
         }
 
-        .logo-wrap img {
-            height: 50px;
-            margin-bottom: 16px;
+        .hdr-logo {
+            height: 48px;
+            margin-bottom: 12px
         }
 
-        .event-title {
+        .hdr-title {
             font-family: 'Syne', sans-serif;
-            font-size: clamp(24px, 7vw, 34px);
+            font-size: clamp(22px, 7vw, 30px);
             font-weight: 800;
-            line-height: 1.1;
-            position: relative;
-            z-index: 1;
+            line-height: 1.1
         }
 
-        .event-subtitle {
+        .hdr-sub {
             color: var(--muted);
-            margin-top: 6px;
-            font-size: 14px;
-            position: relative;
-            z-index: 1;
+            font-size: 13px;
+            margin-top: 5px
         }
 
-        /* Nav pills */
-        .module-nav {
+        /* Sponsor */
+        .sponsor-strip {
             display: flex;
+            align-items: center;
+            justify-content: center;
             gap: 8px;
-            padding: 16px;
+            padding: 10px 20px;
+            background: rgba(0, 0, 0, .2);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border)
+        }
+
+        .sponsor-strip img {
+            height: 24px;
+            opacity: .65
+        }
+
+        .sponsor-strip span {
+            font-size: 10px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--muted)
+        }
+
+        /* Nav */
+        .nav-bar {
+            display: flex;
+            gap: 6px;
+            padding: 12px 14px;
             overflow-x: auto;
             scrollbar-width: none;
-            background: rgba(0, 0, 0, .2);
+            background: rgba(0, 0, 0, .15);
             border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px)
         }
 
-        .module-nav::-webkit-scrollbar {
-            display: none;
+        .nav-bar::-webkit-scrollbar {
+            display: none
         }
 
         .nav-pill {
             flex-shrink: 0;
-            padding: 8px 18px;
-            border-radius: 40px;
+            padding: 8px 16px;
+            border-radius: 30px;
             font-size: 13px;
             font-weight: 600;
             cursor: pointer;
@@ -114,127 +143,133 @@
             color: var(--muted);
             transition: all .2s;
             white-space: nowrap;
+            font-family: 'DM Sans', sans-serif
         }
 
         .nav-pill.active {
-            background: var(--primary);
-            border-color: var(--primary);
+            background: var(--p);
+            border-color: var(--p);
             color: #fff;
+            box-shadow: 0 4px 14px color-mix(in srgb, var(--p) 40%, transparent)
         }
 
         /* Sections */
         .section {
             display: none;
-            padding: 20px 16px;
-            animation: fadeIn .3s ease;
+            padding: 16px;
+            animation: sectionIn .25s ease
         }
 
         .section.active {
-            display: block;
+            display: block
         }
 
-        @keyframes fadeIn {
+        @keyframes sectionIn {
             from {
                 opacity: 0;
-                transform: translateY(8px);
+                transform: translateY(6px)
             }
 
             to {
                 opacity: 1;
-                transform: none;
+                transform: none
             }
         }
 
         .section-title {
             font-family: 'Syne', sans-serif;
-            font-size: 22px;
+            font-size: 21px;
             font-weight: 800;
-            margin-bottom: 6px;
+            margin-bottom: 5px
         }
 
         .section-desc {
             color: var(--muted);
-            font-size: 14px;
-            margin-bottom: 20px;
-            line-height: 1.5;
+            font-size: 13px;
+            line-height: 1.55;
+            margin-bottom: 18px
         }
 
-        /* Cards */
-        .glass-card {
-            background: var(--surface);
+        /* Glass card */
+        .glass {
+            background: var(--card);
             border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 20px;
-            margin-bottom: 14px;
+            border-radius: var(--r);
+            padding: 16px;
+            margin-bottom: 12px
         }
 
         /* Upload zone */
         .upload-zone {
             border: 2px dashed var(--border);
-            border-radius: var(--radius);
-            padding: 32px 20px;
+            border-radius: var(--r);
+            padding: 28px 16px;
             text-align: center;
             cursor: pointer;
-            transition: border-color .2s;
-            background: rgba(255, 255, 255, .03);
+            background: rgba(255, 255, 255, .02);
             position: relative;
             overflow: hidden;
+            transition: all .2s
         }
 
+        .upload-zone:hover,
         .upload-zone.drag-over {
-            border-color: var(--primary);
-            background: rgba(255, 255, 255, .06);
+            border-color: var(--p);
+            background: rgba(255, 255, 255, .04)
         }
 
-        .upload-zone input[type=file] {
+        .upload-zone input {
             position: absolute;
             inset: 0;
             opacity: 0;
             cursor: pointer;
+            font-size: 0
         }
 
-        .upload-icon {
-            font-size: 40px;
-            margin-bottom: 12px;
+        .upload-zone .uz-icon {
+            font-size: 38px;
+            margin-bottom: 10px
         }
 
         .upload-zone p {
             color: var(--muted);
-            font-size: 14px;
-            line-height: 1.5;
+            font-size: 13px;
+            line-height: 1.5
+        }
+
+        .upload-zone strong {
+            color: var(--text)
         }
 
         .preview-img {
             width: 100%;
-            max-height: 280px;
+            max-height: 260px;
             object-fit: cover;
-            border-radius: 12px;
+            border-radius: 10px;
             display: none;
-            margin-bottom: 14px;
+            margin-bottom: 12px
         }
 
-        .preview-img.shown {
+        .preview-img.show {
+            display: block
+        }
+
+        /* Form fields */
+        .field-group {
+            margin-bottom: 12px
+        }
+
+        .field-label {
             display: block;
-        }
-
-        /* Form */
-        .form-group {
-            margin-bottom: 14px;
-        }
-
-        label.field-label {
-            display: block;
-            font-size: 12px;
-            font-weight: 600;
+            font-size: 11px;
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 1px;
             color: var(--muted);
-            margin-bottom: 6px;
+            margin-bottom: 5px
         }
 
-        input.field,
-        textarea.field,
-        select.field {
+        .field {
             width: 100%;
             background: rgba(0, 0, 0, .3);
             border: 1px solid var(--border);
@@ -244,111 +279,183 @@
             font-size: 15px;
             font-family: 'DM Sans', sans-serif;
             -webkit-appearance: none;
-            transition: border-color .15s;
+            transition: border-color .15s
         }
 
-        input.field:focus,
-        textarea.field:focus {
+        .field:focus {
             outline: none;
-            border-color: var(--primary);
+            border-color: var(--p)
         }
 
-        input.field::placeholder {
-            color: var(--muted);
+        .field::placeholder {
+            color: var(--muted)
         }
 
-        /* Buttons */
+        /* Main button */
         .btn-main {
             width: 100%;
-            background: var(--primary);
+            background: var(--p);
             color: #fff;
             border: none;
             border-radius: 12px;
-            padding: 16px;
+            padding: 15px;
             font-size: 16px;
             font-weight: 700;
             font-family: 'Syne', sans-serif;
             cursor: pointer;
             transition: all .2s;
-            letter-spacing: .3px;
+            letter-spacing: .2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px
         }
 
         .btn-main:hover {
-            filter: brightness(1.1);
+            filter: brightness(1.1)
+        }
+
+        .btn-main:active {
+            transform: scale(.98)
         }
 
         .btn-main:disabled {
-            opacity: .5;
+            opacity: .45;
             cursor: not-allowed;
+            transform: none
         }
 
-        .btn-main.loading::after {
-            content: ' ⏳';
+        /* Success state */
+        .success-state {
+            text-align: center;
+            padding: 32px 16px;
+            animation: sectionIn .3s ease
+        }
+
+        .success-state .s-icon {
+            font-size: 56px;
+            margin-bottom: 14px
+        }
+
+        .success-state h3 {
+            font-family: 'Syne', sans-serif;
+            font-size: 22px;
+            margin-bottom: 8px
+        }
+
+        .success-state p {
+            color: var(--muted);
+            font-size: 14px
+        }
+
+        .btn-again {
+            margin-top: 20px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 11px 24px;
+            color: var(--text);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif
         }
 
         /* Vote cards */
+        .vote-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 16px
+        }
+
         .vote-card {
             border: 2px solid var(--border);
             border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 10px;
+            padding: 14px;
             cursor: pointer;
             transition: all .2s;
             display: flex;
             align-items: center;
             gap: 14px;
+            background: rgba(255, 255, 255, .02)
         }
 
-        .vote-card:hover,
-        .vote-card.selected {
-            border-color: var(--primary);
-            background: rgba(255, 61, 0, .08);
+        .vote-card:active {
+            transform: scale(.98)
         }
 
-        .vote-card .athlete-avatar {
-            width: 48px;
-            height: 48px;
+        .vote-card.sel {
+            border-color: var(--p);
+            background: color-mix(in srgb, var(--p) 10%, transparent)
+        }
+
+        .v-avatar {
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
+            background: linear-gradient(135deg, var(--p), var(--acc));
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
-            font-weight: 700;
-            flex-shrink: 0;
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: 18px;
+            flex-shrink: 0
         }
 
-        .vote-card .athlete-name {
+        .v-name {
             font-weight: 700;
-            font-size: 16px;
+            font-size: 15px
         }
 
-        .vote-bar {
-            height: 6px;
-            background: var(--border);
+        .v-pos {
+            font-size: 12px;
+            color: var(--muted)
+        }
+
+        .v-bar {
+            height: 5px;
+            background: rgba(255, 255, 255, .1);
             border-radius: 3px;
             margin-top: 6px;
-            overflow: hidden;
+            overflow: hidden
         }
 
-        .vote-bar-fill {
+        .v-fill {
             height: 100%;
-            background: var(--primary);
+            background: var(--p);
             border-radius: 3px;
-            transition: width .6s ease;
+            transition: width .5s ease;
+            width: 0%
+        }
+
+        .v-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            flex-shrink: 0;
+            margin-left: auto;
+            transition: all .2s
+        }
+
+        .vote-card.sel .v-dot {
+            background: var(--p);
+            border-color: var(--p)
         }
 
         /* Toast */
         #toast {
             position: fixed;
-            bottom: 24px;
+            bottom: calc(env(safe-area-inset-bottom, 0px)+16px);
             left: 50%;
-            transform: translateX(-50%) translateY(100px);
+            transform: translateX(-50%) translateY(80px);
             background: #1a2a1a;
-            border: 1px solid #4ade80;
+            border: 1px solid #22c55e;
             color: #4ade80;
-            padding: 14px 24px;
-            border-radius: 40px;
+            padding: 12px 22px;
+            border-radius: 30px;
             font-weight: 600;
             font-size: 14px;
             z-index: 999;
@@ -356,364 +463,435 @@
             white-space: nowrap;
             max-width: 90vw;
             text-align: center;
+            pointer-events: none
         }
 
         #toast.show {
-            transform: translateX(-50%) translateY(0);
+            transform: translateX(-50%) translateY(0)
         }
 
-        #toast.error {
-            background: #2a1a1a;
-            border-color: #f87171;
-            color: #f87171;
+        #toast.err {
+            background: #2a1212;
+            border-color: #ef4444;
+            color: #f87171
         }
 
-        /* Sponsor bar */
-        .sponsor-bar {
-            padding: 16px;
-            text-align: center;
-            border-top: 1px solid var(--border);
-            margin-top: 32px;
+        /* Upload progress bar */
+        .upload-progress {
+            height: 4px;
+            background: rgba(255, 255, 255, .1);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 12px;
+            display: none
         }
 
-        .sponsor-bar img {
-            height: 32px;
-            opacity: .6;
+        .upload-progress-fill {
+            height: 100%;
+            background: var(--p);
+            width: 0%;
+            transition: width .3s;
+            border-radius: 2px
         }
 
-        .sponsor-bar p {
+        /* Checkbox */
+        .check-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 4px 0;
+            cursor: pointer;
             color: var(--muted);
-            font-size: 11px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
+            font-size: 13px
+        }
+
+        .check-row input {
+            accent-color: var(--p);
+            width: 17px;
+            height: 17px;
+            cursor: pointer;
+            flex-shrink: 0
         }
     </style>
 </head>
 
 <body>
 
-    <!-- Header -->
-    <div class="event-header">
-        <div class="logo-wrap">
+    {{-- Header --}}
+    <div class="hdr">
+        <div class="hdr-inner">
             @if ($event->logo_path)
-                <img src="{{ Storage::disk('public')->url($event->logo_path) }}" alt="{{ $event->name }}">
+                <img src="{{ $event->logo_url }}" class="hdr-logo" alt="{{ $event->name }}">
             @endif
-            <h1 class="event-title">{{ $event->name }}</h1>
-            <p class="event-subtitle">{{ $event->subtitle }}</p>
+            <h1 class="hdr-title">{{ $event->name }}</h1>
+            <p class="hdr-sub">{{ $event->subtitle }}</p>
         </div>
     </div>
 
-    <!-- Module Navigation -->
-    <div class="module-nav" id="moduleNav">
+    {{-- Sponsor --}}
+    @if ($event->sponsor_logo_path)
+        <div class="sponsor-strip">
+            <span>Sponsored by</span>
+            <img src="{{ $event->sponsor_logo_url }}" alt="Sponsor">
+        </div>
+    @endif
+
+    {{-- Nav --}}
+    <nav class="nav-bar" id="navBar">
         @if ($event->module_fotobomb)
-            <button class="nav-pill active" data-section="fotobomb">📷 {{ $event->fotobomb_title }}</button>
+            <button class="nav-pill active" data-sec="fotobomb">📷 {{ $event->fotobomb_title }}</button>
         @endif
         @if ($event->module_lottery)
-            <button class="nav-pill" data-section="lottery">🎰 {{ $event->lottery_title }}</button>
+            <button class="nav-pill {{ !$event->module_fotobomb ? 'active' : '' }}" data-sec="lottery">🎰
+                {{ $event->lottery_title }}</button>
         @endif
         @if ($event->module_voting)
-            <button class="nav-pill" data-section="voting">🏆 {{ $event->voting_title }}</button>
+            <button class="nav-pill" data-sec="voting">🏆 {{ $event->voting_title }}</button>
         @endif
         @if ($event->module_membership)
-            <button class="nav-pill" data-section="membership">⭐ {{ $event->membership_title }}</button>
+            <button class="nav-pill" data-sec="membership">⭐ {{ $event->membership_title }}</button>
         @endif
-    </div>
+    </nav>
 
-    <!-- FOTO BOMB Section -->
+    {{-- ── FOTO BOMB ── --}}
     @if ($event->module_fotobomb)
         <div class="section active" id="fotobomb">
-            <h2 class="section-title">📷 {{ $event->fotobomb_title }}</h2>
-            <p class="section-desc">Snap a photo and we might put it on the big screen! 🎬</p>
+            <div id="fotoForm">
+                <p class="section-title">📷 {{ $event->fotobomb_title }}</p>
+                <p class="section-desc">{{ $event->fotobomb_desc }}</p>
 
-            <img id="preview" class="preview-img" src="" alt="Preview">
+                <img id="preview" class="preview-img" src="" alt="Preview">
 
-            <div class="upload-zone" id="uploadZone">
-                <input type="file" id="photoInput" accept="image/*" capture="environment">
-                <div class="upload-icon">📸</div>
-                <p><strong>Tap to take a photo</strong><br>or choose from your gallery<br><small>JPG, PNG, WEBP — max
-                        10MB</small></p>
+                <div class="upload-zone" id="uploadZone">
+                    <input type="file" id="photoInput" accept="image/*" capture="environment">
+                    <div class="uz-icon">📸</div>
+                    <p><strong>Tap to take a photo</strong><br>or choose from your gallery<br><small
+                            style="color:var(--muted);font-size:11px">JPG · PNG · WEBP — max 10MB</small></p>
+                </div>
+
+                <div class="upload-progress" id="uploadProgress">
+                    <div class="upload-progress-fill" id="uploadProgressFill"></div>
+                </div>
+
+                <div style="margin-top:14px">
+                    <div class="field-group">
+                        <label class="field-label">Your Name</label>
+                        <input type="text" class="field" id="fotoName" placeholder="e.g. Ahmed from Row D"
+                            autocomplete="name">
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Phone (optional)</label>
+                        <input type="tel" class="field" id="fotoPhone" placeholder="+20 1xx xxx xxxx"
+                            autocomplete="tel">
+                    </div>
+                    <button class="btn-main" id="uploadBtn" onclick="submitFoto()" disabled>
+                        🚀 Send to Vidiwall
+                    </button>
+                </div>
             </div>
 
-            <div style="margin-top:16px;">
-                <div class="form-group">
-                    <label class="field-label">Your Name</label>
-                    <input type="text" class="field" id="fotoName" placeholder="e.g. Ahmed from Section B">
-                </div>
-                <div class="form-group">
-                    <label class="field-label">Phone (optional)</label>
-                    <input type="tel" class="field" id="fotoPhone" placeholder="+20 1xx xxx xxxx">
-                </div>
-                <button class="btn-main" id="uploadBtn" onclick="submitFoto()" disabled>
-                     Send to Vidiwall
-                </button>
+            <div class="success-state" id="fotoSuccess" style="display:none">
+                <div class="s-icon">🎉</div>
+                <h3>Photo Submitted!</h3>
+                <p>Watch the big screen — you might be up next!</p>
+                <button class="btn-again" onclick="resetFoto()">📷 Upload Another</button>
             </div>
         </div>
     @endif
 
-    <!-- LOTTERY Section -->
+    {{-- ── LOTTERY ── --}}
     @if ($event->module_lottery)
         <div class="section" id="lottery">
-            <h2 class="section-title">🎰 {{ $event->lottery_title }}</h2>
-            <p class="section-desc">Enter your details for a chance to win tonight's prize! Winner announced live. 🏆
-            </p>
-
-            <div class="glass-card">
-                <div class="form-group">
-                    <label class="field-label">Full Name *</label>
-                    <input type="text" class="field" id="lotteryName" placeholder="Your full name">
+            <div id="lotteryForm">
+                <p class="section-title">🎰 {{ $event->lottery_title }}</p>
+                <p class="section-desc">{{ $event->lottery_desc }}</p>
+                <div class="glass">
+                    <div class="field-group">
+                        <label class="field-label">Full Name *</label>
+                        <input type="text" class="field" id="lName" placeholder="Your full name"
+                            autocomplete="name">
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Phone Number *</label>
+                        <input type="tel" class="field" id="lPhone" placeholder="+20 1xx xxx xxxx"
+                            autocomplete="tel">
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Email (optional)</label>
+                        <input type="email" class="field" id="lEmail" placeholder="your@email.com"
+                            autocomplete="email">
+                    </div>
+                    <button class="btn-main" onclick="submitLottery()">🎰 Enter the Draw</button>
                 </div>
-                <div class="form-group">
-                    <label class="field-label">Phone Number *</label>
-                    <input type="tel" class="field" id="lotteryPhone" placeholder="+20 1xx xxx xxxx">
-                </div>
-                <div class="form-group">
-                    <label class="field-label">Email (optional)</label>
-                    <input type="email" class="field" id="lotteryEmail" placeholder="your@email.com">
-                </div>
-                <button class="btn-main" onclick="submitLottery()">🎰 Enter the Draw</button>
+            </div>
+            <div class="success-state" id="lotterySuccess" style="display:none">
+                <div class="s-icon">🎟</div>
+                <h3>You're In!</h3>
+                <p>Good luck! The winner will be announced live.</p>
             </div>
         </div>
     @endif
 
-    <!-- VOTING Section -->
+    {{-- ── VOTING ── --}}
     @if ($event->module_voting)
         <div class="section" id="voting">
-            <h2 class="section-title">🏆 {{ $event->voting_title }}</h2>
-            <p class="section-desc">Cast your vote! Results are shown live on the big screen.</p>
+            <p class="section-title">🏆 {{ $event->voting_title }}</p>
+            <p class="section-desc">{{ $event->voting_desc }}</p>
 
-            @php $options = $event->voting_options ?? []; @endphp
-            @foreach ($options as $i => $option)
-                <div class="vote-card" data-candidate="{{ $option['name'] }}" onclick="selectVote(this)">
-                    <div class="athlete-avatar">{{ strtoupper(substr($option['name'], 0, 1)) }}</div>
-                    <div style="flex:1;">
-                        <div class="athlete-name">{{ $option['name'] }}</div>
-                        <div class="vote-bar">
-                            <div class="vote-bar-fill" id="bar-{{ $i }}" style="width:0%"></div>
-                        </div>
-                    </div>
-                    <div style="width:20px; height:20px; border-radius:50%; border:2px solid var(--border); flex-shrink:0;"
-                        class="vote-dot"></div>
+            @if ($event->voting_closed)
+                <div
+                    style="background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:12px;padding:24px;text-align:center">
+                    <div style="font-size:36px;margin-bottom:10px">🔒</div>
+                    <div style="font-weight:700;margin-bottom:6px">Voting is closed</div>
+                    <div class="text-muted" style="font-size:13px;color:var(--muted)">Thank you for participating!
+                        Results will be announced shortly.</div>
                 </div>
-            @endforeach
-
-            <button class="btn-main" style="margin-top:16px;" onclick="submitVote()">🗳️ Cast My Vote</button>
+            @else
+                <div class="vote-grid" id="voteGrid">
+                    @php $opts = $event->voting_options ?? [] @endphp
+                    @foreach ($opts as $i => $opt)
+                        <div class="vote-card" data-cand="{{ $opt['name'] }}" onclick="selectVote(this)">
+                            <div class="v-avatar">{{ strtoupper(substr($opt['name'], 0, 1)) }}</div>
+                            <div style="flex:1;min-width:0">
+                                <div class="v-name">{{ $opt['name'] }}</div>
+                                @if ($opt['position'] ?? null)
+                                    <div class="v-pos">{{ $opt['position'] }}</div>
+                                @endif
+                                <div class="v-bar">
+                                    <div class="v-fill" id="vbar-{{ $i }}"></div>
+                                </div>
+                            </div>
+                            <div class="v-dot"></div>
+                        </div>
+                    @endforeach
+                </div>
+                <div id="voteAction">
+                    <button class="btn-main" id="voteBtn" onclick="submitVote()" style="margin-bottom:6px">🗳️
+                        Cast My Vote</button>
+                </div>
+                <div class="success-state" id="voteSuccess" style="display:none">
+                    <div class="s-icon">🏆</div>
+                    <h3>Vote Recorded!</h3>
+                    <p>Live results are shown on the big screen.</p>
+                </div>
+            @endif
         </div>
     @endif
 
-    <!-- MEMBERSHIP Section -->
+    {{-- ── MEMBERSHIP ── --}}
     @if ($event->module_membership)
         <div class="section" id="membership">
-            <h2 class="section-title">⭐ {{ $event->membership_title }}</h2>
-            <p class="section-desc">Join the community and stay connected with exclusive updates, events, and offers.
-            </p>
-
-            <div class="glass-card">
-                <div class="form-group">
-                    <label class="field-label">Full Name *</label>
-                    <input type="text" class="field" id="memberName" placeholder="Your full name">
+            <div id="memberForm">
+                <p class="section-title">⭐ {{ $event->membership_title }}</p>
+                <p class="section-desc">{{ $event->membership_desc }}</p>
+                <div class="glass">
+                    <div class="field-group">
+                        <label class="field-label">Full Name *</label>
+                        <input type="text" class="field" id="mName" placeholder="Your full name"
+                            autocomplete="name">
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Email Address *</label>
+                        <input type="email" class="field" id="mEmail" placeholder="your@email.com"
+                            autocomplete="email">
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Phone (optional)</label>
+                        <input type="tel" class="field" id="mPhone" placeholder="+20 1xx xxx xxxx"
+                            autocomplete="tel">
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Favourite Team (optional)</label>
+                        <input type="text" class="field" id="mTeam" placeholder="e.g. Al Ahly">
+                    </div>
+                    <label class="check-row" style="margin-bottom:16px">
+                        <input type="checkbox" id="mNewsletter"> Subscribe to news &amp; exclusive offers
+                    </label>
+                    <button class="btn-main" onclick="submitMembership()">⭐ Join Now</button>
                 </div>
-                <div class="form-group">
-                    <label class="field-label">Email Address *</label>
-                    <input type="email" class="field" id="memberEmail" placeholder="your@email.com">
-                </div>
-                <div class="form-group">
-                    <label class="field-label">Phone (optional)</label>
-                    <input type="tel" class="field" id="memberPhone" placeholder="+20 1xx xxx xxxx">
-                </div>
-                <div class="form-group">
-                    <label class="field-label">Favourite Team (optional)</label>
-                    <input type="text" class="field" id="memberTeam" placeholder="e.g. Al Ahly">
-                </div>
-                <label
-                    style="display:flex; align-items:center; gap:10px; margin-bottom:16px; color:var(--muted); font-size:14px; cursor:pointer;">
-                    <input type="checkbox" id="newsletterOpt"
-                        style="accent-color:var(--primary); width:18px; height:18px;">
-                    Subscribe to newsletter & updates
-                </label>
-                <button class="btn-main" onclick="submitMembership()">⭐ Join Now</button>
+            </div>
+            <div class="success-state" id="memberSuccess" style="display:none">
+                <div class="s-icon">⭐</div>
+                <h3>Welcome to the Club!</h3>
+                <p>Membership confirmed. Stay tuned for exclusive updates.</p>
             </div>
         </div>
     @endif
 
-    <!-- Sponsor -->
-    @if ($event->sponsor_logo_path)
-        <div class="sponsor-bar">
-            <p>Sponsored by</p>
-            <img src="{{ Storage::disk('public')->url($event->sponsor_logo_path) }}" alt="Sponsor">
-        </div>
-    @endif
-
-    <!-- Toast notification -->
     <div id="toast"></div>
 
     <script>
         const SLUG = '{{ $event->slug }}';
         const CSRF = '{{ csrf_token() }}';
-        let selectedCandidate = null;
-        let selectedFile = null;
+        let selCandidate = null,
+            selFile = null;
 
-        // ── Navigation ──────────────────────────────────────────────────────────────
-        document.querySelectorAll('.nav-pill').forEach(pill => {
-            pill.addEventListener('click', () => {
-                document.querySelectorAll('.nav-pill').forEach(p => p.classList.remove('active'));
+        // ── Nav ──────────────────────────────────────────────────────────────────────
+        document.querySelectorAll('.nav-pill').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.nav-pill').forEach(b => b.classList.remove('active'));
                 document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-                pill.classList.add('active');
-                document.getElementById(pill.dataset.section)?.classList.add('active');
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.sec)?.classList.add('active');
             });
         });
 
-        // ── Toast ───────────────────────────────────────────────────────────────────
-        function showToast(msg, isError = false) {
+        // ── Toast ─────────────────────────────────────────────────────────────────────
+        function toast(msg, err = false) {
             const t = document.getElementById('toast');
             t.textContent = msg;
-            t.className = 'show' + (isError ? ' error' : '');
-            setTimeout(() => t.className = '', 3500);
+            t.className = 'show' + (err ? ' err' : '');
+            clearTimeout(t._t);
+            t._t = setTimeout(() => t.className = '', 3500);
         }
 
-        // ── POST helper ─────────────────────────────────────────────────────────────
-        async function post(url, body, isFormData = false) {
-            const headers = {
+        // ── POST helper ───────────────────────────────────────────────────────────────
+        async function post(url, body, fd = false) {
+            const h = {
                 'X-CSRF-TOKEN': CSRF
             };
-            if (!isFormData) headers['Content-Type'] = 'application/json';
-            const res = await fetch(url, {
+            if (!fd) h['Content-Type'] = 'application/json';
+            const r = await fetch(url, {
                 method: 'POST',
-                headers,
-                body: isFormData ? body : JSON.stringify(body),
+                headers: h,
+                body: fd ? body : JSON.stringify(body)
             });
-            return res.json();
+            return r.json();
         }
 
-        // ── Foto Bomb ────────────────────────────────────────────────────────────────
-        const photoInput = document.getElementById('photoInput');
-        if (photoInput) {
-            photoInput.addEventListener('change', e => {
-                const file = e.target.files[0];
-                if (!file) return;
-                selectedFile = file;
-                const preview = document.getElementById('preview');
-                preview.src = URL.createObjectURL(file);
-                preview.classList.add('shown');
-                document.getElementById('uploadZone').style.display = 'none';
-                document.getElementById('uploadBtn').disabled = false;
-            });
-        }
+        // ── Foto Bomb ─────────────────────────────────────────────────────────────────
+        document.getElementById('photoInput')?.addEventListener('change', e => {
+            const f = e.target.files[0];
+            if (!f) return;
+            selFile = f;
+            const prev = document.getElementById('preview');
+            prev.src = URL.createObjectURL(f);
+            prev.classList.add('show');
+            document.getElementById('uploadZone').style.display = 'none';
+            document.getElementById('uploadBtn').disabled = false;
+        });
 
         async function submitFoto() {
-            if (!selectedFile) return showToast('Please select a photo first.', true);
-
+            if (!selFile) return toast('Please take a photo first.', true);
             const btn = document.getElementById('uploadBtn');
             btn.disabled = true;
-            btn.textContent = '⏳ Uploading...';
+            btn.innerHTML = '⏳ Uploading…';
+            const progress = document.getElementById('uploadProgress');
+            const fill = document.getElementById('uploadProgressFill');
+            progress.style.display = 'block';
+            fill.style.width = '30%';
+            setTimeout(() => fill.style.width = '70%', 400);
 
             const fd = new FormData();
-            fd.append('photo', selectedFile);
+            fd.append('photo', selFile);
             fd.append('uploader_name', document.getElementById('fotoName')?.value || '');
             fd.append('uploader_phone', document.getElementById('fotoPhone')?.value || '');
             fd.append('_token', CSRF);
 
             try {
-                const response = await fetch(`/e/${SLUG}/foto/upload`, {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/json'
-                    },
-                    body: fd
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    showToast(data.message);
-                    selectedFile = null;
-                    document.getElementById('preview').classList.remove('shown');
-                    document.getElementById('uploadZone').style.display = '';
-                    btn.textContent = ' Send to Vidiwall';
-                    btn.disabled = true;
-                } else {
-                    showToast(data.message || 'Upload failed.', true);
-                    btn.disabled = false;
-                    btn.textContent = ' Send to Vidiwall';
-                }
+                const d = await post(`/e/${SLUG}/foto/upload`, fd, true);
+                fill.style.width = '100%';
+                setTimeout(() => {
+                    if (d.success) {
+                        document.getElementById('fotoForm').style.display = 'none';
+                        document.getElementById('fotoSuccess').style.display = 'block';
+                    } else {
+                        toast(d.message || 'Upload failed.', true);
+                        resetFotoBtn();
+                    }
+                }, 400);
             } catch {
-                showToast('Network error. Please try again.', true);
-                btn.disabled = false;
-                btn.textContent = ' Send to Vidiwall';
+                toast('Network error. Please try again.', true);
+                resetFotoBtn();
             }
         }
 
-        // ── Lottery ──────────────────────────────────────────────────────────────────
-        async function submitLottery() {
-            const name = document.getElementById('lotteryName')?.value.trim();
-            const phone = document.getElementById('lotteryPhone')?.value.trim();
-            if (!name || !phone) return showToast('Name and phone are required.', true);
+        function resetFotoBtn() {
+            const btn = document.getElementById('uploadBtn');
+            btn.disabled = false;
+            btn.innerHTML = '🚀 Send to Vidiwall';
+            document.getElementById('uploadProgress').style.display = 'none';
+            document.getElementById('uploadProgressFill').style.width = '0%';
+        }
 
-            const data = await post(`/e/${SLUG}/lottery`, {
+        function resetFoto() {
+            selFile = null;
+            document.getElementById('fotoForm').style.display = 'block';
+            document.getElementById('fotoSuccess').style.display = 'none';
+            document.getElementById('preview').classList.remove('show');
+            document.getElementById('uploadZone').style.display = '';
+            document.getElementById('uploadBtn').disabled = true;
+            document.getElementById('uploadBtn').innerHTML = '🚀 Send to Vidiwall';
+            document.getElementById('photoInput').value = '';
+        }
+
+        // ── Lottery ───────────────────────────────────────────────────────────────────
+        async function submitLottery() {
+            const name = document.getElementById('lName')?.value.trim();
+            const phone = document.getElementById('lPhone')?.value.trim();
+            if (!name || !phone) return toast('Name and phone are required.', true);
+            const d = await post(`/e/${SLUG}/lottery`, {
                 name,
                 phone,
-                email: document.getElementById('lotteryEmail')?.value,
+                email: document.getElementById('lEmail')?.value
             });
-            showToast(data.message, !data.success);
+            if (d.success) {
+                document.getElementById('lotteryForm').style.display = 'none';
+                document.getElementById('lotterySuccess').style.display = 'block';
+            } else {
+                toast(d.message, true);
+            }
         }
 
         // ── Voting ────────────────────────────────────────────────────────────────────
         function selectVote(card) {
-            document.querySelectorAll('.vote-card').forEach(c => {
-                c.classList.remove('selected');
-                c.querySelector('.vote-dot').style.background = '';
-                c.querySelector('.vote-dot').style.borderColor = '';
-            });
-            card.classList.add('selected');
-            card.querySelector('.vote-dot').style.background = 'var(--primary)';
-            card.querySelector('.vote-dot').style.borderColor = 'var(--primary)';
-            selectedCandidate = card.dataset.candidate;
+            document.querySelectorAll('.vote-card').forEach(c => c.classList.remove('sel'));
+            card.classList.add('sel');
+            selCandidate = card.dataset.cand;
         }
 
         async function submitVote() {
-            if (!selectedCandidate) return showToast('Please select an athlete first.', true);
-            const data = await post(`/e/${SLUG}/vote`, {
-                candidate: selectedCandidate
+            if (!selCandidate) return toast('Please select an athlete first.', true);
+            const btn = document.getElementById('voteBtn');
+            btn.disabled = true;
+            const d = await post(`/e/${SLUG}/vote`, {
+                candidate: selCandidate
             });
-            showToast(data.message, !data.success);
-
-            if (data.tallies) {
-                const total = Object.values(data.tallies).reduce((a, b) => a + b, 0);
-                document.querySelectorAll('.vote-card').forEach((card, i) => {
-                    const name = card.dataset.candidate;
-                    const count = data.tallies[name] || 0;
-                    const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-                    card.querySelector('.vote-bar-fill').style.width = pct + '%';
-                });
+            if (d.success) {
+                if (d.tallies) {
+                    const total = Object.values(d.tallies).reduce((a, b) => a + b, 0);
+                    document.querySelectorAll('.vote-card').forEach((card, i) => {
+                        const c = card.dataset.cand;
+                        const cnt = d.tallies[c] || 0;
+                        const pct = total > 0 ? Math.round((cnt / total) * 100) : 0;
+                        card.querySelector('.v-fill').style.width = pct + '%';
+                    });
+                }
+                document.getElementById('voteAction').style.display = 'none';
+                document.getElementById('voteSuccess').style.display = 'block';
+            } else {
+                toast(d.message, true);
+                btn.disabled = false;
             }
         }
 
         // ── Membership ────────────────────────────────────────────────────────────────
         async function submitMembership() {
-            const name = document.getElementById('memberName')?.value.trim();
-            const email = document.getElementById('memberEmail')?.value.trim();
-            if (!name || !email) return showToast('Name and email are required.', true);
-
-            try {
-                const response = await fetch(`/e/${SLUG}/membership`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': CSRF
-                    },
-                    body: JSON.stringify({
-                        name,
-                        email,
-                        phone: document.getElementById('memberPhone')?.value,
-                        team_preference: document.getElementById('memberTeam')?.value,
-                        newsletter_opt_in: document.getElementById('newsletterOpt')?.checked ? 1 : 0,
-                    })
-                });
-
-                const data = await response.json();
-                showToast(data.message, !data.success);
-            } catch {
-                showToast('Network error. Please try again.', true);
+            const name = document.getElementById('mName')?.value.trim();
+            const email = document.getElementById('mEmail')?.value.trim();
+            if (!name || !email) return toast('Name and email are required.', true);
+            const d = await post(`/e/${SLUG}/membership`, {
+                name,
+                email,
+                phone: document.getElementById('mPhone')?.value,
+                team_preference: document.getElementById('mTeam')?.value,
+                newsletter_opt_in: document.getElementById('mNewsletter')?.checked ? 1 : 0,
+            });
+            if (d.success) {
+                document.getElementById('memberForm').style.display = 'none';
+                document.getElementById('memberSuccess').style.display = 'block';
+            } else {
+                toast(d.message, true);
             }
         }
     </script>

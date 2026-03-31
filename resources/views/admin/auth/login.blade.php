@@ -1,171 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Login — EventBomb</title>
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap"
-        rel="stylesheet">
+    <title>Sign In — EventBomb</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
     <style>
-        *,
-        *::before,
-        *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: 'DM Sans', sans-serif;
-            background: #0D0D1A;
-            color: #e8e8f0;
-            min-height: 100vh;
-            display: grid;
-            place-items: center;
-            background-image: radial-gradient(ellipse at 20% 50%, rgba(255, 61, 0, .08) 0%, transparent 60%),
-                radial-gradient(ellipse at 80% 20%, rgba(255, 215, 0, .05) 0%, transparent 50%);
-        }
-
-        .login-box {
-            width: 100%;
-            max-width: 400px;
-            padding: 0 20px;
-        }
-
-        .logo {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        .logo h1 {
-            font-family: 'Syne', sans-serif;
-            font-size: 36px;
-            font-weight: 800;
-            color: #FF3D00;
-            letter-spacing: -1px;
-        }
-
-        .logo p {
-            color: #8888aa;
-            font-size: 14px;
-            margin-top: 6px;
-        }
-
-        .card {
-            background: #161628;
-            border: 1px solid #2a2a45;
-            border-radius: 16px;
-            padding: 36px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #8888aa;
-            margin-bottom: 8px;
-        }
-
-        input {
-            width: 100%;
-            background: #0D0D1A;
-            border: 1px solid #2a2a45;
-            border-radius: 8px;
-            padding: 12px 16px;
-            color: #e8e8f0;
-            font-size: 15px;
-            font-family: 'DM Sans', sans-serif;
-            transition: border-color .15s;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: #FF3D00;
-        }
-
-        .remember {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-            color: #8888aa;
-        }
-
-        .remember input[type=checkbox] {
-            width: auto;
-            accent-color: #FF3D00;
-        }
-
-        .btn-login {
-            width: 100%;
-            background: #FF3D00;
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            padding: 14px;
-            font-size: 15px;
-            font-weight: 700;
-            font-family: 'Syne', sans-serif;
-            cursor: pointer;
-            margin-top: 24px;
-            letter-spacing: .5px;
-            transition: background .15s;
-        }
-
-        .btn-login:hover {
-            background: #e03500;
-        }
-
-        .error {
-            color: #f87171;
-            font-size: 13px;
-            margin-top: 6px;
-        }
-
-        .divider {
-            text-align: center;
-            color: #8888aa;
-            font-size: 12px;
-            margin-top: 24px;
-        }
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'DM Sans',sans-serif;background:#0A0A18;color:#e8e8f2;min-height:100vh;display:grid;place-items:center;
+            background-image:radial-gradient(ellipse at 15% 50%,rgba(255,61,0,.09) 0%,transparent 55%),
+                             radial-gradient(ellipse at 85% 20%,rgba(255,215,0,.05) 0%,transparent 50%);}
+        .wrap{width:100%;max-width:400px;padding:0 20px}
+        .logo{text-align:center;margin-bottom:36px}
+        .logo h1{font-family:'Syne',sans-serif;font-size:34px;font-weight:800;color:#FF3D00;letter-spacing:-1px}
+        .logo p{color:#7878A0;font-size:13px;margin-top:6px}
+        .card{background:#12121F;border:1px solid #252540;border-radius:16px;padding:32px}
+        .form-group{margin-bottom:18px}
+        label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#7878A0;margin-bottom:7px}
+        input{width:100%;background:#0A0A18;border:1px solid #252540;border-radius:8px;padding:12px 14px;color:#e8e8f2;font-size:14px;font-family:'DM Sans',sans-serif;transition:border-color .15s}
+        input:focus{outline:none;border-color:#FF3D00}
+        input::placeholder{color:#7878A0}
+        .remember{display:flex;align-items:center;gap:8px;font-size:13px;color:#7878A0;cursor:pointer}
+        .remember input[type=checkbox]{width:auto;accent-color:#FF3D00;width:15px;height:15px}
+        .btn-login{width:100%;background:#FF3D00;color:#fff;border:none;border-radius:8px;padding:13px;font-size:15px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer;margin-top:22px;letter-spacing:.3px;transition:background .15s}
+        .btn-login:hover{background:#d93400}
+        .error{color:#f87171;font-size:12px;margin-top:5px}
+        .hint{text-align:center;color:#7878A0;font-size:11px;margin-top:20px}
     </style>
 </head>
-
 <body>
-    <div class="login-box">
-        <div class="logo">
-            <h1>⚡ EventBomb</h1>
-            <p>Admin Console — Secure Access</p>
-        </div>
-        <div class="card">
-            <form method="POST" action="{{ route('admin.login.post') }}">
-                @csrf
-                <div class="form-group">
-                    <label for="email">Email Address</label>
-                    <input type="email" id="email" name="email" value="{{ old('email') }}" required autofocus>
-                    @error('email')
-                        <div class="error">{{ $message }}</div>
-                    @enderror
-                </div>
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" name="password" required>
-                </div>
-                <label class="remember">
-                    <input type="checkbox" name="remember"> Remember me
-                </label>
-                <button type="submit" class="btn-login">Sign In →</button>
-            </form>
-            <div class="divider">EventBomb Platform v1.0</div>
-        </div>
+<div class="wrap">
+    <div class="logo">
+        <h1>⚡ EventBomb</h1>
+        <p>Admin Console · Secure Access</p>
     </div>
+    <div class="card">
+        <form method="POST" action="{{ route('admin.login.post') }}">
+            @csrf
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" name="email" value="{{ old('email') }}" required autofocus placeholder="admin@example.com">
+                @error('email')<div class="error">{{ $message }}</div>@enderror
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" name="password" required placeholder="••••••••">
+            </div>
+            <label class="remember">
+                <input type="checkbox" name="remember"> Keep me signed in
+            </label>
+            <button type="submit" class="btn-login">Sign In →</button>
+        </form>
+        <div class="hint">EventBomb Platform v2.0 · All rights reserved</div>
+    </div>
+</div>
 </body>
-
 </html>
