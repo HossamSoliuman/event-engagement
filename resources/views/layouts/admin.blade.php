@@ -268,11 +268,11 @@
         @endif
 
         <div class="sb-label">Admin</div>
-        @if(auth()->user()->isSuperAdmin())
+        {{-- @if(auth()->user()->isSuperAdmin())
         <a href="{{ route('admin.users.index') }}" class="nav-item {{ request()->routeIs('admin.users*') ? 'active' : '' }}">
             <i class="ni-icon">👥</i> Users
         </a>
-        @endif
+        @endif --}}
         <a href="{{ route('admin.settings.index') }}" class="nav-item {{ request()->routeIs('admin.settings*') ? 'active' : '' }}">
             <i class="ni-icon">⚙</i> Settings
         </a>
