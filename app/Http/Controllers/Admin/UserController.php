@@ -48,7 +48,6 @@ class UserController extends Controller
             'name'      => 'required|string|max:255',
             'email'     => ['required','email', Rule::unique('users')->ignore($user->id)],
             'role'      => 'required|in:superadmin,admin,moderator',
-            'is_active' => 'boolean',
             'password'  => 'nullable|string|min:8|confirmed',
         ]);
 

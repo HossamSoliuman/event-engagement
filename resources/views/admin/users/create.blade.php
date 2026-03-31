@@ -39,6 +39,7 @@
                 <input type="checkbox" name="is_active" {{ $user->is_active?'checked':'' }}>
                 Account is active
             </label>
+            
             @endif
         </div>
     </div>
