@@ -12,7 +12,7 @@
 {{-- Stats --}}
 <div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin-bottom:20px">
     <div class="stat-card">
-        <div class="stat-label">Total Entries</div>
+        <div class="stat-label">Total Entries </div>
         <div class="stat-value c-gold">{{ $totalCount }}</div>
     </div>
     <div class="stat-card">
@@ -172,7 +172,7 @@ function animateDraw() {
     setTimeout(() => { cancelAnimationFrame(frame); canvas.remove(); }, 5000);
 })();
 @endif
-}
+
 </script>
 @endif
 @endpush
