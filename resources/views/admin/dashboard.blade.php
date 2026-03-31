@@ -157,7 +157,7 @@
 </div>{{-- /grid --}}
 
 {{-- Upload Activity Chart --}}
-@if(!empty($uploadActivity))
+{{-- @if(!empty($uploadActivity))
 <div class="card mt-3">
     <div class="card-header"><h3>Upload Activity — Last 24 Hours</h3></div>
     <div class="card-body">
@@ -175,6 +175,6 @@
         </div>
     </div>
 </div>
-@endif
+@endif --}}
 
 @endsection
