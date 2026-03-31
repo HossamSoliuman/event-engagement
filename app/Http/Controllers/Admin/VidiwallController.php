@@ -21,7 +21,6 @@ class VidiwallController extends Controller
         if ($event->vidiwall_slideshow_mode) {
             $fotos = $event->fotoUploads()
                 ->where('status', 'approved')
-                ->where('on_screen', true)
                 ->orderByDesc('displayed_at')
                 ->get()
                 ->map(fn($f) => [
