@@ -16,7 +16,7 @@ use App\Http\Controllers\Guest\VoteController;
 use App\Http\Controllers\Guest\LotteryController;
 use App\Http\Controllers\Guest\MembershipController;
 use Illuminate\Support\Facades\Route;
-//test
+
 // ── Guest ─────────────────────────────────────────────────────────────────────
 Route::get('/e/{slug}',              [EventPageController::class, 'index'])->name('event.landing');
 Route::post('/e/{slug}/session',     [EventPageController::class, 'startSession'])->name('event.session.start');
