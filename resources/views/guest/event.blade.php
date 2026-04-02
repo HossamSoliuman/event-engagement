@@ -218,10 +218,6 @@
                     <label class="field-label" data-en="Your Name" data-de="Dein Name">Your Name</label>
                     <input type="text" class="field" id="fotoName" data-ph-en="e.g. Ahmed from Row D" data-ph-de="z.B. Max aus Reihe D" placeholder="e.g. Ahmed from Row D" autocomplete="name">
                 </div>
-                <div class="field-group">
-                    <label class="field-label" data-en="Phone (optional)" data-de="Telefon (optional)">Phone (optional)</label>
-                    <input type="tel" class="field" id="fotoPhone" placeholder="+43 xxx xxx xxxx" autocomplete="tel">
-                </div>
                 <button class="btn-main" id="uploadBtn" onclick="submitFoto()" disabled>
                     <span data-en="🚀 Send to Vidiwall" data-de="🚀 Auf die Vidiwall">🚀 Send to Vidiwall</span>
                 </button>
