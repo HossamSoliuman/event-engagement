@@ -157,6 +157,7 @@ class EventController extends Controller
             'membership_desc'             => 'nullable|string|max:255',
             'vidiwall_overlay_text'       => 'nullable|string|max:255',
             'vidiwall_slideshow_interval' => 'nullable|integer|min:3|max:60',
+            'privacy_policy_text'         => 'nullable|string|max:2000',
             'starts_at'                   => 'nullable|date',
             'ends_at'                     => 'nullable|date',
             'logo'                        => 'nullable|image|max:2048',

@@ -44,6 +44,7 @@ class Event extends Model
         'vidiwall_slideshow_mode',
         'vidiwall_slideshow_interval',
         'vidiwall_overlay_text',
+        'privacy_policy_text',
         'starts_at',
         'ends_at',
     ];
