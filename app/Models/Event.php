@@ -47,6 +47,18 @@ class Event extends Model
         'privacy_policy_text',
         'starts_at',
         'ends_at',
+        'privacy_policy_text',
+        'privacy_policy_url',
+        'font_heading',
+        'font_body',
+        'tile_fotobomb_config',
+        'tile_voting_config',
+        'tile_lottery_config',
+        'tile_membership_config',
+        'lottery_extra_fields',
+        'membership_extra_fields',
+        'starts_at',
+        'ends_at',
     ];
     protected $casts = [
         'voting_options' => 'array',
@@ -61,6 +73,12 @@ class Event extends Model
         'vidiwall_slideshow_mode' => 'boolean',
         'starts_at' => 'datetime',
         'ends_at' => 'datetime',
+        'tile_fotobomb_config'    => 'array',
+        'tile_voting_config'      => 'array',
+        'tile_lottery_config'     => 'array',
+        'tile_membership_config'  => 'array',
+        'lottery_extra_fields'    => 'array',
+        'membership_extra_fields' => 'array',
     ];
     public function fotoUploads()
     {
@@ -149,5 +167,26 @@ class Event extends Model
     public function getOnScreenFotos()
     {
         return $this->fotoUploads()->where('status', 'approved')->where('on_screen', true)->orderByDesc('displayed_at')->get();
+    }
+    public function tileConfig(string $module): array
+    {
+        $field    = "tile_{$module}_config";
+        $defaults = [
+            'label'         => '',
+            'sublabel'      => '',
+            'bg_color'      => '',
+            'image_path'    => null,
+            'link_url'      => '',
+            'link_external' => false,
+        ];
+        return array_merge($defaults, $this->$field ?? []);
+    }
+
+    public function getTileImageUrl(string $module): ?string
+    {
+        $config = $this->tileConfig($module);
+        return !empty($config['image_path'])
+            ? \Illuminate\Support\Facades\Storage::disk('public')->url($config['image_path'])
+            : null;
     }
 }

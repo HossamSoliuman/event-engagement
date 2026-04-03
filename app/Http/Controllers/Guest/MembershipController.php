@@ -21,6 +21,7 @@ class MembershipController extends Controller
             'phone'             => 'nullable|string|max:30',
             'team_preference'   => 'nullable|string|max:100',
             'newsletter_opt_in' => 'boolean',
+            'extra_fields'      => 'nullable|array',
         ]);
 
         if (Membership::where('event_id', $event->id)->where('email', $data['email'])->exists()) {

@@ -7,9 +7,13 @@
     <meta name="theme-color" content="{{ $event->primary_color }}">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <title>{{ $event->name }}</title>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap"
+    <link {{-- Dynamic fonts from admin settings --}}
+        @php
+$fontH = $event->font_heading ?: 'Syne';
+        $fontB = $event->font_body    ?: 'DM Sans'; @endphp <link
+        href="https://fonts.googleapis.com/css2?family={{ urlencode($fontH) }}:wght@700;800&family={{ urlencode($fontB) }}:wght@300;400;500;600&display=swap"
         rel="stylesheet">
+
     <style>
         :root {
             --p: {{ $event->primary_color }};
@@ -19,7 +23,9 @@
             --muted: rgba(240, 240, 248, .55);
             --border: rgba(255, 255, 255, .12);
             --card: rgba(255, 255, 255, .07);
-            --r: 18px
+            --r: 18px;
+            --font-h: '{{ $fontH }}', sans-serif;
+            --font-b: '{{ $fontB }}', sans-serif;
         }
 
         *,
@@ -36,7 +42,6 @@
         }
 
         body {
-            font-family: 'DM Sans', sans-serif;
             background: var(--bg);
             color: var(--text);
             min-height: 100vh;
@@ -44,6 +49,21 @@
             display: flex;
             flex-direction: column;
             overflow-x: hidden
+        }
+
+        body {
+            font-family: var(--font-b);
+        }
+
+        .land-title,
+        .land-hero-text,
+        .tile-name,
+        .section-title,
+        .mod-header-title,
+        .btn-main,
+        .success-state h3,
+        .land-hashtag {
+            font-family: var(--font-h);
         }
 
         #landing {
@@ -762,25 +782,48 @@
             'I agree to the Privacy Policy and consent to my data being processed for this event.');
     </script>
     @php
-        $gdprSnippet = fn(string $id) => '
-    <div class="gdpr-box" id="gdpr-box-' .
-            $id .
-            '">
-        <label class="gdpr-row">
-            <input type="checkbox" id="gdpr-' .
-            $id .
-            '">
-            <span class="gdpr-text">' .
-            e(
-                $event->privacy_policy_text ?:
-                'I agree to the Privacy Policy and consent to my data being processed for this event.',
-            ) .
-            '</span>
-        </label>
-        <div class="gdpr-error" id="gdpr-err-' .
-            $id .
-            '">Please accept the data protection agreement to continue.</div>
-    </div>';
+        $privacyText =
+            $event->privacy_policy_text ?:
+            'I agree to the Privacy Policy and consent to my data being processed for this event.';
+        $privacyUrl = $event->privacy_policy_url ?: '#';
+
+        $gdprSnippet = function (string $id) use ($privacyText, $privacyUrl) {
+            $linkOpen =
+                $privacyUrl !== '#'
+                    ? '<a href="' .
+                        e($privacyUrl) .
+                        '" target="_blank" style="color:var(--p);text-decoration:underline;text-underline-offset:2px">'
+                    : '<a href="#" onclick="return false" style="color:var(--p);text-decoration:underline;text-underline-offset:2px">';
+            $linkClose = '</a>';
+
+            // Wrap the words "Privacy Policy" / "Datenschutz" in the link if they appear
+            $displayText = preg_replace(
+                '/(Privacy Policy|Datenschutzerklärung|Datenschutz)/i',
+                $linkOpen . '$1' . $linkClose,
+                e($privacyText),
+            );
+            // If none matched, just append a standalone link
+            if ($displayText === e($privacyText)) {
+                $displayText = e($privacyText) . ' ' . $linkOpen . 'Privacy Policy' . $linkClose;
+            }
+
+            return '
+<div class="gdpr-box" id="gdpr-box-' .
+                $id .
+                '">
+    <label class="gdpr-row">
+        <input type="checkbox" id="gdpr-' .
+                $id .
+                '">
+        <span class="gdpr-text">' .
+                $displayText .
+                '</span>
+    </label>
+    <div class="gdpr-error" id="gdpr-err-' .
+                $id .
+                '"></div>
+</div>';
+        };
     @endphp
     <div class="lang-toggle">
         <button class="lang-btn active" onclick="setLang('en')">EN</button>
@@ -818,65 +861,110 @@
         </div>
 
         <div class="tile-grid">
-            @if ($event->module_fotobomb)
-                <div class="tile tile-fotobomb" onclick="openModule('fotobomb')">
-                    <div class="tile-arrow">↗</div>
-                    @if ($event->sponsor_logo_path)
+            @foreach ([['fotobomb', '📸', $event->fotobomb_title, '#FF3D00'], ['voting', '🏆', $event->voting_title, '#FFD700'], ['lottery', '🎰', $event->lottery_title, '#6366f1'], ['membership', '⭐', $event->membership_title, '#22c55e']] as [$mod, $defaultIcon, $defaultName, $defaultAccent])
+                @if (!$event->{'module_' . $mod})
+                    @continue
+                @endif
+
+                @php
+                    $tc = $event->tileConfig($mod);
+                    $imgUrl = $event->getTileImageUrl($mod);
+                    $bgColor = !empty($tc['bg_color']) ? $tc['bg_color'] : null;
+                    $linkUrl = $tc['link_url'] ?? '';
+                    $isLink = !empty($linkUrl);
+                    $external = $tc['link_external'] ?? false;
+                    $tileLabel = $tc['label'] ?: '';
+                    $tileSublabel = $tc['sublabel'] ?: '';
+
+                    $bgStyle = $bgColor
+                        ? "background:{$bgColor}"
+                        : match ($mod) {
+                            'fotobomb'
+                                => 'background:linear-gradient(160deg,color-mix(in srgb,var(--p) 65%,#000),color-mix(in srgb,var(--p) 35%,#000))',
+                            'voting'
+                                => 'background:linear-gradient(160deg,color-mix(in srgb,var(--acc) 28%,#111),color-mix(in srgb,var(--acc) 8%,#080808))',
+                            'lottery' => 'background:linear-gradient(160deg,#1a1040,#080520)',
+                            'membership' => 'background:linear-gradient(160deg,#071a07,#020d02)',
+                        };
+
+                    $accentStyle = match ($mod) {
+                        'fotobomb' => 'background:var(--p)',
+                        'voting' => 'background:var(--acc)',
+                        'lottery' => 'background:#6366f1',
+                        'membership' => 'background:#22c55e',
+                    };
+                @endphp
+
+                <div class="tile" style="{{ $bgStyle }}"
+                    onclick="{{ $isLink
+                        ? "window.open('" . addslashes($linkUrl) . "','" . ($external ? '_blank' : '_self') . "')"
+                        : "openModule('{$mod}')" }}">
+
+                    {{-- Bottom accent bar --}}
+                    <div style="position:absolute;bottom:0;left:0;right:0;height:3px;z-index:3;{{ $accentStyle }}">
+                    </div>
+
+                    {{-- Arrow --}}
+                    <div class="tile-arrow">{{ $isLink ? '↗' : '↗' }}</div>
+
+                    {{-- Background image if uploaded --}}
+                    @if ($imgUrl)
+                        <img src="{{ $imgUrl }}"
+                            style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.5;pointer-events:none"
+                            alt="">
+                    @else
+                        <div class="tile-icon">{{ $defaultIcon }}</div>
+                    @endif
+
+                    {{-- Sponsor/logo area top-left --}}
+                    @if ($tileLabel || $tileSublabel)
+                        <div class="tile-sponsor">
+                            <div>
+                                @if ($tileLabel)
+                                    <div class="tile-sponsor-name"
+                                        style="font-size:10px;font-weight:800;color:rgba(255,255,255,.85);letter-spacing:.5px">
+                                        {{ $tileLabel }}</div>
+                                @endif
+                                @if ($tileSublabel)
+                                    <div
+                                        style="font-size:9px;color:rgba(255,255,255,.45);letter-spacing:1px;text-transform:uppercase;margin-top:1px">
+                                        {{ $tileSublabel }}</div>
+                                @endif
+                            </div>
+                        </div>
+                    @elseif($event->sponsor_logo_path && $mod === 'fotobomb')
                         <div class="tile-sponsor">
                             <img src="{{ $event->sponsor_logo_url }}" alt="">
-                            <div class="tile-sponsor-name" data-en="Selfie Wall" data-de="Selfie Wall">Selfie Wall</div>
+                            <div class="tile-sponsor-name">Selfie Wall</div>
                         </div>
-                    @endif
-                    <div class="tile-icon">📸</div>
-                    <div class="tile-body">
-                        <div class="tile-label" data-en="Upload your photo" data-de="Foto hochladen">Upload your photo
-                        </div>
-                        <div class="tile-name">{{ $event->fotobomb_title }}</div>
-                    </div>
-                </div>
-            @endif
-
-            @if ($event->module_voting)
-                <div class="tile tile-voting" onclick="openModule('voting')">
-                    <div class="tile-arrow">↗</div>
-                    @if ($event->logo_path)
+                    @elseif($event->logo_path && $mod === 'voting')
                         <div class="tile-sponsor">
                             <img src="{{ $event->logo_url }}" alt="">
-                            <div class="tile-sponsor-name" data-en="Athlete of the Day" data-de="Athlet des Tages">
-                                Athlete of the Day</div>
+                            <div class="tile-sponsor-name">Athlete of the Day</div>
                         </div>
                     @endif
-                    <div class="tile-icon">🏆</div>
-                    <div class="tile-body">
-                        <div class="tile-label" data-en="Cast your vote" data-de="Jetzt abstimmen">Cast your vote</div>
-                        <div class="tile-name">{{ $event->voting_title }}</div>
-                    </div>
-                </div>
-            @endif
 
-            @if ($event->module_lottery)
-                <div class="tile tile-lottery" onclick="openModule('lottery')">
-                    <div class="tile-arrow">↗</div>
-                    <div class="tile-icon">🎰</div>
                     <div class="tile-body">
-                        <div class="tile-label" data-en="Win tonight's prize" data-de="Jetzt Tickets sichern">Win
-                            tonight's prize</div>
-                        <div class="tile-name" style="color:var(--p)">{{ $event->lottery_title }}</div>
+                        <div class="tile-label">
+                            {{ $isLink
+                                ? '🔗 ' . __('Tap to visit')
+                                : match ($mod) {
+                                    'fotobomb' => $event->fotobomb_desc
+                                        ? \Illuminate\Support\Str::limit($event->fotobomb_desc, 30)
+                                        : 'Upload your photo',
+                                    'voting' => $event->voting_desc ? \Illuminate\Support\Str::limit($event->voting_desc, 30) : 'Cast your vote',
+                                    'lottery' => $event->lottery_desc
+                                        ? \Illuminate\Support\Str::limit($event->lottery_desc, 30)
+                                        : "Win tonight's prize",
+                                    'membership' => $event->membership_desc
+                                        ? \Illuminate\Support\Str::limit($event->membership_desc, 30)
+                                        : 'Join the community',
+                                } }}
+                        </div>
+                        <div class="tile-name">{{ $defaultName }}</div>
                     </div>
                 </div>
-            @endif
-
-            @if ($event->module_membership)
-                <div class="tile tile-membership" onclick="openModule('membership')">
-                    <div class="tile-arrow">↗</div>
-                    <div class="tile-icon">⭐</div>
-                    <div class="tile-body">
-                        <div class="tile-label" data-en="Join the community" data-de="Jetzt Mitglied werden">Join the
-                            community</div>
-                        <div class="tile-name" style="color:#22c55e">{{ $event->membership_title }}</div>
-                    </div>
-                </div>
-            @endif
+            @endforeach
         </div>
 
         <div class="land-footer">
@@ -962,6 +1050,16 @@
                                 data-de="E-Mail (optional)">Email (optional)</label><input type="email"
                                 class="field" id="lEmail" data-ph-en="your@email.com"
                                 data-ph-de="deine@email.com" placeholder="your@email.com" autocomplete="email"></div>
+                        @foreach ($event->lottery_extra_fields ?? [] as $field)
+                            <div class="field-group">
+                                <label
+                                    class="field-label">{{ $field['label'] }}{{ $field['required'] ? ' *' : '' }}</label>
+                                <input type="{{ $field['type'] }}" class="field extra-lottery-field"
+                                    data-label="{{ $field['label'] }}"
+                                    data-required="{{ $field['required'] ? '1' : '0' }}"
+                                    placeholder="{{ $field['label'] }}" {{ $field['required'] ? 'required' : '' }}>
+                            </div>
+                        @endforeach
                         {!! $gdprSnippet('lottery') !!}
                         <button class="btn-main" onclick="submitLottery()">
                             <span data-en="🎰 Enter the Draw" data-de="🎰 Jetzt teilnehmen">🎰 Enter the Draw</span>
@@ -1062,6 +1160,16 @@
                                 data-de="Lieblingsmannschaft (optional)">Favourite Team</label><input type="text"
                                 class="field" id="mTeam" data-ph-en="e.g. Al Ahly" data-ph-de="z.B. SK Rapid"
                                 placeholder="e.g. Al Ahly"></div>
+                        @foreach ($event->membership_extra_fields ?? [] as $field)
+                            <div class="field-group">
+                                <label
+                                    class="field-label">{{ $field['label'] }}{{ $field['required'] ? ' *' : '' }}</label>
+                                <input type="{{ $field['type'] }}" class="field extra-membership-field"
+                                    data-label="{{ $field['label'] }}"
+                                    data-required="{{ $field['required'] ? '1' : '0' }}"
+                                    placeholder="{{ $field['label'] }}" {{ $field['required'] ? 'required' : '' }}>
+                            </div>
+                        @endforeach
                         <label class="check-row"><input type="checkbox" id="mNewsletter"><span
                                 data-en="Subscribe to news &amp; offers"
                                 data-de="Newsletter &amp; Angebote erhalten">Subscribe to news &amp;
@@ -1210,14 +1318,58 @@
             if (!name || !phone) return toast(lang === 'de' ? 'Name und Telefon sind erforderlich.' :
                 'Name and phone required.', true);
             if (!checkGdpr('lottery')) return;
+
+            // Collect extra fields
+            const extra = {};
+            document.querySelectorAll('.extra-lottery-field').forEach(el => {
+                if (el.dataset.required === '1' && !el.value.trim()) {
+                    toast((lang === 'de' ? 'Pflichtfeld: ' : 'Required: ') + el.dataset.label, true);
+                    throw new Error('validation');
+                }
+                extra[el.dataset.label] = el.value;
+            });
+
             const d = await post(`/e/${SLUG}/lottery`, {
                 name,
                 phone,
-                email: document.getElementById('lEmail')?.value
+                email: document.getElementById('lEmail')?.value,
+                extra_fields: extra
             });
             if (d.success) {
                 document.getElementById('lotteryForm').style.display = 'none';
                 document.getElementById('lotterySuccess').style.display = 'block';
+                setLang(lang);
+            } else toast(d.message, true);
+        }
+
+        async function submitMembership() {
+            const name = document.getElementById('mName')?.value.trim();
+            const email = document.getElementById('mEmail')?.value.trim();
+            if (!name || !email) return toast(lang === 'de' ? 'Name und E-Mail sind erforderlich.' :
+                'Name and email required.', true);
+            if (!checkGdpr('member')) return;
+
+            // Collect extra fields
+            const extra = {};
+            document.querySelectorAll('.extra-membership-field').forEach(el => {
+                if (el.dataset.required === '1' && !el.value.trim()) {
+                    toast((lang === 'de' ? 'Pflichtfeld: ' : 'Required: ') + el.dataset.label, true);
+                    throw new Error('validation');
+                }
+                extra[el.dataset.label] = el.value;
+            });
+
+            const d = await post(`/e/${SLUG}/membership`, {
+                name,
+                email,
+                phone: document.getElementById('mPhone')?.value,
+                team_preference: document.getElementById('mTeam')?.value,
+                newsletter_opt_in: document.getElementById('mNewsletter')?.checked ? 1 : 0,
+                extra_fields: extra,
+            });
+            if (d.success) {
+                document.getElementById('memberForm').style.display = 'none';
+                document.getElementById('memberSuccess').style.display = 'block';
                 setLang(lang);
             } else toast(d.message, true);
         }
@@ -1255,25 +1407,7 @@
             }
         }
 
-        async function submitMembership() {
-            const name = document.getElementById('mName')?.value.trim();
-            const email = document.getElementById('mEmail')?.value.trim();
-            if (!name || !email) return toast(lang === 'de' ? 'Name und E-Mail sind erforderlich.' :
-                'Name and email required.', true);
-            if (!checkGdpr('member')) return;
-            const d = await post(`/e/${SLUG}/membership`, {
-                name,
-                email,
-                phone: document.getElementById('mPhone')?.value,
-                team_preference: document.getElementById('mTeam')?.value,
-                newsletter_opt_in: document.getElementById('mNewsletter')?.checked ? 1 : 0,
-            });
-            if (d.success) {
-                document.getElementById('memberForm').style.display = 'none';
-                document.getElementById('memberSuccess').style.display = 'block';
-                setLang(lang);
-            } else toast(d.message, true);
-        }
+
 
 
         function resetFotoBtn() {
@@ -1294,8 +1428,6 @@
             document.getElementById('photoInput').value = '';
             resetFotoBtn();
         }
-
-
     </script>
 </body>
 

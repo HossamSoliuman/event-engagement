@@ -13,13 +13,20 @@ class MembershipAdminController extends Controller
     {
         $search  = $request->get('search');
         $members = $event->memberships()
-            ->when($search, fn($q) => $q->where('name','like',"%$search%")->orWhere('email','like',"%$search%"))
+            ->when($search, fn($q) => $q->where('name', 'like', "%$search%")->orWhere('email', 'like', "%$search%"))
             ->latest()->paginate(30);
 
         $totalCount       = $event->memberships()->count();
         $newsletterCount  = $event->memberships()->where('newsletter_opt_in', true)->count();
 
-        return view('admin.membership.index', compact('event','members','totalCount','newsletterCount','search'));
+        $memberExtraKeys = [];
+        foreach ($members as $member) {
+            if (!empty($member->extra_fields) && is_array($member->extra_fields)) {
+                $memberExtraKeys = array_keys($member->extra_fields);
+                break;
+            }
+        }
+        return view('admin.membership.index', compact('event', 'members', 'totalCount', 'newsletterCount', 'search', 'memberExtraKeys'));
     }
 
     public function destroy(Membership $member)
@@ -34,12 +41,15 @@ class MembershipAdminController extends Controller
         $csv     = "ID,Name,Email,Phone,Team,Newsletter,Membership Number,Joined At\n";
         foreach ($members as $m) {
             $csv .= implode(',', [
-                $m->id, '"'.$m->name.'"', '"'.$m->email.'"',
-                '"'.($m->phone??'').'"', '"'.($m->team_preference??'').'"',
+                $m->id,
+                '"' . $m->name . '"',
+                '"' . $m->email . '"',
+                '"' . ($m->phone ?? '') . '"',
+                '"' . ($m->team_preference ?? '') . '"',
                 $m->newsletter_opt_in ? 'Yes' : 'No',
-                '"'.($m->membership_number??'').'"',
+                '"' . ($m->membership_number ?? '') . '"',
                 $m->created_at->format('Y-m-d H:i'),
-            ])."\n";
+            ]) . "\n";
         }
         return response($csv, 200, [
             'Content-Type'        => 'text/csv',

@@ -25,7 +25,8 @@
                     <div class="form-row">
                         <div class="form-group mb-0">
                             <label class="form-label">Subtitle</label>
-                            <input name="subtitle" class="form-control" value="{{ old('subtitle', $event->subtitle ?? '') }}"
+                            <input name="subtitle" class="form-control"
+                                value="{{ old('subtitle', $event->subtitle ?? '') }}"
                                 placeholder="The Ultimate Fan Experience">
                         </div>
                         @if (isset($event))
@@ -124,6 +125,233 @@
                             </div>
                         </div>
                     @endforeach
+                </div>
+            </div>
+            {{-- ── PRIVACY POLICY ── --}}
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h3>🔒 Privacy Policy & Data Protection</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label class="form-label">Consent Text (shown inside every checkbox)</label>
+                        <textarea name="privacy_policy_text" class="form-control" rows="3"
+                            placeholder="e.g. I agree to the processing of my personal data in accordance with the Privacy Policy of [Organisation].">{{ old('privacy_policy_text', $event->privacy_policy_text ?? '') }}</textarea>
+                        <div class="form-hint">Guests must tick this before submitting any form. Write in your audience's
+                            language(s).</div>
+                    </div>
+                    <div class="form-group mb-0">
+                        <label class="form-label">Privacy Policy URL <span
+                                style="color:var(--muted);font-weight:400">(guests can click "Privacy Policy" to open
+                                this)</span></label>
+                        <input type="url" name="privacy_policy_url" class="form-control"
+                            placeholder="https://yourdomain.com/datenschutz"
+                            value="{{ old('privacy_policy_url', $event->privacy_policy_url ?? '') }}">
+                        <div class="form-hint">Link to your full privacy policy document or page. Required by law.</div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- ── FONT & STYLE ── --}}
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h3>🎨 Fonts & Typography</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-hint mb-2" style="margin-bottom:12px">Enter any Google Fonts name. Examples: Oswald ·
+                        Bebas Neue · Raleway · Montserrat · Playfair Display · Inter</div>
+                    <div class="form-row">
+                        <div class="form-group mb-0">
+                            <label class="form-label">Heading Font</label>
+                            <input type="text" name="font_heading" class="form-control" placeholder="Syne"
+                                value="{{ old('font_heading', $event->font_heading ?? 'Syne') }}" id="fontHeadingInput">
+                            <div class="form-hint">Used for event name, tile names, section titles</div>
+                        </div>
+                        <div class="form-group mb-0">
+                            <label class="form-label">Body Font</label>
+                            <input type="text" name="font_body" class="form-control" placeholder="DM Sans"
+                                value="{{ old('font_body', $event->font_body ?? 'DM Sans') }}" id="fontBodyInput">
+                            <div class="form-hint">Used for descriptions, form labels, body text</div>
+                        </div>
+                    </div>
+                    <div
+                        style="margin-top:14px;padding:12px 14px;background:var(--dark);border:1px solid var(--border);border-radius:8px">
+                        <div id="fontPreviewHeading" style="font-size:20px;font-weight:800;margin-bottom:4px">Championship
+                            Night 2025</div>
+                        <div id="fontPreviewBody" style="font-size:14px;color:var(--muted)">Upload your photo and be part
+                            of the show!</div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- ── TILE DESIGNER ── --}}
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h3>🖼 Tile Designer</h3>
+                    <div class="text-muted text-xs">Customise each of the 4 landing page tiles. Upload a graphic, set a
+                        background colour, or turn a tile into an external link.</div>
+                </div>
+                <div class="card-body" style="padding:0">
+
+                    @foreach ([['fotobomb', '📷', 'Foto Bomb / Selfie Wall'], ['voting', '🏆', 'Athlete of the Day / Voting'], ['lottery', '🎰', 'Lottery / Tickets'], ['membership', '⭐', 'Membership / Community']] as [$mod, $ico, $modLabel])
+                        @php $tc = isset($event) ? $event->tileConfig($mod) : []; @endphp
+                        <div style="border-bottom:1px solid var(--border);padding:18px 20px">
+                            <div style="font-weight:700;font-size:14px;margin-bottom:14px">{{ $ico }}
+                                {{ $modLabel }}</div>
+                            <div class="form-row" style="margin-bottom:12px">
+                                <div class="form-group mb-0">
+                                    <label class="form-label">Tile Label (top small text)</label>
+                                    <input type="text" name="tile_{{ $mod }}_label" class="form-control"
+                                        placeholder="e.g. SELFIE WALL"
+                                        value="{{ old('tile_' . $mod . '_label', $tc['label'] ?? '') }}">
+                                </div>
+                                <div class="form-group mb-0">
+                                    <label class="form-label">Tile Sublabel</label>
+                                    <input type="text" name="tile_{{ $mod }}_sublabel" class="form-control"
+                                        placeholder="e.g. Presented by UNIQA"
+                                        value="{{ old('tile_' . $mod . '_sublabel', $tc['sublabel'] ?? '') }}">
+                                </div>
+                            </div>
+                            <div class="form-row" style="margin-bottom:12px">
+                                <div class="form-group mb-0">
+                                    <label class="form-label">Background Colour (overrides default)</label>
+                                    <div style="display:flex;gap:8px;align-items:center">
+                                        <input type="color" value="{{ $tc['bg_color'] ?? '#1a1a3a' }}"
+                                            style="width:36px;height:36px;padding:2px;border-radius:6px;border:1px solid var(--border);background:var(--dark);cursor:pointer"
+                                            oninput="document.getElementById('tile_{{ $mod }}_bg_color').value=this.value">
+                                        <input type="text" name="tile_{{ $mod }}_bg_color"
+                                            id="tile_{{ $mod }}_bg_color" class="form-control"
+                                            style="font-family:monospace;font-size:12px"
+                                            value="{{ old('tile_' . $mod . '_bg_color', $tc['bg_color'] ?? '') }}"
+                                            placeholder="e.g. #003b8e or leave blank for default">
+                                    </div>
+                                </div>
+                                <div class="form-group mb-0">
+                                    <label class="form-label">External Link URL <span
+                                            style="color:var(--muted);font-weight:400">(optional — replaces
+                                            module)</span></label>
+                                    <input type="url" name="tile_{{ $mod }}_link_url" class="form-control"
+                                        placeholder="https://tickets.example.com"
+                                        value="{{ old('tile_' . $mod . '_link_url', $tc['link_url'] ?? '') }}">
+                                    <label class="form-check" style="margin-top:6px">
+                                        <input type="checkbox" name="tile_{{ $mod }}_link_external"
+                                            value="1" {{ $tc['link_external'] ?? false ? 'checked' : '' }}>
+                                        Open in new tab
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-group mb-0">
+                                <label class="form-label">Tile Background Image / Graphic</label>
+                                <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
+                                    @if (!empty($tc['image_path']))
+                                        <div style="position:relative;flex-shrink:0">
+                                            <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($tc['image_path']) }}"
+                                                style="width:90px;height:90px;object-fit:cover;border-radius:10px;border:1px solid var(--border)">
+                                            <label
+                                                style="position:absolute;top:-6px;right:-6px;background:var(--red);border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer">
+                                                <input type="checkbox" name="tile_{{ $mod }}_clear_image"
+                                                    value="1" style="display:none"
+                                                    onchange="this.closest('label').style.opacity=this.checked?.4:1"> ✕
+                                            </label>
+                                        </div>
+                                    @endif
+                                    <div style="flex:1">
+                                        <input type="file" name="tile_{{ $mod }}_image" class="form-control"
+                                            accept="image/*">
+                                        <div class="form-hint">Recommended: 400×400px. Will fill the tile as background.
+                                            PNG with transparency works great.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+
+                </div>
+            </div>
+
+            {{-- ── EXTRA FORM FIELDS ── --}}
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h3>➕ Extra Form Fields</h3>
+                    <div class="text-muted text-xs">Add custom data fields to the Lottery and Membership forms</div>
+                </div>
+                <div class="card-body">
+
+                    {{-- Lottery extra fields --}}
+                    <div style="margin-bottom:24px">
+                        <div style="font-weight:700;font-size:13px;margin-bottom:10px">🎰 Lottery — Extra Fields</div>
+                        <div id="lotteryExtraFields">
+                            @foreach (old('lottery_field_label', array_column($event->lottery_extra_fields ?? [], 'label')) as $i => $lbl)
+                                @php
+                                    $types = old(
+                                        'lottery_field_type',
+                                        array_column($event->lottery_extra_fields ?? [], 'type'),
+                                    );
+                                    $reqs = old(
+                                        'lottery_field_required',
+                                        array_column($event->lottery_extra_fields ?? [], 'required'),
+                                    );
+                                @endphp
+                                <div class="extra-field-row"
+                                    style="display:grid;grid-template-columns:1fr 120px auto auto;gap:8px;margin-bottom:8px;align-items:center">
+                                    <input type="text" name="lottery_field_label[]" class="form-control"
+                                        value="{{ $lbl }}" placeholder="Field label e.g. Date of Birth">
+                                    <select name="lottery_field_type[]" class="form-control">
+                                        @foreach (['text', 'number', 'email', 'tel', 'date', 'select'] as $t)
+                                            <option value="{{ $t }}"
+                                                {{ ($types[$i] ?? 'text') === $t ? 'selected' : '' }}>{{ ucfirst($t) }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <label class="form-check" style="white-space:nowrap"><input type="checkbox"
+                                            name="lottery_field_required[]" value="1"
+                                            {{ $reqs[$i] ?? false ? 'checked' : '' }}> Required</label>
+                                    <button type="button" onclick="this.closest('.extra-field-row').remove()"
+                                        class="btn btn-danger btn-sm">✕</button>
+                                </div>
+                            @endforeach
+                        </div>
+                        <button type="button" class="btn btn-secondary btn-sm"
+                            onclick="addExtraField('lotteryExtraFields','lottery')">+ Add Field</button>
+                    </div>
+
+                    {{-- Membership extra fields --}}
+                    <div>
+                        <div style="font-weight:700;font-size:13px;margin-bottom:10px">⭐ Membership — Extra Fields</div>
+                        <div id="membershipExtraFields">
+                            @foreach (old('membership_field_label', array_column($event->membership_extra_fields ?? [], 'label')) as $i => $lbl)
+                                @php
+                                    $mtypes = old(
+                                        'membership_field_type',
+                                        array_column($event->membership_extra_fields ?? [], 'type'),
+                                    );
+                                    $mreqs = old(
+                                        'membership_field_required',
+                                        array_column($event->membership_extra_fields ?? [], 'required'),
+                                    );
+                                @endphp
+                                <div class="extra-field-row"
+                                    style="display:grid;grid-template-columns:1fr 120px auto auto;gap:8px;margin-bottom:8px;align-items:center">
+                                    <input type="text" name="membership_field_label[]" class="form-control"
+                                        value="{{ $lbl }}" placeholder="Field label e.g. Club Name">
+                                    <select name="membership_field_type[]" class="form-control">
+                                        @foreach (['text', 'number', 'email', 'tel', 'date', 'select'] as $t)
+                                            <option value="{{ $t }}"
+                                                {{ ($mtypes[$i] ?? 'text') === $t ? 'selected' : '' }}>{{ ucfirst($t) }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <label class="form-check" style="white-space:nowrap"><input type="checkbox"
+                                            name="membership_field_required[]" value="1"
+                                            {{ $mreqs[$i] ?? false ? 'checked' : '' }}> Required</label>
+                                    <button type="button" onclick="this.closest('.extra-field-row').remove()"
+                                        class="btn btn-danger btn-sm">✕</button>
+                                </div>
+                            @endforeach
+                        </div>
+                        <button type="button" class="btn btn-secondary btn-sm"
+                            onclick="addExtraField('membershipExtraFields','membership')">+ Add Field</button>
+                    </div>
                 </div>
             </div>
 
@@ -258,6 +486,48 @@
         function toggleSlideshow() {
             document.getElementById('slideshowInterval').style.display =
                 document.getElementById('slideshowToggle').checked ? '' : 'none';
+        }
+        // Font live preview
+        function updateFontPreview() {
+            const h = document.getElementById('fontHeadingInput')?.value || 'Syne';
+            const b = document.getElementById('fontBodyInput')?.value || 'DM Sans';
+            const url =
+                `https://fonts.googleapis.com/css2?family=${encodeURIComponent(h)}:wght@700;800&family=${encodeURIComponent(b)}:wght@400;500&display=swap`;
+            let link = document.getElementById('fontPreviewLink');
+            if (!link) {
+                link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.id = 'fontPreviewLink';
+                document.head.appendChild(link);
+            }
+            link.href = url;
+            document.getElementById('fontPreviewHeading').style.fontFamily = `'${h}', sans-serif`;
+            document.getElementById('fontPreviewBody').style.fontFamily = `'${b}', sans-serif`;
+        }
+        document.getElementById('fontHeadingInput')?.addEventListener('input', updateFontPreview);
+        document.getElementById('fontBodyInput')?.addEventListener('input', updateFontPreview);
+        updateFontPreview();
+
+        // Extra field rows
+        function addExtraField(containerId, prefix) {
+            const row = document.createElement('div');
+            row.className = 'extra-field-row';
+            row.style.cssText =
+                'display:grid;grid-template-columns:1fr 120px auto auto;gap:8px;margin-bottom:8px;align-items:center';
+            row.innerHTML =
+                `
+        <input type="text" name="${prefix}_field_label[]" class="form-control" placeholder="Field label">
+        <select name="${prefix}_field_type[]" class="form-control">
+            <option value="text">Text</option>
+            <option value="number">Number</option>
+            <option value="email">Email</option>
+            <option value="tel">Tel</option>
+            <option value="date">Date</option>
+            <option value="select">Select</option>
+        </select>
+        <label class="form-check" style="white-space:nowrap"><input type="checkbox" name="${prefix}_field_required[]" value="1"> Required</label>
+        <button type="button" onclick="this.closest('.extra-field-row').remove()" class="btn btn-danger btn-sm">✕</button>`;
+            document.getElementById(containerId).appendChild(row);
         }
     </script>
 @endpush

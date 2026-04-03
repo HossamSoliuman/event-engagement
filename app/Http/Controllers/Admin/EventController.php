@@ -26,7 +26,7 @@ class EventController extends Controller
     {
         $data = $this->validateEvent($request);
         $data['slug'] = Str::slug($data['name']) . '-' . Str::lower(Str::random(4));
-        $data = $this->handleUploads($request, $data);
+        $data = $this->handleUploads($request, $data, $event ?? null);
         $data['voting_options'] = $this->parseVotingOptions($request);
 
         $event = Event::create($data);
@@ -64,7 +64,7 @@ class EventController extends Controller
     {
         $data = $this->validateEvent($request, $event);
         $data['is_active'] = $request->boolean('is_active');
-        $data = $this->handleUploads($request, $data);
+        $data = $this->handleUploads($request, $data, $event ?? null);
         $data['voting_options'] = $this->parseVotingOptions($request);
 
         $event->update($data);
@@ -158,14 +158,21 @@ class EventController extends Controller
             'vidiwall_overlay_text'       => 'nullable|string|max:255',
             'vidiwall_slideshow_interval' => 'nullable|integer|min:3|max:60',
             'privacy_policy_text'         => 'nullable|string|max:2000',
+            'privacy_policy_url'          => 'nullable|url|max:500',
+            'font_heading'                => 'nullable|string|max:100',
+            'font_body'                   => 'nullable|string|max:100',
             'starts_at'                   => 'nullable|date',
             'ends_at'                     => 'nullable|date',
             'logo'                        => 'nullable|image|max:2048',
             'sponsor_logo'                => 'nullable|image|max:2048',
+            // tile images
+            'tile_fotobomb_image'         => 'nullable|image|max:3072',
+            'tile_voting_image'           => 'nullable|image|max:3072',
+            'tile_lottery_image'          => 'nullable|image|max:3072',
+            'tile_membership_image'       => 'nullable|image|max:3072',
         ]);
     }
-
-    private function handleUploads(Request $request, array $data): array
+    private function handleUploads(Request $request, array $data, ?Event $event = null): array
     {
         if ($request->hasFile('logo')) {
             $data['logo_path'] = $request->file('logo')->store('logos', 'public');
@@ -173,10 +180,59 @@ class EventController extends Controller
         if ($request->hasFile('sponsor_logo')) {
             $data['sponsor_logo_path'] = $request->file('sponsor_logo')->store('logos', 'public');
         }
+
         $data['vidiwall_show_uploader']  = $request->boolean('vidiwall_show_uploader');
         $data['vidiwall_slideshow_mode'] = $request->boolean('vidiwall_slideshow_mode');
+
+        // Build per-tile configs
+        foreach (['fotobomb', 'voting', 'lottery', 'membership'] as $mod) {
+            $field      = "tile_{$mod}_config";
+            $existing   = (isset($event) ? ($event->$field ?? []) : []);
+            $config     = [
+                'label'         => $request->input("tile_{$mod}_label", $existing['label'] ?? ''),
+                'sublabel'      => $request->input("tile_{$mod}_sublabel", $existing['sublabel'] ?? ''),
+                'bg_color'      => $request->input("tile_{$mod}_bg_color", $existing['bg_color'] ?? ''),
+                'link_url'      => $request->input("tile_{$mod}_link_url", $existing['link_url'] ?? ''),
+                'link_external' => $request->boolean("tile_{$mod}_link_external"),
+                'image_path'    => $existing['image_path'] ?? null,
+            ];
+            if ($request->hasFile("tile_{$mod}_image")) {
+                $config['image_path'] = $request->file("tile_{$mod}_image")->store("tiles/{$mod}", 'public');
+            }
+            // Allow clearing the image
+            if ($request->input("tile_{$mod}_clear_image")) {
+                $config['image_path'] = null;
+            }
+            $data[$field] = $config;
+        }
+
+        // Extra custom fields for lottery
+        $lotteryFields = [];
+        foreach ($request->input('lottery_field_label', []) as $i => $label) {
+            if (empty(trim($label))) continue;
+            $lotteryFields[] = [
+                'label'    => trim($label),
+                'type'     => $request->input("lottery_field_type.$i", 'text'),
+                'required' => (bool) $request->input("lottery_field_required.$i", false),
+            ];
+        }
+        $data['lottery_extra_fields'] = $lotteryFields ?: null;
+
+        // Extra custom fields for membership
+        $memberFields = [];
+        foreach ($request->input('membership_field_label', []) as $i => $label) {
+            if (empty(trim($label))) continue;
+            $memberFields[] = [
+                'label'    => trim($label),
+                'type'     => $request->input("membership_field_type.$i", 'text'),
+                'required' => (bool) $request->input("membership_field_required.$i", false),
+            ];
+        }
+        $data['membership_extra_fields'] = $memberFields ?: null;
+
         return $data;
     }
+
 
     private function parseVotingOptions(Request $request): string
     {
