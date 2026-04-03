@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Guest;
 use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Models\EventSession;
+use App\Models\SiteSetting;
 use Illuminate\Http\Request;
 
 class EventPageController extends Controller
@@ -16,9 +17,8 @@ class EventPageController extends Controller
         $guestSession = $sessionToken
             ? EventSession::where('session_token', $sessionToken)->where('event_id', $event->id)->first()
             : null;
-
-
-        return view('guest.event', compact('event', 'guestSession'));
+        $privacyUrl = SiteSetting::privacyPolicyUrl();
+        return view('guest.event', compact('event', 'guestSession', 'privacyUrl'));
     }
 
     public function startSession(Request $request, string $slug)

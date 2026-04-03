@@ -127,31 +127,6 @@
                     @endforeach
                 </div>
             </div>
-            {{-- ── PRIVACY POLICY ── --}}
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h3>🔒 Privacy Policy & Data Protection</h3>
-                </div>
-                <div class="card-body">
-                    <div class="form-group">
-                        <label class="form-label">Consent Text (shown inside every checkbox)</label>
-                        <textarea name="privacy_policy_text" class="form-control" rows="3"
-                            placeholder="e.g. I agree to the processing of my personal data in accordance with the Privacy Policy of [Organisation].">{{ old('privacy_policy_text', $event->privacy_policy_text ?? '') }}</textarea>
-                        <div class="form-hint">Guests must tick this before submitting any form. Write in your audience's
-                            language(s).</div>
-                    </div>
-                    <div class="form-group mb-0">
-                        <label class="form-label">Privacy Policy URL <span
-                                style="color:var(--muted);font-weight:400">(guests can click "Privacy Policy" to open
-                                this)</span></label>
-                        <input type="url" name="privacy_policy_url" class="form-control"
-                            placeholder="https://yourdomain.com/datenschutz"
-                            value="{{ old('privacy_policy_url', $event->privacy_policy_url ?? '') }}">
-                        <div class="form-hint">Link to your full privacy policy document or page. Required by law.</div>
-                    </div>
-                </div>
-            </div>
-
             {{-- ── FONT & STYLE ── --}}
             <div class="card mb-3">
                 <div class="card-header">

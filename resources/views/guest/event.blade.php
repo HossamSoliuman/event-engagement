@@ -785,8 +785,6 @@ $fontH = $event->font_heading ?: 'Syne';
         $privacyText =
             $event->privacy_policy_text ?:
             'I agree to the Privacy Policy and consent to my data being processed for this event.';
-        $privacyUrl = $event->privacy_policy_url ?: '#';
-
         $gdprSnippet = function (string $id) use ($privacyText, $privacyUrl) {
             $linkOpen =
                 $privacyUrl !== '#'
