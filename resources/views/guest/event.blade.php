@@ -90,7 +90,7 @@ $fontH = $event->font_heading ?: 'Syne';
         }
 
         .land-logo {
-            height: 40px
+            height: 80px
         }
 
         .land-brand-divider {
@@ -830,23 +830,33 @@ $fontH = $event->font_heading ?: 'Syne';
 
     <!-- LANDING -->
     <div id="landing">
-        <div class="land-header">
-            <div class="land-brand">
+        <div class="land-header" style="display:flex;align-items:center;justify-content:center;padding:22px 18px 10px;">
+            <div class="land-brand" style="display:flex;align-items:center;gap:16px;max-width:100%;">
                 @if ($event->logo_path)
-                    <img src="{{ $event->logo_url }}" class="land-logo" alt="">
-                    <div class="land-brand-divider"></div>
+                    <img src="{{ $event->logo_url }}" class="land-logo"
+                        style="height:64px;width:auto;object-fit:contain;display:block;" alt="">
+                    <div class="land-brand-divider" style="width:1px;height:46px;opacity:.18;"></div>
                 @endif
                 <div>
-                    <div class="land-title">{{ $event->name }}</div>
-                    <div class="land-subtitle-tag">{{ $event->subtitle }}</div>
+                    <div class="land-title" style="font-size:22px;font-weight:800;line-height:1.2;">
+                        {{ $event->name }}
+                    </div>
+                    <div class="land-subtitle-tag" style="font-size:13px;opacity:.7;margin-top:2px;">
+                        {{ $event->subtitle }}
+                    </div>
                 </div>
             </div>
         </div>
 
         @if ($event->sponsor_logo_path)
-            <div class="land-sponsor">
-                <span data-en="Sponsored by" data-de="Präsentiert von">Sponsored by</span>
-                <img src="{{ $event->sponsor_logo_url }}" alt="">
+            <div class="land-sponsor"
+                style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;margin:18px 0 26px;text-align:center;">
+                <span data-en="Sponsored by" data-de="Präsentiert von"
+                    style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;opacity:.6;font-weight:700;">
+                    Sponsored by
+                </span>
+                <img src="{{ $event->sponsor_logo_url }}"
+                    style="height:96px;max-width:80%;object-fit:contain;display:block;" alt="">
             </div>
         @endif
 
@@ -898,25 +908,22 @@ $fontH = $event->font_heading ?: 'Syne';
                         ? "window.open('" . addslashes($linkUrl) . "','" . ($external ? '_blank' : '_self') . "')"
                         : "openModule('{$mod}')" }}">
 
-                    {{-- Bottom accent bar --}}
                     <div style="position:absolute;bottom:0;left:0;right:0;height:3px;z-index:3;{{ $accentStyle }}">
                     </div>
 
-                    {{-- Arrow --}}
                     <div class="tile-arrow">{{ $isLink ? '↗' : '↗' }}</div>
 
-                    {{-- Background image if uploaded --}}
                     @if ($imgUrl)
                         <img src="{{ $imgUrl }}"
-                            style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.5;pointer-events:none"
+                            style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.5;pointer-events:none;filter:brightness(.85) contrast(1.05);"
                             alt="">
                     @else
                         <div class="tile-icon">{{ $defaultIcon }}</div>
                     @endif
 
-                    {{-- Sponsor/logo area top-left --}}
                     @if ($tileLabel || $tileSublabel)
-                        <div class="tile-sponsor">
+                        <div class="tile-sponsor"
+                            style="position:absolute;top:10px;left:10px;display:flex;align-items:center;gap:8px;z-index:4;padding:6px 8px;backdrop-filter:blur(6px);">
                             <div>
                                 @if ($tileLabel)
                                     <div class="tile-sponsor-name"
@@ -931,13 +938,17 @@ $fontH = $event->font_heading ?: 'Syne';
                             </div>
                         </div>
                     @elseif($event->sponsor_logo_path && $mod === 'fotobomb')
-                        <div class="tile-sponsor">
-                            <img src="{{ $event->sponsor_logo_url }}" alt="">
+                        <div class="tile-sponsor"
+                            style="position:absolute;top:10px;left:10px;display:flex;align-items:center;gap:8px;z-index:4;padding:6px 8px;backdrop-filter:blur(6px);">
+                            <img src="{{ $event->sponsor_logo_url }}"
+                                style="height:26px;width:auto;object-fit:contain;display:block;" alt="">
                             <div class="tile-sponsor-name">Selfie Wall</div>
                         </div>
                     @elseif($event->logo_path && $mod === 'voting')
-                        <div class="tile-sponsor">
-                            <img src="{{ $event->logo_url }}" alt="">
+                        <div class="tile-sponsor"
+                            style="position:absolute;top:10px;left:10px;display:flex;align-items:center;gap:8px;z-index:4;padding:6px 8px;backdrop-filter:blur(6px);">
+                            <img src="{{ $event->logo_url }}"
+                                style="height:26px;width:auto;object-fit:contain;display:block;" alt="">
                             <div class="tile-sponsor-name">Athlete of the Day</div>
                         </div>
                     @endif
