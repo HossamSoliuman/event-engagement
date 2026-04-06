@@ -31,7 +31,7 @@
 <body>
 <div class="wrap">
     <div class="logo">
-        <h1>⚡ EventBomb</h1>
+        <h1> EventBomb</h1>
         <p>Admin Console · Secure Access</p>
     </div>
     <div class="card">
