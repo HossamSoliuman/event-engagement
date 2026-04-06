@@ -226,7 +226,7 @@
 <!-- Sidebar -->
 <aside class="sidebar" id="sidebar">
     <div class="sb-logo">
-        <div class="wordmark">⚡ EventBomb</div>
+        <div class="wordmark"> EventBomb</div>
         <div class="tagline">Admin Console v2</div>
     </div>
 
