@@ -22,7 +22,7 @@ class DashboardController extends Controller
 
         $tallies    = $event->getVoteTallies();
         $onScreen   = $event->getOnScreenFotos()->first();
-        $recentLog  = $event->activityLog()->with('user')->latest()->limit(10)->get();
+        $recentLog  = $event->activityLog()->with('user')->where('event_id', $event->id)->latest()->limit(10)->get();
 
         return view('moderator.dashboard', compact('event', 'tallies', 'onScreen', 'recentLog'));
     }
