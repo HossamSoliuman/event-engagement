@@ -67,5 +67,6 @@ class Kernel extends HttpKernel
         'admin' => \App\Http\Middleware\AdminMiddleware::class,
         'admin'      => \App\Http\Middleware\AdminMiddleware::class,
         'superadmin' => \App\Http\Middleware\SuperAdminMiddleware::class,
+        'event.moderator' => \App\Http\Middleware\ModeratorMiddleware::class,
     ];
 }

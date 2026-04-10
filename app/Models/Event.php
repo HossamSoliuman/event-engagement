@@ -100,6 +100,14 @@ class Event extends Model
     {
         return $this->hasMany(EventSession::class);
     }
+    public function moderators()
+    {
+        return $this->belongsToMany(User::class, 'event_moderators')->withTimestamps();
+    }
+    public function hasModerator(User $user): bool
+    {
+        return $this->moderators()->where('user_id', $user->id)->exists();
+    }
     public function activityLog()
     {
         return $this->hasMany(ActivityLog::class);

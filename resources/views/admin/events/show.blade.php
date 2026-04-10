@@ -3,11 +3,12 @@
 @section('page-title', $event->name)
 
 @section('topbar-actions')
-    <a href="{{ route('admin.events.edit',$event) }}" class="btn btn-secondary btn-sm">✏ Edit</a>
+    <a href="{{ route('admin.events.edit',$event) }}" class="btn btn-secondary btn-sm">Edit</a>
     <form method="POST" action="{{ route('admin.events.generate-qr',$event) }}" style="display:inline">
         @csrf <button class="btn btn-outline btn-sm">↻ QR</button>
     </form>
-    <a href="{{ route('vidiwall.show',$event->slug) }}" target="_blank" class="btn btn-gold btn-sm">📺 Vidiwall</a>
+    <a href="{{ route('admin.events.moderators',$event) }}" class="btn btn-outline btn-sm">Moderators</a>
+    <a href="{{ route('vidiwall.show',$event->slug) }}" target="_blank" class="btn btn-gold btn-sm">Vidiwall</a>
 @endsection
 
 @section('content')
@@ -134,12 +135,35 @@
 {{-- Quick Actions --}}
 <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
     <a href="{{ route('admin.fotos.index',$event) }}" class="btn btn-primary">
-        📷 Foto Queue @if($event->pending_count > 0)<span style="background:rgba(255,255,255,.2);padding:1px 8px;border-radius:10px;font-size:11px">{{ $event->pending_count }}</span>@endif
+        Foto Queue @if($event->pending_count > 0)<span style="background:rgba(255,255,255,.2);padding:1px 8px;border-radius:10px;font-size:11px">{{ $event->pending_count }}</span>@endif
     </a>
-    <a href="{{ route('admin.lottery.index',$event) }}" class="btn btn-secondary">🎰 Lottery</a>
-    <a href="{{ route('admin.voting.index',$event) }}" class="btn btn-secondary">🏆 Voting</a>
-    <a href="{{ route('admin.membership.index',$event) }}" class="btn btn-secondary">⭐ Members</a>
+    <a href="{{ route('admin.lottery.index',$event) }}" class="btn btn-secondary">Lottery</a>
+    <a href="{{ route('admin.voting.index',$event) }}" class="btn btn-secondary">Voting</a>
+    <a href="{{ route('admin.membership.index',$event) }}" class="btn btn-secondary">Members</a>
+    <a href="{{ route('admin.events.moderators',$event) }}" class="btn btn-outline">Moderators</a>
 </div>
+
+@php $moderators = $event->moderators; @endphp
+@if($moderators->count())
+<div class="card mb-3" style="border-color:rgba(99,102,241,.25);background:rgba(99,102,241,.04)">
+    <div class="card-header">
+        <h3 style="color:#818cf8">Assigned Moderators</h3>
+        <a href="{{ route('admin.events.moderators',$event) }}" class="btn btn-ghost btn-sm">Manage</a>
+    </div>
+    <div style="padding:8px 16px;display:flex;flex-wrap:wrap;gap:10px">
+        @foreach($moderators as $mod)
+        <div style="display:flex;align-items:center;gap:8px;background:var(--dark);border:1px solid var(--border);border-radius:8px;padding:8px 12px">
+            <img src="{{ $mod->avatar_url }}" style="width:28px;height:28px;border-radius:50%;object-fit:cover">
+            <div>
+                <div style="font-size:13px;font-weight:600">{{ $mod->name }}</div>
+                <div class="text-xs text-muted">{{ $mod->email }}</div>
+            </div>
+            <a href="{{ route('moderator.dashboard',$event) }}" target="_blank" class="btn btn-ghost btn-sm" style="padding:3px 8px;font-size:11px">Portal ↗</a>
+        </div>
+        @endforeach
+    </div>
+</div>
+@endif
 
 {{-- Recent Activity --}}
 @if($recentLog->count())
