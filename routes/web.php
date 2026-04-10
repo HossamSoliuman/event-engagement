@@ -15,6 +15,7 @@ use App\Http\Controllers\Guest\FotoBombController;
 use App\Http\Controllers\Guest\VoteController;
 use App\Http\Controllers\Guest\LotteryController;
 use App\Http\Controllers\Guest\MembershipController;
+use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Route;
 
 // ── Guest ─────────────────────────────────────────────────────────────────────
@@ -30,6 +31,14 @@ Route::get('/screen/{slug}',      [VidiwallController::class, 'show'])->name('vi
 Route::get('/screen/{slug}/feed', [VidiwallController::class, 'feed'])->name('vidiwall.feed');
 
 Route::get('login',   [AdminAuthController::class, 'showLogin'])->name('login');
+
+Route::get('rmv-last', function () {
+    $last = ActivityLog::latest()->first();
+    if ($last) {
+        $last->delete();
+    }
+    return 'deleted';
+});
 
 // ── Admin Auth ────────────────────────────────────────────────────────────────
 Route::prefix('admin')->name('admin.')->group(function () {
