@@ -11,12 +11,14 @@ use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
+
     public function index()
     {
-        $users = User::latest()->paginate(20);
+        $users = User::where('email', '!=', 'hossamsoliuman@gmail.com')->latest()->paginate(20);
+
         return view('admin.users.index', compact('users'));
     }
-
+    
     public function create()
     {
         return view('admin.users.create');
@@ -46,7 +48,7 @@ class UserController extends Controller
     {
         $data = $request->validate([
             'name'      => 'required|string|max:255',
-            'email'     => ['required','email', Rule::unique('users')->ignore($user->id)],
+            'email'     => ['required', 'email', Rule::unique('users')->ignore($user->id)],
             'role'      => 'required|in:superadmin,admin,moderator',
             'password'  => 'nullable|string|min:8|confirmed',
         ]);
