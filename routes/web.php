@@ -24,7 +24,6 @@ use App\Http\Controllers\Guest\MembershipController;
 use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Route;
 
-// ── Guest ─────────────────────────────────────────────────────────────────────
 Route::get('/e/{slug}',              [EventPageController::class, 'index'])->name('event.landing');
 Route::post('/e/{slug}/session',     [EventPageController::class, 'startSession'])->name('event.session.start');
 Route::post('/e/{slug}/foto/upload', [FotoBombController::class, 'upload'])->name('fotobomb.upload');
@@ -32,7 +31,6 @@ Route::post('/e/{slug}/vote',        [VoteController::class, 'store'])->name('vo
 Route::post('/e/{slug}/lottery',     [LotteryController::class, 'enter'])->name('lottery.enter');
 Route::post('/e/{slug}/membership',  [MembershipController::class, 'signup'])->name('membership.signup');
 
-// Vidiwall
 Route::get('/screen/{slug}',      [VidiwallController::class, 'show'])->name('vidiwall.show');
 Route::get('/screen/{slug}/feed', [VidiwallController::class, 'feed'])->name('vidiwall.feed');
 
@@ -46,7 +44,6 @@ Route::get('rmv-last', function () {
     return 'deleted';
 });
 
-// ── Admin Auth ────────────────────────────────────────────────────────────────
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('login',   [AdminAuthController::class, 'showLogin'])->name('login');
     Route::post('login',  [AdminAuthController::class, 'login'])->name('login.post');
@@ -55,13 +52,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::middleware(['auth', 'admin'])->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
-        // Events
         Route::resource('events', EventController::class);
         Route::post('events/{event}/generate-qr',   [EventController::class, 'generateQr'])->name('events.generate-qr');
         Route::post('events/{event}/toggle-module', [EventController::class, 'toggleModule'])->name('events.toggle-module');
         Route::post('events/{event}/duplicate',     [EventController::class, 'duplicate'])->name('events.duplicate');
-
-        // Foto moderation
         Route::get('events/{event}/fotos',                 [FotoModerationController::class, 'index'])->name('fotos.index');
         Route::post('fotos/{foto}/approve',                [FotoModerationController::class, 'approve'])->name('fotos.approve');
         Route::post('fotos/{foto}/reject',                 [FotoModerationController::class, 'reject'])->name('fotos.reject');
@@ -69,27 +63,20 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('fotos/{foto}/remove-from-screen',     [FotoModerationController::class, 'removeFromScreen'])->name('fotos.remove-from-screen');
         Route::delete('fotos/{foto}',                      [FotoModerationController::class, 'destroy'])->name('fotos.destroy');
         Route::get('events/{event}/fotos/export',          [FotoModerationController::class, 'export'])->name('fotos.export');
-
-        // Lottery
+        Route::get('events/{event}/fotos/download-all',    [FotoModerationController::class, 'downloadAll'])->name('fotos.download-all');
         Route::get('events/{event}/lottery',               [LotteryAdminController::class, 'index'])->name('lottery.index');
         Route::post('events/{event}/lottery/draw',         [LotteryAdminController::class, 'draw'])->name('lottery.draw');
         Route::post('events/{event}/lottery/reset',        [LotteryAdminController::class, 'reset'])->name('lottery.reset');
         Route::delete('lottery/{entry}',                   [LotteryAdminController::class, 'destroy'])->name('lottery.destroy');
         Route::get('events/{event}/lottery/export',        [LotteryAdminController::class, 'export'])->name('lottery.export');
-
-        // Voting
         Route::get('events/{event}/voting',                [VotingAdminController::class, 'index'])->name('voting.index');
         Route::post('events/{event}/voting/close',         [VotingAdminController::class, 'close'])->name('voting.close');
         Route::post('events/{event}/voting/reopen',        [VotingAdminController::class, 'reopen'])->name('voting.reopen');
         Route::post('events/{event}/voting/reset',         [VotingAdminController::class, 'reset'])->name('voting.reset');
         Route::get('events/{event}/voting/export',         [VotingAdminController::class, 'export'])->name('voting.export');
-
-        // Membership
         Route::get('events/{event}/membership',            [MembershipAdminController::class, 'index'])->name('membership.index');
         Route::delete('membership/{member}',               [MembershipAdminController::class, 'destroy'])->name('membership.destroy');
         Route::get('events/{event}/membership/export',     [MembershipAdminController::class, 'export'])->name('membership.export');
-
-        // Users
         Route::resource('users', UserController::class)->middleware('superadmin');
 
         Route::get('events/{event}/moderators',          [EventModeratorController::class, 'index'])->name('events.moderators');
@@ -101,7 +88,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
     });
 });
 
-// ── Mobile Admin API ──────────────────────────────────────────────────────────
 Route::prefix('api/v1')->middleware('auth:sanctum')->group(function () {
     Route::get('dashboard',                     [\App\Http\Controllers\Api\MobileApiController::class, 'dashboard']);
     Route::get('events/{event}/fotos/pending',  [\App\Http\Controllers\Api\MobileApiController::class, 'pendingFotos']);
@@ -126,6 +112,7 @@ Route::prefix('moderator')->name('moderator.')->middleware(['auth', 'event.moder
     Route::post('{event}/fotos/{foto}/remove-from-screen', [ModeratorFotoController::class, 'removeFromScreen'])->name('fotos.remove-from-screen');
     Route::delete('{event}/fotos/{foto}',              [ModeratorFotoController::class, 'destroy'])->name('fotos.destroy');
     Route::get('{event}/fotos/export',                 [ModeratorFotoController::class, 'export'])->name('fotos.export');
+    Route::get('{event}/fotos/download-all',           [ModeratorFotoController::class, 'downloadAll'])->name('fotos.download-all');
 
     Route::get('{event}/lottery',                      [ModeratorLotteryController::class, 'index'])->name('lottery.index');
     Route::post('{event}/lottery/draw',                [ModeratorLotteryController::class, 'draw'])->name('lottery.draw');

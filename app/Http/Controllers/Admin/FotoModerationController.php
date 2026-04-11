@@ -91,4 +91,29 @@ class FotoModerationController extends Controller
             'Content-Disposition' => "attachment; filename=\"fotos-{$event->slug}.csv\"",
         ]);
     }
+
+    public function downloadAll(Event $event)
+    {
+        $fotos = $event->fotoUploads()->get();
+        
+        $zip = new \ZipArchive();
+        $zipFileName = 'fotos-' . $event->slug . '-' . time() . '.zip';
+        $zipPath = storage_path('app/public/' . $zipFileName);
+
+        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === TRUE) {
+            foreach ($fotos as $foto) {
+                $filePath = storage_path('app/public/' . $foto->file_path);
+                if (file_exists($filePath)) {
+                    $zip->addFile($filePath, basename($foto->file_path));
+                }
+            }
+            $zip->close();
+        }
+
+        if (file_exists($zipPath)) {
+            return response()->download($zipPath)->deleteFileAfterSend(true);
+        }
+
+        return back()->with('error', 'Could not create zip file.');
+    }
 }
