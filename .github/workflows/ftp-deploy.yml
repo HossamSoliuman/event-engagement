@@ -20,7 +20,7 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           protocol: ftp
           port: 21
-          server-dir: /hossam-event-engagement.22web.org/htdocs/
+          server-dir: /event-engagement.my-board.org/htdocs/
           exclude: |
             **/.git*
             **/.git*/**
