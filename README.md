@@ -1,42 +1,46 @@
-# ⚡ EventBomb Platform — Version 2 (Full Local)
+# EventBomb Platform — Version 2 (Full Local)
+
+Live Application URL: https://event-engagement.my-board.org/
+
+Demo Video: [Demo Placeholder - Insert Video/Link Here]
 
 > Full-featured event engagement platform — all modules working locally. No cloud dependencies.
 
 ---
 
-## 🆕 What's New in V2 vs V1
+## What's New in V2 vs V1
 
 | Feature | V1 | V2 |
 |---|---|---|
-| Foto Bomb upload & moderation | ✅ | ✅ Enhanced |
-| Lottery draw | Basic | ✅ Animated draw + confetti |
-| Voting results | Basic | ✅ Live bar charts + podium |
-| Membership list | Basic | ✅ Search + export CSV |
-| Admin dashboard | Stats | ✅ Activity feed + charts |
-| Event create/edit | Basic | ✅ Candidate editor + vidiwall settings |
-| Vidiwall | Single photo | ✅ + Slideshow mode |
-| Admin Users CRUD | ✅ | ✅ With roles |
-| Settings (profile/password) | ✅ | ✅ |
-| Mobile Admin API (Sanctum) | ✅ | ✅ |
-| Activity logging | ✅ | ✅ Full |
-| CSV export (fotos/lottery/votes/members) | ✅ | ✅ |
-| Duplicate event | ✅ | ✅ |
-| Auto-refresh foto queue | ✅ | ✅ 10s countdown |
-| Overlay text on vidiwall | ✅ | ✅ |
-| SSO / Cognito | ✗ | V3 |
-| S3 / CloudFront | ✗ | V3 |
-| Real-time websockets | ✗ | V3 |
+| Foto Bomb upload & moderation | Yes | Yes Enhanced |
+| Lottery draw | Basic | Yes Animated draw + confetti |
+| Voting results | Basic | Yes Live bar charts + podium |
+| Membership list | Basic | Yes Search + export CSV |
+| Admin dashboard | Stats | Yes Activity feed + charts |
+| Event create/edit | Basic | Yes Candidate editor + vidiwall settings |
+| Vidiwall | Single photo | Yes + Slideshow mode |
+| Admin Users CRUD | Yes | Yes With roles |
+| Event Moderators | No | Yes Assign moderators to specific events |
+| Settings (profile/password) | Yes | Yes |
+| Mobile Admin API (Sanctum) | Yes | Yes |
+| Activity logging | Yes | Yes Full |
+| CSV export (fotos/lottery/votes/members) | Yes | Yes |
+| Duplicate event | Yes | Yes |
+| Auto-refresh foto queue | Yes | Yes 10s countdown |
+| Overlay text on vidiwall | Yes | Yes |
+| SSO / Cognito | No | V3 |
+| S3 / CloudFront | No | V3 |
+| Real-time websockets | No | V3 |
 
 ---
 
-## 🚀 Setup (5 minutes)
+## Setup (5 minutes)
 
 ### 1 — Install into fresh Laravel 10
 
 ```bash
 composer create-project laravel/laravel eventbomb "^10.0"
 cd eventbomb
-# Copy all files from this ZIP over the defaults
 ```
 
 ### 2 — Install packages
@@ -76,7 +80,7 @@ php artisan serve
 
 ---
 
-## 🔑 Login Credentials (seeded)
+## Login Credentials (seeded)
 
 | Role | Email | Password |
 |---|---|---|
@@ -85,7 +89,7 @@ php artisan serve
 
 ---
 
-## 📱 Mobile Admin API
+## Mobile Admin API
 
 Use for building a native mobile app. All endpoints require Bearer token.
 
@@ -110,7 +114,7 @@ POST /api/v1/logout
 
 ---
 
-## 📺 Vidiwall Setup
+## Vidiwall Setup
 
 Open `/screen/{event-slug}` in a browser on the vidiwall computer / OBS browser source.
 
@@ -120,7 +124,7 @@ Open `/screen/{event-slug}` in a browser on the vidiwall computer / OBS browser 
 
 ---
 
-## 🗂️ Admin Navigation
+## Admin Navigation
 
 | Page | URL | Purpose |
 |---|---|---|
@@ -135,7 +139,7 @@ Open `/screen/{event-slug}` in a browser on the vidiwall computer / OBS browser 
 
 ---
 
-## 🔀 V3 Upgrade Path
+## V3 Upgrade Path
 
 V3 adds:
 - **AWS S3** — swap `FILESYSTEM_DISK=public` → `s3`
