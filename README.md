@@ -2,7 +2,7 @@
 
 Live Application URL: https://event-engagement.my-board.org/
 
-Demo Video: [Demo Placeholder - Insert Video/Link Here]
+Demo Video: [[Demo Placeholder - Insert Video/Link Here](https://www.linkedin.com/posts/hossam-soliuman-a62753228_php-freelancing-webdevelopment-ugcPost-7446968263407869952-GjBX?utm_source=share&utm_medium=member_desktop&rcm=ACoAADkQQyoBPQUOrnqp6nEE8kS9-QeoNPCJNN4)]
 
 > Full-featured event engagement platform — all modules working locally. No cloud dependencies.
 
