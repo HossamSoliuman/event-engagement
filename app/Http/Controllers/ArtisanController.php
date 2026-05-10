@@ -2,21 +2,35 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\Artisan;
-
 class ArtisanController extends Controller
 {
     public function __invoke()
     {
-        $target = storage_path('app/public');
-        $link   = public_path('storage');
+        $source = storage_path('app/public');
+        $dest   = public_path('storage');
 
-        if (file_exists($link)) {
-            return 'Already exists.';
+        if (!file_exists($source)) {
+            return 'Source folder does not exist.';
         }
 
-        exec("ln -s {$target} {$link}", $output, $code);
+        $this->copyFolder($source, $dest);
 
-        return $code === 0 ? 'Storage linked successfully.' : 'Failed: ' . implode("\n", $output);
+        return 'Done.';
+    }
+
+    private function copyFolder(string $source, string $dest): void
+    {
+        if (!file_exists($dest)) {
+            mkdir($dest, 0755, true);
+        }
+
+        foreach (scandir($source) as $item) {
+            if ($item === '.' || $item === '..') continue;
+
+            $from = $source . DIRECTORY_SEPARATOR . $item;
+            $to   = $dest   . DIRECTORY_SEPARATOR . $item;
+
+            is_dir($from) ? $this->copyFolder($from, $to) : copy($from, $to);
+        }
     }
 }
