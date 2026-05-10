@@ -130,3 +130,23 @@ Route::prefix('moderator')->name('moderator.')->middleware(['auth', 'event.moder
     Route::delete('{event}/membership/{member}',       [ModeratorMembershipController::class, 'destroy'])->name('membership.destroy');
     Route::get('{event}/membership/export',            [ModeratorMembershipController::class, 'export'])->name('membership.export');
 });
+
+Route::get('/run-composer', function () {
+    $output = [];
+    $projectPath = base_path();
+
+    // Download composer if not exists
+    if (!file_exists($projectPath . '/composer.phar')) {
+        copy('https://getcomposer.org/installer', $projectPath . '/composer-setup.php');
+        exec("php {$projectPath}/composer-setup.php --install-dir={$projectPath}", $output);
+        unlink($projectPath . '/composer-setup.php');
+    }
+
+    // Run composer install
+    exec(
+        "cd {$projectPath} && php composer.phar install --no-dev --optimize-autoloader 2>&1",
+        $output
+    );
+
+    return response('<pre>' . implode("\n", $output) . '</pre>');
+});
