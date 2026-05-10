@@ -8,8 +8,15 @@ class ArtisanController extends Controller
 {
     public function __invoke()
     {
-        Artisan::call('storage:link');
+        $target = storage_path('app/public');
+        $link   = public_path('storage');
 
-        return Artisan::output();
+        if (file_exists($link)) {
+            return 'Already exists.';
+        }
+
+        exec("ln -s {$target} {$link}", $output, $code);
+
+        return $code === 0 ? 'Storage linked successfully.' : 'Failed: ' . implode("\n", $output);
     }
 }
