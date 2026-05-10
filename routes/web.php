@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\MembershipAdminController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\VidiwallController;
+use App\Http\Controllers\ArtisanController;
 use App\Http\Controllers\Moderator\DashboardController as ModeratorDashboardController;
 use App\Http\Controllers\Moderator\FotoModerationController as ModeratorFotoController;
 use App\Http\Controllers\Moderator\LotteryController as ModeratorLotteryController;
@@ -50,6 +51,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::post('logout', [AdminAuthController::class, 'logout'])->name('logout');
 
     Route::middleware(['auth', 'admin'])->group(function () {
+        Route::get('/artisan', ArtisanController::class);
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
         Route::resource('events', EventController::class);
