@@ -269,26 +269,6 @@
         </div>
         <div class="card">
 
-            <!-- Demo Credentials Box -->
-            <div class="demo-box">
-                <div class="demo-badge">Demo Access</div>
-                <div class="demo-row">
-                    <span class="demo-label">Email</span>
-                    <span class="demo-value">
-                        demo@eventbomb.com
-                        <button class="copy-btn" onclick="copyText('demo@eventbomb.com', this)">copy</button>
-                    </span>
-                </div>
-                <div class="demo-row" style="margin-top:8px">
-                    <span class="demo-label">Password</span>
-                    <span class="demo-value">
-                        password
-                        <button class="copy-btn" onclick="copyText('password', this)">copy</button>
-                    </span>
-                </div>
-                <button class="demo-fill-btn" onclick="fillDemo()"> Fill demo credentials</button>
-            </div>
-
             <form method="POST" action="{{ route('admin.login.post') }}">
                 @csrf
                 <div class="form-group">
@@ -312,29 +292,6 @@
         </div>
     </div>
 
-    <script>
-        function fillDemo() {
-            document.getElementById('email-input').value = 'demo@eventbomb.com';
-            document.getElementById('password-input').value = 'password';
-            // Trigger a subtle flash on the inputs
-            ['email-input', 'password-input'].forEach(id => {
-                const el = document.getElementById(id);
-                el.style.borderColor = '#FF3D00';
-                setTimeout(() => el.style.borderColor = '', 800);
-            });
-        }
-
-        function copyText(text, btn) {
-            navigator.clipboard.writeText(text).then(() => {
-                btn.textContent = '✓ copied';
-                btn.classList.add('copied');
-                setTimeout(() => {
-                    btn.textContent = 'copy';
-                    btn.classList.remove('copied');
-                }, 1800);
-            });
-        }
-    </script>
 </body>
 
 </html>
