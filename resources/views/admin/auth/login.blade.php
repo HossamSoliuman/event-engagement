@@ -268,7 +268,6 @@
             <p>Admin Console · Secure Access</p>
         </div>
         <div class="card">
-{{-- test change --}}
             <form method="POST" action="{{ route('admin.login.post') }}">
                 @csrf
                 <div class="form-group">
