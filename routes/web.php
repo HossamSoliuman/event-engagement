@@ -44,7 +44,7 @@ Route::get('rmv-last', function () {
     }
     return 'deleted';
 });
-
+//
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('login',   [AdminAuthController::class, 'showLogin'])->name('login');
     Route::post('login',  [AdminAuthController::class, 'login'])->name('login.post');
