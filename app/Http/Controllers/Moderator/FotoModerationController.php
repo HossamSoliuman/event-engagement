@@ -38,14 +38,14 @@ class FotoModerationController extends Controller
     {
         $foto->approve(auth()->id());
         ActivityLog::record('foto.approved', ['foto_id' => $foto->id, 'uploader' => $foto->uploader_name], $foto->event_id);
-        return back()->with('success', 'Photo approved!');
+        return back()->with('success', 'Approved!');
     }
 
     public function reject(Request $request, Event $event, FotoUpload $foto)
     {
         $foto->reject($request->input('note'));
         ActivityLog::record('foto.rejected', ['foto_id' => $foto->id], $foto->event_id);
-        return back()->with('success', 'Photo rejected.');
+        return back()->with('success', 'Rejected.');
     }
 
     public function pushToScreen(Event $event, FotoUpload $foto)
@@ -55,7 +55,7 @@ class FotoModerationController extends Controller
         }
         $foto->pushToScreen();
         ActivityLog::record('foto.pushed_to_screen', ['foto_id' => $foto->id, 'uploader' => $foto->uploader_name], $foto->event_id);
-        return back()->with('success', 'Photo is now LIVE on the vidiwall!');
+        return back()->with('success', 'Now LIVE on the vidiwall!');
     }
 
     public function removeFromScreen(Event $event, FotoUpload $foto)
@@ -69,20 +69,25 @@ class FotoModerationController extends Controller
     {
         Storage::disk('public')->delete($foto->file_path);
         if ($foto->thumbnail_path) Storage::disk('public')->delete($foto->thumbnail_path);
+        if ($foto->video_path && $foto->video_path !== $foto->file_path) {
+            Storage::disk('public')->delete($foto->video_path);
+        }
         $foto->delete();
         ActivityLog::record('foto.deleted', ['foto_id' => $foto->id], $foto->event_id);
-        return back()->with('success', 'Photo deleted.');
+        return back()->with('success', 'Deleted.');
     }
 
     public function export(Event $event)
     {
         $fotos = $event->fotoUploads()->get();
-        $csv   = "ID,Uploader Name,Phone,Status,On Screen,Uploaded At\n";
+        $csv   = "ID,Uploader Name,Phone,Media Type,Duration (s),Status,On Screen,Uploaded At\n";
         foreach ($fotos as $f) {
             $csv .= implode(',', [
                 $f->id,
                 '"' . ($f->uploader_name ?? '') . '"',
                 '"' . ($f->uploader_phone ?? '') . '"',
+                $f->media_type,
+                $f->video_duration ?? '',
                 $f->status,
                 $f->on_screen ? 'Yes' : 'No',
                 $f->created_at->format('Y-m-d H:i'),
@@ -97,7 +102,7 @@ class FotoModerationController extends Controller
     public function downloadAll(Event $event)
     {
         $fotos = $event->fotoUploads()->get();
-        
+
         $zip = new \ZipArchive();
         $zipFileName = 'fotos-' . $event->slug . '-' . time() . '.zip';
         $zipPath = storage_path('app/public/' . $zipFileName);

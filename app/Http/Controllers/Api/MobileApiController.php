@@ -72,12 +72,15 @@ class MobileApiController extends Controller
 
         return response()->json([
             'data'  => $fotos->map(fn($f) => [
-                'id'            => $f->id,
-                'thumbnail_url' => $f->thumbnail_url,
-                'file_url'      => $f->file_url,
-                'uploader_name' => $f->uploader_name,
-                'uploader_phone'=> $f->uploader_phone,
-                'uploaded_at'   => $f->created_at->diffForHumans(),
+                'id'             => $f->id,
+                'media_type'     => $f->media_type,
+                'thumbnail_url'  => $f->thumbnail_url,
+                'file_url'       => $f->file_url,
+                'video_url'      => $f->video_url,
+                'video_duration' => $f->video_duration,
+                'uploader_name'  => $f->uploader_name,
+                'uploader_phone' => $f->uploader_phone,
+                'uploaded_at'    => $f->created_at->diffForHumans(),
             ]),
             'total' => $fotos->total(),
             'pages' => $fotos->lastPage(),

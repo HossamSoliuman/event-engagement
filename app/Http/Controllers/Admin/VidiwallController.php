@@ -17,7 +17,6 @@ class VidiwallController extends Controller
     {
         $event = Event::where('slug', $slug)->firstOrFail();
 
-        // Slideshow mode: return all approved on-screen fotos
         if ($event->vidiwall_slideshow_mode) {
             $fotos = $event->fotoUploads()
                 ->where('status', 'approved')
@@ -25,7 +24,9 @@ class VidiwallController extends Controller
                 ->get()
                 ->map(fn($f) => [
                     'id'          => $f->id,
+                    'media_type'  => $f->media_type,
                     'url'         => $f->file_url,
+                    'video_url'   => $f->video_url,
                     'uploader'    => $f->uploader_name,
                     'displayed_at'=> $f->displayed_at,
                 ]);
@@ -42,7 +43,6 @@ class VidiwallController extends Controller
             ]);
         }
 
-        // Single photo mode
         $onScreen = $event->fotoUploads()
             ->where('status', 'approved')
             ->where('on_screen', true)
@@ -53,7 +53,9 @@ class VidiwallController extends Controller
             'mode'          => 'single',
             'foto'          => $onScreen ? [
                 'id'          => $onScreen->id,
+                'media_type'  => $onScreen->media_type,
                 'url'         => $onScreen->file_url,
+                'video_url'   => $onScreen->video_url,
                 'uploader'    => $onScreen->uploader_name,
                 'displayed_at'=> $onScreen->displayed_at,
             ] : null,
