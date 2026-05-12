@@ -774,7 +774,7 @@ $fontH = $event->font_heading ?: 'Syne';
 
         .media-toggle {
             display: flex;
-            background: rgba(0,0,0,.3);
+            background: rgba(0, 0, 0, .3);
             border: 1px solid var(--border);
             border-radius: 12px;
             overflow: hidden;
@@ -819,12 +819,12 @@ $fontH = $event->font_heading ?: 'Syne';
             padding: 3px 10px;
             border-radius: 20px;
             margin-bottom: 10px;
-            background: rgba(99,102,241,.15);
+            background: rgba(99, 102, 241, .15);
             color: #818cf8
         }
 
         .duration-badge.over {
-            background: rgba(239,68,68,.15);
+            background: rgba(239, 68, 68, .15);
             color: #f87171
         }
     </style>
@@ -1050,11 +1050,14 @@ $fontH = $event->font_heading ?: 'Syne';
             <div class="mod-body">
                 <div id="fotoForm">
                     <p class="section-title">{{ $event->fotobomb_title }}</p>
-                    <p class="section-desc" data-en="{{ $event->fotobomb_desc }}" data-de="{{ $event->fotobomb_desc }}">{{ $event->fotobomb_desc }}</p>
+                    <p class="section-desc" data-en="{{ $event->fotobomb_desc }}"
+                        data-de="{{ $event->fotobomb_desc }}">{{ $event->fotobomb_desc }}</p>
 
                     <div class="media-toggle">
-                        <button class="media-toggle-btn active" id="togglePhoto" onclick="switchMedia('photo')" data-en="Photo" data-de="Foto">Photo</button>
-                        <button class="media-toggle-btn" id="toggleVideo" onclick="switchMedia('video')" data-en="Video" data-de="Video">Video</button>
+                        <button class="media-toggle-btn active" id="togglePhoto" onclick="switchMedia('photo')"
+                            data-en="Photo" data-de="Foto">Photo</button>
+                        <button class="media-toggle-btn" id="toggleVideo" onclick="switchMedia('video')" data-en="Video"
+                            data-de="Video">Video</button>
                     </div>
 
                     <div id="photoSection">
@@ -1062,9 +1065,12 @@ $fontH = $event->font_heading ?: 'Syne';
                         <div class="upload-zone" id="uploadZone">
                             <input type="file" id="photoInput" accept="image/*" capture="environment">
                             <div class="uz-icon">&#128248;</div>
-                            <p><strong data-en="Tap to take a photo" data-de="Foto aufnehmen">Tap to take a photo</strong><br>
-                            <span data-en="or choose from your gallery" data-de="oder aus der Galerie wählen">or choose from your gallery</span><br>
-                            <small style="color:var(--muted);font-size:11px">JPG · PNG · WEBP — max 10MB</small></p>
+                            <p><strong data-en="Tap to take a photo" data-de="Foto aufnehmen">Tap to take a
+                                    photo</strong><br>
+                                <span data-en="or choose from your gallery" data-de="oder aus der Galerie wählen">or
+                                    choose from your gallery</span><br>
+                                <small style="color:var(--muted);font-size:11px">JPG · PNG · WEBP — max 10MB</small>
+                            </p>
                         </div>
                     </div>
 
@@ -1074,11 +1080,17 @@ $fontH = $event->font_heading ?: 'Syne';
                         <div class="upload-zone" id="uploadZoneVideo">
                             <input type="file" id="videoInput" accept="video/*" capture="environment">
                             <div class="uz-icon">&#127909;</div>
-                            <p><strong data-en="Tap to record a video" data-de="Video aufnehmen">Tap to record a video</strong><br>
-                            <span data-en="or choose from your gallery" data-de="oder aus der Galerie wählen">or choose from your gallery</span><br>
-                            <small style="color:var(--muted);font-size:11px">MP4 · MOV · WebM — max 10 sec · max 25MB</small></p>
+                            <p><strong data-en="Tap to record a video" data-de="Video aufnehmen">Tap to record a
+                                    video</strong><br>
+                                <span data-en="or choose from your gallery" data-de="oder aus der Galerie wählen">or
+                                    choose from your gallery</span><br>
+                                <small style="color:var(--muted);font-size:11px">MP4 · MOV · WebM — max 10 sec · max
+                                    25MB</small>
+                            </p>
                         </div>
-                        <div id="videoDurationError" style="display:none;color:#f87171;font-size:12px;margin-bottom:10px;padding:8px 12px;background:rgba(239,68,68,.1);border-radius:8px"></div>
+                        <div id="videoDurationError"
+                            style="display:none;color:#f87171;font-size:12px;margin-bottom:10px;padding:8px 12px;background:rgba(239,68,68,.1);border-radius:8px">
+                        </div>
                     </div>
 
                     <div class="upload-progress" id="uploadProgress">
@@ -1088,19 +1100,25 @@ $fontH = $event->font_heading ?: 'Syne';
                     <div style="margin-top:16px">
                         <div class="field-group">
                             <label class="field-label" data-en="Your Name" data-de="Dein Name">Your Name</label>
-                            <input type="text" class="field" id="fotoName" data-ph-en="e.g. Ahmed from Row D" data-ph-de="z.B. Max aus Reihe D" placeholder="e.g. Ahmed from Row D" autocomplete="name">
+                            <input type="text" class="field" id="fotoName" data-ph-en="e.g. Ahmed from Row D"
+                                data-ph-de="z.B. Max aus Reihe D" placeholder="e.g. Ahmed from Row D"
+                                autocomplete="name">
                         </div>
                         {!! $gdprSnippet('foto') !!}
                         <button class="btn-main" id="uploadBtn" onclick="submitFoto()" disabled>
-                            <span id="uploadBtnText" data-en="Send to Vidiwall" data-de="Auf die Vidiwall">Send to Vidiwall</span>
+                            <span id="uploadBtnText" data-en="Send to Vidiwall" data-de="Auf die Vidiwall">Send to
+                                Vidiwall</span>
                         </button>
                     </div>
                 </div>
                 <div class="success-state" id="fotoSuccess" style="display:none">
                     <div class="s-icon">&#127881;</div>
                     <h3 id="fotoSuccessTitle" data-en="Submitted!" data-de="Eingereicht!">Submitted!</h3>
-                    <p data-en="Watch the big screen — you might be up next!" data-de="Schau auf die Leinwand — vielleicht bist du als nächstes dran!">Watch the big screen — you might be up next!</p>
-                    <button class="btn-again" onclick="resetFoto()"><span data-en="Upload Another" data-de="Weiteres hochladen">Upload Another</span></button>
+                    <p data-en="Watch the big screen — you might be up next!"
+                        data-de="Schau auf die Leinwand — vielleicht bist du als nächstes dran!">Watch the big screen —
+                        you might be up next!</p>
+                    <button class="btn-again" onclick="resetFoto()"><span data-en="Upload Another"
+                            data-de="Weiteres hochladen">Upload Another</span></button>
                 </div>
             </div>
         </div>
@@ -1381,9 +1399,9 @@ $fontH = $event->font_heading ?: 'Syne';
 
                 if (dur > 10) {
                     badge.classList.add('over');
-                    errEl.textContent = lang === 'de'
-                        ? 'Das Video ist zu lang. Maximal 10 Sekunden erlaubt.'
-                        : 'Video is too long. Maximum 10 seconds allowed.';
+                    errEl.textContent = lang === 'de' ?
+                        'Das Video ist zu lang. Maximal 10 Sekunden erlaubt.' :
+                        'Video is too long. Maximum 10 seconds allowed.';
                     errEl.style.display = 'block';
                     document.getElementById('uploadBtn').disabled = true;
                     selVideo = null;
@@ -1403,7 +1421,8 @@ $fontH = $event->font_heading ?: 'Syne';
             };
             tmpVid.onerror = () => {
                 const errEl = document.getElementById('videoDurationError');
-                errEl.textContent = lang === 'de' ? 'Videodatei konnte nicht gelesen werden.' : 'Could not read video file.';
+                errEl.textContent = lang === 'de' ? 'Videodatei konnte nicht gelesen werden.' :
+                    'Could not read video file.';
                 errEl.style.display = 'block';
             };
         });
@@ -1427,17 +1446,24 @@ $fontH = $event->font_heading ?: 'Syne';
             return true;
         }
 
+
+
+
+
         async function submitFoto() {
             if (currentMedia === 'photo' && !selFile) {
-                return toast(lang === 'de' ? 'Bitte zuerst ein Foto aufnehmen.' : 'Please take a photo first.', true);
+                return toast(lang === 'de' ? 'Bitte zuerst ein Foto aufnehmen.' : 'Please take a photo first.',
+                    true);
             }
             if (currentMedia === 'video' && !selVideo) {
-                return toast(lang === 'de' ? 'Bitte zuerst ein Video aufnehmen.' : 'Please record a video first.', true);
+                return toast(lang === 'de' ? 'Bitte zuerst ein Video aufnehmen.' :
+                    'Please record a video first.', true);
             }
             if (!checkGdpr('foto')) return;
             const btn = document.getElementById('uploadBtn');
+            const txt = document.getElementById('uploadBtnText');
             btn.disabled = true;
-            btn.innerHTML = '&#8987;';
+            if (txt) txt.textContent = '⌛';
             const prog = document.getElementById('uploadProgress'),
                 fill = document.getElementById('uploadProgressFill');
             prog.style.display = 'block';
@@ -1554,7 +1580,8 @@ $fontH = $event->font_heading ?: 'Syne';
                     const total = Object.values(d.tallies).reduce((a, b) => a + b, 0);
                     document.querySelectorAll('.vote-card').forEach(c => {
                         const cnt = d.tallies[c.dataset.cand] || 0;
-                        c.querySelector('.v-fill').style.width = (total > 0 ? Math.round((cnt / total) * 100) :
+                        c.querySelector('.v-fill').style.width = (total > 0 ? Math.round((cnt / total) *
+                                100) :
                             0) + '%';
                     });
                 }
@@ -1590,7 +1617,10 @@ $fontH = $event->font_heading ?: 'Syne';
             document.getElementById('uploadBtn').disabled = true;
             document.getElementById('photoInput').value = '';
             const prevVid = document.getElementById('previewVideo');
-            if (prevVid) { prevVid.classList.remove('show'); prevVid.src = ''; }
+            if (prevVid) {
+                prevVid.classList.remove('show');
+                prevVid.src = '';
+            }
             const vidInput = document.getElementById('videoInput');
             if (vidInput) vidInput.value = '';
             const uploadZoneVideo = document.getElementById('uploadZoneVideo');
