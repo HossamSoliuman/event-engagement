@@ -131,7 +131,24 @@ class Event extends Model
     public function generateQrCode(): string
     {
         $filename = "qrcodes/event-{$this->id}.svg";
-        $svg = QrCode::format('svg')->size(400)->margin(1)->errorCorrection('H')->generate($this->getGuestUrl());
+        $url = $this->getGuestUrl();
+
+        // Use Google Charts QR API - no server-side rendering, no memory issues
+        $apiUrl = 'https://api.qrserver.com/v1/create-qr-code/?'
+            . http_build_query([
+                'data'   => $url,
+                'size'   => '400x400',
+                'format' => 'svg',
+                'ecc'    => 'H',
+                'margin' => '1',
+            ]);
+
+        $svg = file_get_contents($apiUrl);
+
+        if ($svg === false || strlen($svg) < 100) {
+            throw new \RuntimeException('Failed to fetch QR code from API');
+        }
+
         Storage::disk('public')->put($filename, $svg);
         $this->update(['qr_code_path' => $filename]);
         return $filename;
