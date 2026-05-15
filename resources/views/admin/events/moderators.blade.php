@@ -23,7 +23,7 @@
             <div class="text-muted text-xs">{{ $user->email }}</div>
         </div>
         <div style="display:flex;gap:6px;align-items:center">
-            <a href="{{ route('moderator.dashboard', $event) }}" target="_blank" class="btn btn-ghost btn-sm">Portal ↗</a>
+            <a href="{{ route('moderator.dashboard', $event) }}" target="_blank" class="btn btn-ghost btn-sm">Portal <i data-lucide="arrow-up-right" class="lucide-icon"></i></a>
             <form method="POST" action="{{ route('admin.events.moderators.destroy', [$event, $user]) }}"
                   data-confirm="Remove {{ $user->name }} from this event?">
                 @csrf @method('DELETE')
@@ -81,7 +81,7 @@
             </div>
             <div class="form-hint" style="margin-top:6px">Share this URL with your assigned moderators. They log in with their own credentials.</div>
         </div>
-        <a href="{{ route('moderator.dashboard', $event) }}" target="_blank" class="btn btn-outline">Preview Portal ↗</a>
+        <a href="{{ route('moderator.dashboard', $event) }}" target="_blank" class="btn btn-outline">Preview Portal <i data-lucide="arrow-up-right" class="lucide-icon"></i></a>
     </div>
 </div>
 

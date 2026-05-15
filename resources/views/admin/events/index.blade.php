@@ -32,9 +32,9 @@
                             </td>
                             <td>
                                 <div style="display:flex;gap:3px;flex-wrap:wrap">
-                                    @foreach (['fotobomb' => '📷', 'lottery' => '🎰', 'voting' => '🏆', 'membership' => '⭐'] as $mod => $ico)
+                                    @foreach (['fotobomb' => '<i data-lucide="camera" class="lucide-icon"></i>', 'lottery' => '<i data-lucide="ticket" class="lucide-icon"></i>', 'voting' => '<i data-lucide="trophy" class="lucide-icon"></i>', 'membership' => '<i data-lucide="star" class="lucide-icon"></i>'] as $mod => $ico)
                                         <span title="{{ ucfirst($mod) }}"
-                                            style="font-size:14px;opacity:{{ $event->{'module_' . $mod} ? 1 : 0.2 }}">{{ $ico }}</span>
+                                            style="font-size:14px;opacity:{{ $event->{'module_' . $mod} ? 1 : 0.2 }}">{!! $ico !!}</span>
                                     @endforeach
                                 </div>
                             </td>
@@ -65,7 +65,7 @@
                         <tr>
                             <td colspan="7">
                                 <div class="empty-state">
-                                    <div class="empty-icon">◉</div>
+                                    <div class="empty-icon"><i data-lucide="calendar" class="lucide-icon"></i></div>
                                     <h3>No events yet</h3>
                                     <p><a href="{{ route('admin.events.create') }}" style="color:var(--red)">Create your
                                             first event →</a></p>

@@ -15,6 +15,7 @@
             --mod:#6366f1;
         }
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        .lucide-icon { width: 16px; height: 16px; vertical-align: text-bottom; stroke-width: 2px; }
         html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--text);font-size:14px}
         h1,h2,h3,h4,h5{font-family:'Syne',sans-serif}
         a{color:inherit;text-decoration:none}
@@ -30,10 +31,11 @@
         .sb-scroll{flex:1;overflow-y:auto;padding:12px 0;scrollbar-width:none}
         .sb-scroll::-webkit-scrollbar{display:none}
         .sb-label{padding:10px 18px 4px;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
-        .nav-item{display:flex;align-items:center;gap:9px;padding:9px 18px;color:var(--muted);font-size:13px;font-weight:500;transition:all .15s;border-left:3px solid transparent;cursor:pointer;background:none;border-top:none;border-right:none;border-bottom:none;width:100%;text-align:left}
+        .nav-item{display:flex;align-items:center;gap:12px;padding:9px 18px;color:var(--muted);font-size:13px;font-weight:500;transition:all .15s;border-left:3px solid transparent;cursor:pointer;background:none;border-top:none;border-right:none;border-bottom:none;width:100%;text-align:left}
         .nav-item:hover{color:var(--text);background:rgba(255,255,255,.03)}
         .nav-item.active{color:var(--mod);border-left-color:var(--mod);background:rgba(99,102,241,.07)}
-        .nav-item .ni-icon{width:16px;text-align:center;font-style:normal;flex-shrink:0}
+        .nav-item .ni-icon{width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-style:normal;flex-shrink:0}
+        .nav-item .ni-icon .lucide-icon{width:18px;height:18px}
         .nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px}
         .sb-footer{padding:14px 18px;border-top:1px solid var(--border)}
         .sb-user{display:flex;align-items:center;gap:10px}
@@ -190,7 +192,7 @@
         @if($event)
         <div class="sb-label">Overview</div>
         <a href="{{ route('moderator.dashboard', $event) }}" class="nav-item {{ request()->routeIs('moderator.dashboard') ? 'active' : '' }}">
-            <i class="ni-icon">◈</i> Dashboard
+            <i class="ni-icon"><i data-lucide="layout-dashboard" class="lucide-icon"></i></i> Dashboard
         </a>
 
         <div class="sb-label">Manage</div>
@@ -205,7 +207,7 @@
         @endif
         @if($event->module_voting)
         <a href="{{ route('moderator.voting.index', $event) }}" class="nav-item {{ request()->routeIs('moderator.voting*') ? 'active' : '' }}">
-            <i class="ni-icon">◉</i> Voting
+            <i class="ni-icon"><i data-lucide="calendar" class="lucide-icon"></i></i> Voting
         </a>
         @endif
         @if($event->module_membership)
@@ -216,10 +218,10 @@
 
         <div class="sb-label">Screens</div>
         <a href="{{ route('vidiwall.show', $event->slug) }}" target="_blank" class="nav-item">
-            <i class="ni-icon">◻</i> Vidiwall ↗
+            <i class="ni-icon">◻</i> Vidiwall <i data-lucide="arrow-up-right" class="lucide-icon"></i>
         </a>
         <a href="{{ route('event.landing', $event->slug) }}" target="_blank" class="nav-item">
-            <i class="ni-icon">◫</i> Guest Page ↗
+            <i class="ni-icon"><i data-lucide="users" class="lucide-icon"></i></i> Guest Page <i data-lucide="arrow-up-right" class="lucide-icon"></i>
         </a>
         @endif
 
@@ -227,7 +229,7 @@
         <form method="POST" action="{{ route('admin.logout') }}">
             @csrf
             <button type="submit" class="nav-item" style="width:100%">
-                <i class="ni-icon">⎋</i> Logout
+                <i class="ni-icon"><i data-lucide="log-out" class="lucide-icon"></i></i> Logout
             </button>
         </form>
     </nav>
@@ -254,10 +256,10 @@
 
     <main class="main-content">
         @if(session('success'))
-            <div class="alert alert-success">✓ {{ session('success') }}</div>
+            <div class="alert alert-success"><i data-lucide="check" class="lucide-icon"></i> {{ session('success') }}</div>
         @endif
         @if(session('error'))
-            <div class="alert alert-error">✕ {{ session('error') }}</div>
+            <div class="alert alert-error"><i data-lucide="x" class="lucide-icon"></i> {{ session('error') }}</div>
         @endif
         @if($errors->any())
             <div class="alert alert-error">
@@ -280,5 +282,9 @@ document.querySelectorAll('form[data-confirm]').forEach(f => {
 });
 </script>
 @stack('scripts')
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+    lucide.createIcons();
+</script>
 </body>
 </html>

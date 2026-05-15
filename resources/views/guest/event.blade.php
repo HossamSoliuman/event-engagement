@@ -7,7 +7,7 @@
     <meta name="theme-color" content="{{ $event->primary_color }}">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <title>{{ $event->name }}</title>
-    <link {{-- Dynamic fonts from admin settings --}}
+    <link 
         @php
 $fontH = $event->font_heading ?: 'Syne';
         $fontB = $event->font_body    ?: 'DM Sans'; @endphp <link
@@ -35,6 +35,12 @@ $fontH = $event->font_heading ?: 'Syne';
             margin: 0;
             padding: 0
         }
+        .lucide-icon { width: 1em; height: 1em; vertical-align: text-bottom; stroke-width: 2px; }
+
+        #screen-fotobomb .mod-header-title .lucide-icon, #screen-fotobomb .section-title .lucide-icon, #screen-fotobomb .s-icon .lucide-icon, #screen-fotobomb .uz-icon .lucide-icon { color: var(--p); }
+        #screen-voting .mod-header-title .lucide-icon, #screen-voting .section-title .lucide-icon, #screen-voting .s-icon .lucide-icon { color: var(--acc); }
+        #screen-lottery .mod-header-title .lucide-icon, #screen-lottery .section-title .lucide-icon, #screen-lottery .s-icon .lucide-icon { color: #6366f1; }
+        #screen-membership .mod-header-title .lucide-icon, #screen-membership .section-title .lucide-icon, #screen-membership .s-icon .lucide-icon { color: #22c55e; }
 
         html {
             -webkit-tap-highlight-color: transparent;
@@ -831,7 +837,7 @@ $fontH = $event->font_heading ?: 'Syne';
 </head>
 
 <body>
-    {{-- make privacy text available to JS --}}
+    
     <script>
         const PRIVACY_TEXT = @json(
             $event->privacy_policy_text ?:
@@ -884,7 +890,7 @@ $fontH = $event->font_heading ?: 'Syne';
         <button class="lang-btn" onclick="setLang('de')">DE</button>
     </div>
 
-    <!-- LANDING -->
+    
     <div id="landing">
         <div class="land-header" style="display:flex;align-items:center;justify-content:center;padding:22px 18px 10px;">
             <div class="land-brand" style="display:flex;align-items:center;gap:16px;max-width:100%;">
@@ -925,7 +931,7 @@ $fontH = $event->font_heading ?: 'Syne';
         </div>
 
         <div class="tile-grid">
-            @foreach ([['fotobomb', '📸', $event->fotobomb_title, '#FF3D00'], ['voting', '🏆', $event->voting_title, '#FFD700'], ['lottery', '🎰', $event->lottery_title, '#6366f1'], ['membership', '⭐', $event->membership_title, '#22c55e']] as [$mod, $defaultIcon, $defaultName, $defaultAccent])
+            @foreach ([['fotobomb', '<i data-lucide="camera" class="lucide-icon"></i>', $event->fotobomb_title, '#FF3D00'], ['voting', '<i data-lucide="trophy" class="lucide-icon"></i>', $event->voting_title, '#FFD700'], ['lottery', '<i data-lucide="ticket" class="lucide-icon"></i>', $event->lottery_title, '#6366f1'], ['membership', '<i data-lucide="star" class="lucide-icon"></i>', $event->membership_title, '#22c55e']] as [$mod, $defaultIcon, $defaultName, $defaultAccent])
                 @if (!$event->{'module_' . $mod})
                     @continue
                 @endif
@@ -967,14 +973,14 @@ $fontH = $event->font_heading ?: 'Syne';
                     <div style="position:absolute;bottom:0;left:0;right:0;height:3px;z-index:3;{{ $accentStyle }}">
                     </div>
 
-                    <div class="tile-arrow">{{ $isLink ? '↗' : '↗' }}</div>
+                    <div class="tile-arrow">{!! $isLink ? '<i data-lucide="arrow-up-right" class="lucide-icon"></i>' : '<i data-lucide="arrow-right" class="lucide-icon"></i>' !!}</div>
 
                     @if ($imgUrl)
                         <img src="{{ $imgUrl }}"
                             style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.5;pointer-events:none;filter:brightness(.85) contrast(1.05);"
                             alt="">
                     @else
-                        <div class="tile-icon">{{ $defaultIcon }}</div>
+                        <div class="tile-icon" style="color: {{ $defaultAccent }};">{!! $defaultIcon !!}</div>
                     @endif
 
                     @if ($tileLabel || $tileSublabel)
@@ -1040,7 +1046,7 @@ $fontH = $event->font_heading ?: 'Syne';
         </div>
     </div>
 
-    <!-- FOTO BOMB -->
+    
     @if ($event->module_fotobomb)
         <div class="module-screen" id="screen-fotobomb">
             <div class="mod-header">
@@ -1064,7 +1070,7 @@ $fontH = $event->font_heading ?: 'Syne';
                         <img id="preview" class="preview-img" src="" alt="">
                         <div class="upload-zone" id="uploadZone">
                             <input type="file" id="photoInput" accept="image/*" capture="environment">
-                            <div class="uz-icon">&#128248;</div>
+                            <div class="uz-icon"><i data-lucide="camera" class="lucide-icon"></i></div>
                             <p><strong data-en="Tap to take a photo" data-de="Foto aufnehmen">Tap to take a
                                     photo</strong><br>
                                 <span data-en="or choose from your gallery" data-de="oder aus der Galerie wählen">or
@@ -1079,7 +1085,7 @@ $fontH = $event->font_heading ?: 'Syne';
                         <div id="durationBadge" class="duration-badge" style="display:none"></div>
                         <div class="upload-zone" id="uploadZoneVideo">
                             <input type="file" id="videoInput" accept="video/*" capture="environment">
-                            <div class="uz-icon">&#127909;</div>
+                            <div class="uz-icon"><i data-lucide="video" class="lucide-icon"></i></div>
                             <p><strong data-en="Tap to record a video" data-de="Video aufnehmen">Tap to record a
                                     video</strong><br>
                                 <span data-en="or choose from your gallery" data-de="oder aus der Galerie wählen">or
@@ -1124,16 +1130,16 @@ $fontH = $event->font_heading ?: 'Syne';
         </div>
     @endif
 
-    <!-- LOTTERY -->
+    
     @if ($event->module_lottery)
         <div class="module-screen" id="screen-lottery">
             <div class="mod-header">
                 <button class="mod-back" onclick="closeModule('lottery')">←</button>
-                <div class="mod-header-title">🎰 {{ $event->lottery_title }}</div>
+                <div class="mod-header-title"><i data-lucide="ticket" class="lucide-icon"></i> {{ $event->lottery_title }}</div>
             </div>
             <div class="mod-body">
                 <div id="lotteryForm">
-                    <p class="section-title">🎰 {{ $event->lottery_title }}</p>
+                    <p class="section-title"><i data-lucide="ticket" class="lucide-icon"></i> {{ $event->lottery_title }}</p>
                     <p class="section-desc">{{ $event->lottery_desc }}</p>
                     <div class="glass">
                         <div class="field-group"><label class="field-label" data-en="Full Name *"
@@ -1160,7 +1166,7 @@ $fontH = $event->font_heading ?: 'Syne';
                         @endforeach
                         {!! $gdprSnippet('lottery') !!}
                         <button class="btn-main" onclick="submitLottery()">
-                            <span data-en="🎰 Enter the Draw" data-de="🎰 Jetzt teilnehmen">🎰 Enter the Draw</span>
+                            <span data-en='<i data-lucide="ticket" class="lucide-icon"></i> Enter the Draw' data-de='<i data-lucide="ticket" class="lucide-icon"></i> Jetzt teilnehmen'><i data-lucide="ticket" class="lucide-icon"></i> Enter the Draw</span>
                         </button>
                     </div>
                 </div>
@@ -1175,20 +1181,20 @@ $fontH = $event->font_heading ?: 'Syne';
         </div>
     @endif
 
-    <!-- VOTING -->
+    
     @if ($event->module_voting)
         <div class="module-screen" id="screen-voting">
             <div class="mod-header">
                 <button class="mod-back" onclick="closeModule('voting')">←</button>
-                <div class="mod-header-title">🏆 {{ $event->voting_title }}</div>
+                <div class="mod-header-title"><i data-lucide="trophy" class="lucide-icon"></i> {{ $event->voting_title }}</div>
             </div>
             <div class="mod-body">
-                <p class="section-title">🏆 {{ $event->voting_title }}</p>
+                <p class="section-title"><i data-lucide="trophy" class="lucide-icon"></i> {{ $event->voting_title }}</p>
                 <p class="section-desc">{{ $event->voting_desc }}</p>
                 @if ($event->voting_closed)
                     <div
                         style="background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:14px;padding:28px;text-align:center">
-                        <div style="font-size:40px;margin-bottom:12px">🔒</div>
+                        <div style="font-size:40px;margin-bottom:12px"><i data-lucide="lock" class="lucide-icon"></i></div>
                         <div style="font-weight:700;font-size:16px;margin-bottom:6px" data-en="Voting is closed"
                             data-de="Abstimmung beendet">Voting is closed</div>
                         <div style="font-size:13px;color:var(--muted)" data-en="Results will be announced shortly."
@@ -1215,11 +1221,11 @@ $fontH = $event->font_heading ?: 'Syne';
                     <div id="voteAction">
                         {!! $gdprSnippet('vote') !!}
                         <button class="btn-main" id="voteBtn" onclick="submitVote()"> <span
-                                data-en="🗳️ Cast My Vote" data-de="🗳️ Abstimmen">🗳️ Cast My Vote</span>
+                                data-en='<i data-lucide="check-square" class="lucide-icon"></i> Cast My Vote' data-de='<i data-lucide="check-square" class="lucide-icon"></i> Abstimmen'><i data-lucide="check-square" class="lucide-icon"></i> Cast My Vote</span>
                         </button>
                     </div>
                     <div class="success-state" id="voteSuccess" style="display:none">
-                        <div class="s-icon">🏆</div>
+                        <div class="s-icon"><i data-lucide="trophy" class="lucide-icon"></i></div>
                         <h3 data-en="Vote Recorded!" data-de="Stimme gezählt!">Vote Recorded!</h3>
                         <p data-en="Live results shown on the big screen."
                             data-de="Live-Ergebnisse auf der Leinwand.">Live results shown on the big screen.</p>
@@ -1229,16 +1235,16 @@ $fontH = $event->font_heading ?: 'Syne';
         </div>
     @endif
 
-    <!-- MEMBERSHIP -->
+    
     @if ($event->module_membership)
         <div class="module-screen" id="screen-membership">
             <div class="mod-header">
                 <button class="mod-back" onclick="closeModule('membership')">←</button>
-                <div class="mod-header-title">⭐ {{ $event->membership_title }}</div>
+                <div class="mod-header-title"><i data-lucide="star" class="lucide-icon"></i> {{ $event->membership_title }}</div>
             </div>
             <div class="mod-body">
                 <div id="memberForm">
-                    <p class="section-title">⭐ {{ $event->membership_title }}</p>
+                    <p class="section-title"><i data-lucide="star" class="lucide-icon"></i> {{ $event->membership_title }}</p>
                     <p class="section-desc">{{ $event->membership_desc }}</p>
                     <div class="glass">
                         <div class="field-group"><label class="field-label" data-en="Full Name *"
@@ -1273,12 +1279,12 @@ $fontH = $event->font_heading ?: 'Syne';
                                 data-de="Newsletter &amp; Angebote erhalten">Subscribe to news &amp;
                                 offers</span></label>
                         {!! $gdprSnippet('member') !!}
-                        <button class="btn-main" onclick="submitMembership()"> <span data-en="⭐ Join Now"
-                                data-de="⭐ Jetzt beitreten">⭐ Join Now</span></button>
+                        <button class="btn-main" onclick="submitMembership()"> <span data-en='<i data-lucide="star" class="lucide-icon"></i> Join Now'
+                                data-de='<i data-lucide="star" class="lucide-icon"></i> Jetzt beitreten'><i data-lucide="star" class="lucide-icon"></i> Join Now</span></button>
                     </div>
                 </div>
                 <div class="success-state" id="memberSuccess" style="display:none">
-                    <div class="s-icon">⭐</div>
+                    <div class="s-icon"><i data-lucide="star" class="lucide-icon"></i></div>
                     <h3 data-en="Welcome to the Club!" data-de="Willkommen im Club!">Welcome to the Club!</h3>
                     <p data-en="Membership confirmed. Stay tuned for exclusive updates."
                         data-de="Mitgliedschaft bestätigt. Bleib dran für exklusive Updates.">Membership confirmed.</p>
@@ -1633,6 +1639,9 @@ $fontH = $event->font_heading ?: 'Syne';
             resetFotoBtn();
         }
     </script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+    lucide.createIcons();
+</script>
 </body>
-
 </html>

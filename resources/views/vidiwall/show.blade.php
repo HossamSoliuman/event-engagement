@@ -341,7 +341,7 @@
         <div class="stage" id="stage">
             <div class="stage-bg" id="stageBg"></div>
 
-            {{-- Idle state --}}
+            
             <div class="idle" id="idleState">
                 <div class="idle-icon">&#128247;</div>
                 <div class="idle-title">Foto Bomb</div>
@@ -352,34 +352,34 @@
                 <div class="idle-url">{{ $event->getGuestUrl() }}</div>
             </div>
 
-            {{-- Photo frame --}}
+            
             <div class="photo-frame" id="photoFrame" style="display:none">
                 <img id="liveImg" src="" alt="">
             </div>
 
-            {{-- Video frame --}}
+            
             <div class="video-frame" id="videoFrame" style="display:none">
                 <video id="liveVideo" src="" autoplay muted playsinline></video>
             </div>
 
-            {{-- Uploader name --}}
+            
             <div class="uploader" id="uploaderTag" style="display:none">
                 <span id="uploaderName"></span>
             </div>
 
-            {{-- Live badge (photo) --}}
+            
             <div class="live-badge" id="liveBadge" style="display:none">&#9679; LIVE</div>
 
-            {{-- Video badge --}}
+            
             <div class="video-badge" id="videoBadge" style="display:none">&#9654; VIDEO</div>
 
-            {{-- Slideshow counter --}}
+            
             <div class="slide-counter" id="slideCounter" style="display:none"></div>
 
-            {{-- Progress bar (slideshow) --}}
+            
             <div class="slide-progress" id="slideProgress" style="width:0;display:none"></div>
 
-            {{-- Overlay text --}}
+            
             @if ($event->vidiwall_overlay_text)
                 <div class="overlay-text" id="overlayText" style="display:none">
                     <span class="overlay-pill">{{ $event->vidiwall_overlay_text }}</span>
@@ -609,6 +609,9 @@
         poll();
         setInterval(poll, 3000);
     </script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+    lucide.createIcons();
+</script>
 </body>
-
 </html>

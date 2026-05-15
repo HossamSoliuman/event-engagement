@@ -13,7 +13,7 @@
 
 @section('content')
 
-    {{-- Stats row --}}
+    
     <div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr))">
         <div class="stat-card">
             <div class="stat-label">Pending Fotos</div>
@@ -43,7 +43,7 @@
 
     <div class="grid-2" style="gap:16px;margin-bottom:16px">
 
-        {{-- QR Code --}}
+        
         <div class="card">
             <div class="card-header">
                 <h3>QR Code & Links</h3>
@@ -68,25 +68,25 @@
                         {{ url('/screen/' . $event->slug) }}</div>
                     <div style="display:flex;gap:7px;flex-wrap:wrap">
                         <a href="{{ route('event.landing', $event->slug) }}" target="_blank"
-                            class="btn btn-outline btn-sm">📱 Guest Page ↗</a>
-                        <a href="{{ route('vidiwall.show', $event->slug) }}" target="_blank" class="btn btn-gold btn-sm">📺
-                            Open Vidiwall ↗</a>
+                            class="btn btn-outline btn-sm"><i data-lucide="smartphone" class="lucide-icon"></i> Guest Page <i data-lucide="arrow-up-right" class="lucide-icon"></i></a>
+                        <a href="{{ route('vidiwall.show', $event->slug) }}" target="_blank" class="btn btn-gold btn-sm"><i data-lucide="monitor-play" class="lucide-icon"></i>
+                            Open Vidiwall <i data-lucide="arrow-up-right" class="lucide-icon"></i></a>
                     </div>
                 </div>
             </div>
         </div>
 
-        {{-- Module Toggles --}}
+        
         <div class="card">
             <div class="card-header">
                 <h3>Module Controls</h3>
             </div>
             <div class="card-body" style="padding:0">
-                @foreach ([['fotobomb', '📷', 'Foto Bomb', 'Let guests upload photos for vidiwall'], ['lottery', '🎰', 'Lottery', 'Guests enter the prize draw'], ['voting', '🏆', 'Athlete Vote', 'Vote for athlete of the day'], ['membership', '⭐', 'Membership', 'Guest community sign-ups']] as [$key, $ico, $label, $desc])
+                @foreach ([['fotobomb', '<i data-lucide="camera" class="lucide-icon"></i>', 'Foto Bomb', 'Let guests upload photos for vidiwall'], ['lottery', '<i data-lucide="ticket" class="lucide-icon"></i>', 'Lottery', 'Guests enter the prize draw'], ['voting', '<i data-lucide="trophy" class="lucide-icon"></i>', 'Athlete Vote', 'Vote for athlete of the day'], ['membership', '<i data-lucide="star" class="lucide-icon"></i>', 'Membership', 'Guest community sign-ups']] as [$key, $ico, $label, $desc])
                     <div
                         style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)">
                         <div>
-                            <div style="font-weight:600;font-size:13px">{{ $ico }} {{ $label }}</div>
+                            <div style="font-weight:600;font-size:13px">{!! $ico !!} {{ $label }}</div>
                             <div class="text-muted text-xs">{{ $desc }}</div>
                         </div>
                         <label class="toggle">
@@ -107,13 +107,13 @@
             </div>
         </div>
 
-    </div>{{-- /grid --}}
+    </div>
 
-    {{-- Live Vote Tallies --}}
+    
     @if ($event->module_voting && count($tallies))
         <div class="card mb-3">
             <div class="card-header">
-                <h3>🏆 Live Vote Tallies</h3>
+                <h3><i data-lucide="trophy" class="lucide-icon"></i> Live Vote Tallies</h3>
                 <div style="display:flex;gap:6px">
                     <a href="{{ route('admin.voting.index', $event) }}" class="btn btn-secondary btn-sm">Full Results</a>
                     @if ($event->voting_closed)
@@ -121,7 +121,7 @@
                                 class="btn btn-outline btn-sm">🔓 Reopen</button></form>
                     @else
                         <form method="POST" action="{{ route('admin.voting.close', $event) }}">@csrf<button
-                                class="btn btn-outline btn-sm">🔒 Close Voting</button></form>
+                                class="btn btn-outline btn-sm"><i data-lucide="lock" class="lucide-icon"></i> Close Voting</button></form>
                     @endif
                 </div>
             </div>
@@ -143,21 +143,21 @@
                     </div>
                 @endforeach
                 <div class="text-xs text-muted mt-2">Total: {{ $totalVotes }} votes
-                    {{ $event->voting_closed ? '· 🔒 Closed' : '· 🔓 Open' }}</div>
+                    {{ $event->voting_closed ? '· <i data-lucide="lock" class="lucide-icon"></i> Closed' : '· 🔓 Open' }}</div>
             </div>
         </div>
     @endif
 
 
-    {{-- Currently on screen --}}
+    
     @if ($onScreen)
         <div class="card mb-3" style="border-color:var(--gold);background:rgba(255,215,0,.04)">
             <div class="card-header">
-                <h3>📺 Currently on Vidiwall</h3>
+                <h3><i data-lucide="monitor-play" class="lucide-icon"></i> Currently on Vidiwall</h3>
             </div>
             <div class="card-body" style="display:flex;align-items:center;gap:16px">
 
-                {{-- Media preview --}}
+                
                 @if ($onScreen->isVideo())
                     <video src="{{ $onScreen->video_url }}" poster="{{ $onScreen->thumbnail_url }}"
                         style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid var(--gold)" muted
@@ -191,7 +191,7 @@
         </div>
     @endif
 
-    {{-- Quick Actions --}}
+    
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
         <a href="{{ route('admin.fotos.index', $event) }}" class="btn btn-primary">
             Foto Queue @if ($event->pending_count > 0)
@@ -223,14 +223,14 @@
                             <div class="text-xs text-muted">{{ $mod->email }}</div>
                         </div>
                         <a href="{{ route('moderator.dashboard', $event) }}" target="_blank" class="btn btn-ghost btn-sm"
-                            style="padding:3px 8px;font-size:11px">Portal ↗</a>
+                            style="padding:3px 8px;font-size:11px">Portal <i data-lucide="arrow-up-right" class="lucide-icon"></i></a>
                     </div>
                 @endforeach
             </div>
         </div>
     @endif
 
-    {{-- Recent Activity --}}
+    
     @if ($recentLog->count())
         <div class="card">
             <div class="card-header">

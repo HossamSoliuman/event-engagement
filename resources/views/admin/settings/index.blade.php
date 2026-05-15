@@ -1,31 +1,31 @@
 @extends('layouts.admin')
 @section('title', 'Settings')
-@section('page-title', '⚙ Settings')
+@section('page-title', '<i data-lucide="settings" class="lucide-icon"></i> Settings')
 
 @section('content')
     <div style="max-width:560px">
-        {{-- Privacy Policy --}}
+        
         <div class="card mb-3" style="border-color:rgba(255,61,0,.2)">
             <div class="card-header">
-                <h3>🔒 Site-wide Privacy Policy</h3>
+                <h3><i data-lucide="lock" class="lucide-icon"></i> Site-wide Privacy Policy</h3>
             </div>
             <div class="card-body">
                 @if (!empty($privacy_policy_url))
                     <div
                         style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.2);border-radius:8px;margin-bottom:16px">
-                        <div style="font-size:24px">✅</div>
+                        <div style="font-size:24px"><i data-lucide="check-circle" class="lucide-icon"></i></div>
                         <div style="flex:1">
                             <div class="font-bold" style="font-size:13px">Privacy policy is live</div>
                             <div class="text-muted text-xs">
                                 Guests see a clickable link to this file in every consent checkbox across all events.
                             </div>
                         </div>
-                        <a href="{{ $privacy_policy_url }}" target="_blank" class="btn btn-outline btn-sm">View File ↗</a>
+                        <a href="{{ $privacy_policy_url }}" target="_blank" class="btn btn-outline btn-sm">View File <i data-lucide="arrow-up-right" class="lucide-icon"></i></a>
                     </div>
                 @else
                     <div
                         style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);border-radius:8px;margin-bottom:16px">
-                        <div style="font-size:24px">⚠️</div>
+                        <div style="font-size:24px"><i data-lucide="alert-triangle" class="lucide-icon"></i></div>
                         <div>
                             <div class="font-bold" style="font-size:13px;color:#f87171">No privacy policy uploaded yet</div>
                             <div class="text-muted text-xs">Required by law. Upload your PDF or HTML file below.</div>
@@ -45,7 +45,7 @@
                 </form>
             </div>
         </div>
-        {{-- Profile --}}
+        
         <div class="card mb-3">
             <div class="card-header">
                 <h3>Profile</h3>
@@ -83,7 +83,7 @@
             </div>
         </div>
 
-        {{-- Password --}}
+        
         <div class="card mb-3">
             <div class="card-header">
                 <h3>Change Password</h3>
@@ -112,10 +112,10 @@
             </div>
         </div>
 
-        {{-- API Token for Mobile --}}
+        
         <div class="card">
             <div class="card-header">
-                <h3>📱 Mobile Admin API Token</h3>
+                <h3><i data-lucide="smartphone" class="lucide-icon"></i> Mobile Admin API Token</h3>
             </div>
             <div class="card-body">
                 <p class="text-muted text-sm" style="margin-bottom:14px">

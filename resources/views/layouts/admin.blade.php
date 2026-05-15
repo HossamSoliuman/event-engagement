@@ -14,6 +14,7 @@
             --green:#22C55E; --blue:#3B82F6; --sidebar:220px;
         }
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        .lucide-icon { width: 16px; height: 16px; vertical-align: text-bottom; stroke-width: 2px; }
         html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--text);font-size:14px}
         h1,h2,h3,h4,h5{font-family:'Syne',sans-serif}
         a{color:inherit;text-decoration:none}
@@ -27,10 +28,11 @@
         .sb-scroll{flex:1;overflow-y:auto;padding:12px 0;scrollbar-width:none}
         .sb-scroll::-webkit-scrollbar{display:none}
         .sb-label{padding:10px 18px 4px;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
-        .nav-item{display:flex;align-items:center;gap:9px;padding:9px 18px;color:var(--muted);font-size:13px;font-weight:500;transition:all .15s;border-left:3px solid transparent;cursor:pointer;background:none;border-top:none;border-right:none;border-bottom:none;width:100%;text-align:left}
+        .nav-item{display:flex;align-items:center;gap:12px;padding:9px 18px;color:var(--muted);font-size:13px;font-weight:500;transition:all .15s;border-left:3px solid transparent;cursor:pointer;background:none;border-top:none;border-right:none;border-bottom:none;width:100%;text-align:left}
         .nav-item:hover{color:var(--text);background:rgba(255,255,255,.03)}
         .nav-item.active{color:var(--red);border-left-color:var(--red);background:rgba(255,61,0,.07)}
-        .nav-item .ni-icon{width:16px;text-align:center;font-style:normal;flex-shrink:0}
+        .nav-item .ni-icon{width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-style:normal;flex-shrink:0}
+        .nav-item .ni-icon .lucide-icon{width:18px;height:18px}
         .nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px}
         .sb-footer{padding:14px 18px;border-top:1px solid var(--border)}
         .sb-user{display:flex;align-items:center;gap:10px}
@@ -159,7 +161,7 @@
         /* ── Search ── */
         .search-bar{position:relative}
         .search-bar input{padding-left:36px}
-        .search-bar::before{content:"🔍";position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none}
+        .search-bar::before{content:"<i data-lucide="search" class="lucide-icon"></i>";position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none}
 
         /* ── Helpers ── */
         .flex{display:flex}.items-center{align-items:center}.justify-between{justify-content:space-between}
@@ -220,10 +222,10 @@
 </head>
 <body>
 
-<!-- Sidebar overlay (mobile) -->
+
 <div class="sb-overlay" id="sbOverlay" onclick="closeSidebar()"></div>
 
-<!-- Sidebar -->
+
 <aside class="sidebar" id="sidebar">
     <div class="sb-logo">
         <div class="wordmark"> EventBomb</div>
@@ -233,10 +235,10 @@
     <nav class="sb-scroll">
         <div class="sb-label">Overview</div>
         <a href="{{ route('admin.dashboard') }}" class="nav-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-            <i class="ni-icon">◈</i> Dashboard
+            <i class="ni-icon"><i data-lucide="layout-dashboard" class="lucide-icon"></i></i> Dashboard
         </a>
         <a href="{{ route('admin.events.index') }}" class="nav-item {{ request()->routeIs('admin.events*') ? 'active' : '' }}">
-            <i class="ni-icon">◉</i> Events
+            <i class="ni-icon"><i data-lucide="calendar" class="lucide-icon"></i></i> Events
         </a>
 
         @php $activeEvent = \App\Models\Event::where('is_active',true)->first(); @endphp
@@ -244,42 +246,42 @@
         <div class="sb-label">Live: {{ Str::limit($activeEvent->name, 18) }}</div>
 
         <a href="{{ route('admin.fotos.index', $activeEvent) }}" class="nav-item {{ request()->routeIs('admin.fotos*') ? 'active' : '' }}">
-            <i class="ni-icon">📷</i> Foto Queue
+            <i class="ni-icon"><i data-lucide="camera" class="lucide-icon"></i></i> Foto Queue
             @php $pend = $activeEvent->getPendingFotosCount() @endphp
             @if($pend > 0)<span class="nav-badge">{{ $pend }}</span>@endif
         </a>
         <a href="{{ route('admin.lottery.index', $activeEvent) }}" class="nav-item {{ request()->routeIs('admin.lottery*') ? 'active' : '' }}">
-            <i class="ni-icon">🎰</i> Lottery
+            <i class="ni-icon"><i data-lucide="ticket" class="lucide-icon"></i></i> Lottery
         </a>
         <a href="{{ route('admin.voting.index', $activeEvent) }}" class="nav-item {{ request()->routeIs('admin.voting*') ? 'active' : '' }}">
-            <i class="ni-icon">🏆</i> Voting
+            <i class="ni-icon"><i data-lucide="trophy" class="lucide-icon"></i></i> Voting
         </a>
         <a href="{{ route('admin.membership.index', $activeEvent) }}" class="nav-item {{ request()->routeIs('admin.membership*') ? 'active' : '' }}">
-            <i class="ni-icon">⭐</i> Members
+            <i class="ni-icon"><i data-lucide="star" class="lucide-icon"></i></i> Members
         </a>
 
         <div class="sb-label">Screens</div>
         <a href="{{ route('vidiwall.show', $activeEvent->slug) }}" target="_blank" class="nav-item">
-            <i class="ni-icon">📺</i> Vidiwall ↗
+            <i class="ni-icon"><i data-lucide="monitor-play" class="lucide-icon"></i></i> Vidiwall <i data-lucide="arrow-up-right" class="lucide-icon"></i>
         </a>
         <a href="{{ route('event.landing', $activeEvent->slug) }}" target="_blank" class="nav-item">
-            <i class="ni-icon">📱</i> Guest Page ↗
+            <i class="ni-icon"><i data-lucide="smartphone" class="lucide-icon"></i></i> Guest Page <i data-lucide="arrow-up-right" class="lucide-icon"></i>
         </a>
         @endif
 
         <div class="sb-label">Admin</div>
         @if(auth()->user()->isSuperAdmin())
         <a href="{{ route('admin.users.index') }}" class="nav-item {{ request()->routeIs('admin.users*') ? 'active' : '' }}">
-            <i class="ni-icon">◫</i> Users
+            <i class="ni-icon"><i data-lucide="users" class="lucide-icon"></i></i> Users
         </a>
         @endif
         <a href="{{ route('admin.settings.index') }}" class="nav-item {{ request()->routeIs('admin.settings*') ? 'active' : '' }}">
-            <i class="ni-icon">⚙</i> Settings
+            <i class="ni-icon"><i data-lucide="settings" class="lucide-icon"></i></i> Settings
         </a>
         <form method="POST" action="{{ route('admin.logout') }}">
             @csrf
             <button type="submit" class="nav-item" style="width:100%">
-                <i class="ni-icon">⎋</i> Logout
+                <i class="ni-icon"><i data-lucide="log-out" class="lucide-icon"></i></i> Logout
             </button>
         </form>
     </nav>
@@ -295,7 +297,7 @@
     </div>
 </aside>
 
-<!-- Main -->
+
 <div class="main-wrap">
     <header class="topbar">
         <button class="tb-hamburger" onclick="openSidebar()">☰</button>
@@ -306,7 +308,7 @@
             @endif
             @yield('topbar-actions')
             <button class="notif-btn" title="Notifications">
-                🔔
+                <i data-lucide="bell" class="lucide-icon"></i>
                 @if(($pendingCount ?? 0) > 0)<span class="notif-dot"></span>@endif
             </button>
         </div>
@@ -314,10 +316,10 @@
 
     <main class="main-content">
         @if(session('success'))
-            <div class="alert alert-success">✓ {{ session('success') }}</div>
+            <div class="alert alert-success"><i data-lucide="check" class="lucide-icon"></i> {{ session('success') }}</div>
         @endif
         @if(session('error'))
-            <div class="alert alert-error">✕ {{ session('error') }}</div>
+            <div class="alert alert-error"><i data-lucide="x" class="lucide-icon"></i> {{ session('error') }}</div>
         @endif
         @if($errors->any())
             <div class="alert alert-error">
@@ -356,5 +358,9 @@ function toggleModule(module, el, eventId) {
 </script>
 @livewireScripts
 @stack('scripts')
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+    lucide.createIcons();
+</script>
 </body>
 </html>

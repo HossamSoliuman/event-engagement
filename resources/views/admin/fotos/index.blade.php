@@ -6,7 +6,7 @@
     @if($onScreen)
         <span class="badge badge-on-screen">Live: {{ Str::limit($onScreen->uploader_name??'Guest',16) }}</span>
     @endif
-    <a href="{{ route('vidiwall.show',$event->slug) }}" target="_blank" class="btn btn-gold btn-sm">Vidiwall ↗</a>
+    <a href="{{ route('vidiwall.show',$event->slug) }}" target="_blank" class="btn btn-gold btn-sm">Vidiwall <i data-lucide="arrow-up-right" class="lucide-icon"></i></a>
     <a href="{{ route('admin.fotos.export',$event) }}" class="btn btn-ghost btn-sm">CSV</a>
     <a href="{{ route('admin.fotos.download-all',$event) }}" class="btn btn-ghost btn-sm">Download All</a>
 @endsection

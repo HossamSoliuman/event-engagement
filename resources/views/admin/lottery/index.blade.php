@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 @section('title', 'Lottery — ' . $event->name)
-@section('page-title', '🎰 Lottery')
+@section('page-title', '<i data-lucide="ticket" class="lucide-icon"></i> Lottery')
 
 @section('topbar-actions')
     <a href="{{ route('admin.lottery.export', $event) }}" class="btn btn-ghost btn-sm">⬇ CSV</a>
@@ -9,7 +9,7 @@
 
 @section('content')
 
-    {{-- Stats --}}
+    
     <div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin-bottom:20px">
         <div class="stat-card">
             <div class="stat-label">Total Entries </div>
@@ -21,16 +21,16 @@
                 @if ($event->lottery_drawn)
                     🎉 Winner Drawn
                 @else
-                    🎰 Open
+                    <i data-lucide="ticket" class="lucide-icon"></i> Open
                 @endif
             </div>
         </div>
     </div>
 
-    {{-- Winner Card --}}
+    
     @if ($winner && $event->lottery_drawn)
         <div class="winner-card mb-3" id="winnerCard">
-            <div class="trophy">🏆</div>
+            <div class="trophy"><i data-lucide="trophy" class="lucide-icon"></i></div>
             <h2>WINNER!</h2>
             <div style="font-size:28px;font-weight:800;color:var(--text);margin:10px 0">{{ $winner->name }}</div>
             <p style="font-size:16px">{{ $winner->phone }}</p>
@@ -47,17 +47,17 @@
             </div>
         </div>
     @elseif($totalCount > 0)
-        {{-- Draw Button --}}
+        
         <div class="card mb-3" style="border-color:rgba(255,215,0,.25)">
             <div class="card-body" style="text-align:center;padding:40px 20px">
-                <div style="font-size:52px;margin-bottom:14px" id="drumRoll">🎰</div>
+                <div style="font-size:52px;margin-bottom:14px" id="drumRoll"><i data-lucide="ticket" class="lucide-icon"></i></div>
                 <h2 style="font-size:24px;margin-bottom:8px">Ready to Draw!</h2>
                 <p class="text-muted" style="margin-bottom:24px">{{ $totalCount }} entries in the draw. One lucky winner
                     will be selected at random.</p>
                 <form method="POST" action="{{ route('admin.lottery.draw', $event) }}" id="drawForm">
                     @csrf
                     <button type="button" class="btn btn-gold btn-lg" onclick="animateDraw()" id="drawBtn">
-                        🎰 Draw the Winner!
+                        <i data-lucide="ticket" class="lucide-icon"></i> Draw the Winner!
                     </button>
                 </form>
             </div>
@@ -70,7 +70,7 @@
         </div>
     @endif
 
-    {{-- Search + Entries --}}
+    
     <div class="card">
         <div class="card-header">
             <h3>All Entries ({{ $totalCount }})</h3>
@@ -81,7 +81,7 @@
                 </div>
                 <button class="btn btn-secondary btn-sm">Search</button>
                 @if ($search)
-                    <a href="{{ route('admin.lottery.index', $event) }}" class="btn btn-ghost btn-sm">✕</a>
+                    <a href="{{ route('admin.lottery.index', $event) }}" class="btn btn-ghost btn-sm"><i data-lucide="x" class="lucide-icon"></i></a>
                 @endif
             </form>
         </div>
@@ -115,7 +115,7 @@
                             <td class="text-muted text-xs">{{ $entry->created_at->format('M d · H:i') }}</td>
                             <td>
                                 @if ($entry->is_winner)
-                                    <span class="badge badge-winner">🏆 WINNER</span>
+                                    <span class="badge badge-winner"><i data-lucide="trophy" class="lucide-icon"></i> WINNER</span>
                                 @else
                                     <span class="badge badge-pending">Entered</span>
                                 @endif
@@ -124,7 +124,7 @@
                                 <form method="POST" action="{{ route('admin.lottery.destroy', $entry) }}"
                                     onsubmit="return confirm('Remove this entry?')">
                                     @csrf @method('DELETE')
-                                    <button class="btn btn-ghost btn-sm" style="color:var(--red)" title="Remove">🗑</button>
+                                    <button class="btn btn-ghost btn-sm" style="color:var(--red)" title="Remove"><i data-lucide="trash-2" class="lucide-icon"></i></button>
                                 </form>
                             </td>
                         </tr>
@@ -153,7 +153,7 @@
                 const icon = document.getElementById('drumRoll');
                 btn.disabled = true;
                 btn.textContent = '🎲 Drawing…';
-                const emojis = ['🎰', '🎲', '🎟', '🎉', '✨', '🏆', '⭐', '🎊'];
+                const emojis = ['<i data-lucide="ticket" class="lucide-icon"></i>', '🎲', '🎟', '🎉', '✨', '<i data-lucide="trophy" class="lucide-icon"></i>', '<i data-lucide="star" class="lucide-icon"></i>', '🎊'];
                 let i = 0;
                 const spin = setInterval(() => {
                     icon.textContent = emojis[i++ % emojis.length];

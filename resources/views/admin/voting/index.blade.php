@@ -1,25 +1,25 @@
 @extends('layouts.admin')
 @section('title','Voting — '.$event->name)
-@section('page-title','🏆 Voting Results')
+@section('page-title','<i data-lucide="trophy" class="lucide-icon"></i> Voting Results')
 
 @section('topbar-actions')
     <a href="{{ route('admin.voting.export',$event) }}" class="btn btn-ghost btn-sm">⬇ CSV</a>
     @if($event->voting_closed)
         <form method="POST" action="{{ route('admin.voting.reopen',$event) }}">@csrf<button class="btn btn-success btn-sm">🔓 Reopen Voting</button></form>
     @else
-        <form method="POST" action="{{ route('admin.voting.close',$event) }}">@csrf<button class="btn btn-danger btn-sm">🔒 Close Voting</button></form>
+        <form method="POST" action="{{ route('admin.voting.close',$event) }}">@csrf<button class="btn btn-danger btn-sm"><i data-lucide="lock" class="lucide-icon"></i> Close Voting</button></form>
     @endif
     <a href="{{ route('admin.events.show',$event) }}" class="btn btn-secondary btn-sm">← Event</a>
 @endsection
 
 @section('content')
 
-{{-- Status Banner --}}
+
 @if($event->voting_closed)
-<div class="alert alert-info">🔒 Voting is closed. Guests can no longer cast votes.</div>
+<div class="alert alert-info"><i data-lucide="lock" class="lucide-icon"></i> Voting is closed. Guests can no longer cast votes.</div>
 @endif
 
-{{-- Stats --}}
+
 <div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin-bottom:20px">
     <div class="stat-card">
         <div class="stat-label">Total Votes</div>
@@ -31,11 +31,11 @@
     </div>
     <div class="stat-card">
         <div class="stat-label">Status</div>
-        <div class="stat-value" style="font-size:16px;padding-top:8px">{{ $event->voting_closed ? '🔒 Closed' : '🔓 Open' }}</div>
+        <div class="stat-value" style="font-size:16px;padding-top:8px">{{ $event->voting_closed ? '<i data-lucide="lock" class="lucide-icon"></i> Closed' : '🔓 Open' }}</div>
     </div>
 </div>
 
-{{-- Results Podium --}}
+
 @if(count($tallies))
 <div class="card mb-3">
     <div class="card-header">
@@ -73,7 +73,7 @@
     </div>
 </div>
 
-{{-- Podium Visual --}}
+
 @if(count($tallies) >= 2)
 <div class="card mb-3">
     <div class="card-header"><h3>Podium</h3></div>
@@ -103,7 +103,7 @@
 </div>
 @endif
 
-{{-- Danger Zone --}}
+
 <div class="card" style="border-color:rgba(239,68,68,.25)">
     <div class="card-header"><h3 style="color:var(--red)">⚠ Danger Zone</h3></div>
     <div class="card-body" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
@@ -113,7 +113,7 @@
         </div>
         <form method="POST" action="{{ route('admin.voting.reset',$event) }}"
               onsubmit="return confirm('Delete ALL votes? This cannot be undone.')">
-            @csrf <button class="btn btn-danger btn-sm">🗑 Reset All Votes</button>
+            @csrf <button class="btn btn-danger btn-sm"><i data-lucide="trash-2" class="lucide-icon"></i> Reset All Votes</button>
         </form>
     </div>
 </div>

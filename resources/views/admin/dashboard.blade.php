@@ -5,7 +5,7 @@
 @section('topbar-actions')
 @if($activeEvent)
     <a href="{{ route('admin.fotos.index', $activeEvent) }}" class="btn btn-primary btn-sm">
-        📷 Foto Queue @if($pendingFotos > 0)<span style="background:rgba(255,255,255,.25);padding:1px 6px;border-radius:8px;margin-left:2px">{{ $pendingFotos }}</span>@endif
+        <i data-lucide="camera" class="lucide-icon"></i> Foto Queue @if($pendingFotos > 0)<span style="background:rgba(255,255,255,.25);padding:1px 6px;border-radius:8px;margin-left:2px">{{ $pendingFotos }}</span>@endif
     </a>
 @else
     <a href="{{ route('admin.events.create') }}" class="btn btn-primary btn-sm">+ New Event</a>
@@ -14,7 +14,7 @@
 
 @section('content')
 
-{{-- Active Event Hero --}}
+
 @if($activeEvent)
 <div class="card mb-3" style="background:linear-gradient(135deg,rgba(255,61,0,.1),rgba(10,10,24,.95));border-color:rgba(255,61,0,.25)">
     <div class="card-body" style="display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap">
@@ -23,9 +23,9 @@
             <h2 style="font-size:24px;margin-bottom:4px">{{ $activeEvent->name }}</h2>
             <div class="text-muted text-sm">{{ $activeEvent->subtitle }}</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
-                <a href="{{ route('event.landing',$activeEvent->slug) }}" target="_blank" class="btn btn-outline btn-sm">📱 Guest Page</a>
-                <a href="{{ route('vidiwall.show',$activeEvent->slug) }}" target="_blank" class="btn btn-gold btn-sm">📺 Vidiwall</a>
-                <a href="{{ route('admin.fotos.index',$activeEvent) }}" class="btn btn-primary btn-sm">📷 Moderate Fotos</a>
+                <a href="{{ route('event.landing',$activeEvent->slug) }}" target="_blank" class="btn btn-outline btn-sm"><i data-lucide="smartphone" class="lucide-icon"></i> Guest Page</a>
+                <a href="{{ route('vidiwall.show',$activeEvent->slug) }}" target="_blank" class="btn btn-gold btn-sm"><i data-lucide="monitor-play" class="lucide-icon"></i> Vidiwall</a>
+                <a href="{{ route('admin.fotos.index',$activeEvent) }}" class="btn btn-primary btn-sm"><i data-lucide="camera" class="lucide-icon"></i> Moderate Fotos</a>
                 <a href="{{ route('admin.events.show',$activeEvent) }}" class="btn btn-secondary btn-sm">Manage →</a>
             </div>
         </div>
@@ -39,7 +39,7 @@
 </div>
 @endif
 
-{{-- Global Stats --}}
+
 <div class="stats-grid">
     <div class="stat-card">
         <div class="stat-label">Pending Fotos</div>
@@ -75,7 +75,7 @@
 
 <div class="grid-2" style="gap:16px">
 
-{{-- Events List --}}
+
 <div class="card">
     <div class="card-header">
         <h3>All Events</h3>
@@ -94,7 +94,7 @@
         <div style="display:flex;gap:5px">
             <a href="{{ route('admin.events.show',$event) }}" class="btn btn-ghost btn-sm">Manage</a>
             <a href="{{ route('admin.fotos.index',$event) }}" class="btn btn-ghost btn-sm">
-                📷@if($event->pending_fotos_count > 0) <span style="color:var(--red)">{{ $event->pending_fotos_count }}</span>@endif
+                <i data-lucide="camera" class="lucide-icon"></i>@if($event->pending_fotos_count > 0) <span style="color:var(--red)">{{ $event->pending_fotos_count }}</span>@endif
             </a>
         </div>
     </div>
@@ -106,7 +106,7 @@
     </div>
 </div>
 
-{{-- Recent Activity --}}
+
 <div class="card">
     <div class="card-header"><h3>Recent Activity</h3></div>
     <div class="card-body" style="padding:12px 16px">
@@ -119,17 +119,17 @@
             default => ''
         };
         $icons = [
-            'foto.approved'        => '✅',
-            'foto.pushed_to_screen'=> '📺',
-            'foto.uploaded'        => '📷',
-            'foto.rejected'        => '✕',
-            'lottery.drawn'        => '🎰',
-            'lottery.entered'      => '🎟',
-            'vote.cast'            => '🗳',
-            'membership.signup'    => '⭐',
-            'admin.login'          => '🔑',
-            'event.created'        => '◉',
-            'event.updated'        => '✏',
+            'foto.approved'        => '<i data-lucide="check-circle" class="lucide-icon"></i>',
+            'foto.pushed_to_screen'=> '<i data-lucide="monitor-play" class="lucide-icon"></i>',
+            'foto.uploaded'        => '<i data-lucide="camera" class="lucide-icon"></i>',
+            'foto.rejected'        => '<i data-lucide="x" class="lucide-icon"></i>',
+            'lottery.drawn'        => '<i data-lucide="ticket" class="lucide-icon"></i>',
+            'lottery.entered'      => '<i data-lucide="ticket" class="lucide-icon"></i>',
+            'vote.cast'            => '<i data-lucide="check-square" class="lucide-icon"></i>',
+            'membership.signup'    => '<i data-lucide="star" class="lucide-icon"></i>',
+            'admin.login'          => '<i data-lucide="key" class="lucide-icon"></i>',
+            'event.created'        => '<i data-lucide="calendar" class="lucide-icon"></i>',
+            'event.updated'        => '<i data-lucide="edit-3" class="lucide-icon"></i>',
         ];
         $icon = $icons[$log->action] ?? '·';
         $label = str_replace(['.','-','_'],' ', $log->action);
@@ -138,7 +138,7 @@
         <div class="activity-dot {{ $dot }}"></div>
         <div style="flex:1;min-width:0">
             <div style="font-size:12px">
-                <span style="margin-right:4px">{{ $icon }}</span>
+                <span style="margin-right:4px">{!! $icon !!}</span>
                 <span style="text-transform:capitalize">{{ $label }}</span>
                 @if($log->meta && isset($log->meta['name'])) — <span class="text-muted">{{ $log->meta['name'] }}</span>@endif
                 @if($log->meta && isset($log->meta['uploader'])) — <span class="text-muted">{{ $log->meta['uploader'] }}</span>@endif
@@ -154,27 +154,9 @@
     </div>
 </div>
 
-</div>{{-- /grid --}}
-
-{{-- Upload Activity Chart --}}
-{{-- @if(!empty($uploadActivity))
-<div class="card mt-3">
-    <div class="card-header"><h3>Upload Activity — Last 24 Hours</h3></div>
-    <div class="card-body">
-        <div style="display:flex;align-items:flex-end;gap:3px;height:80px">
-            @php $maxUploads = max(array_values($uploadActivity) ?: [1]); @endphp
-            @for($h = 0; $h < 24; $h++)
-            @php $count = $uploadActivity[$h] ?? 0; $pct = $maxUploads > 0 ? ($count/$maxUploads)*100 : 0; @endphp
-            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px" title="{{ $count }} uploads at {{ $h }}:00">
-                <div style="width:100%;background:{{ $count > 0 ? 'var(--red)' : 'var(--border)' }};border-radius:3px 3px 0 0;height:{{ max(4,$pct) }}%;opacity:{{ $count > 0 ? 1 : 0.3 }};transition:height .3s"></div>
-            </div>
-            @endfor
-        </div>
-        <div style="display:flex;justify-content:space-between;margin-top:6px" class="text-xs text-muted">
-            <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:00</span>
-        </div>
-    </div>
 </div>
-@endif --}}
+
+
+
 
 @endsection

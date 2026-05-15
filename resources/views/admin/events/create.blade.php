@@ -11,7 +11,7 @@
                 @method('PUT')
             @endif
 
-            {{-- Basic Info --}}
+            
             <div class="card mb-3">
                 <div class="card-header">
                     <h3>Event Details</h3>
@@ -59,7 +59,7 @@
                 </div>
             </div>
 
-            {{-- Branding --}}
+            
             <div class="card mb-3">
                 <div class="card-header">
                     <h3>Branding & Colours</h3>
@@ -100,16 +100,16 @@
                 </div>
             </div>
 
-            {{-- Module Labels & Descriptions --}}
+            
             <div class="card mb-3">
                 <div class="card-header">
                     <h3>Module Content</h3>
                 </div>
                 <div class="card-body">
-                    @foreach ([['fotobomb', '📷', 'Foto Bomb'], ['lottery', '🎰', 'Lottery'], ['voting', '🏆', 'Voting'], ['membership', '⭐', 'Membership']] as [$key, $ico, $def])
+                    @foreach ([['fotobomb', '<i data-lucide="camera" class="lucide-icon"></i>', 'Foto Bomb'], ['lottery', '<i data-lucide="ticket" class="lucide-icon"></i>', 'Lottery'], ['voting', '<i data-lucide="trophy" class="lucide-icon"></i>', 'Voting'], ['membership', '<i data-lucide="star" class="lucide-icon"></i>', 'Membership']] as [$key, $ico, $def])
                         <div
                             style="background:var(--dark);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:12px">
-                            <div style="font-weight:700;font-size:13px;margin-bottom:10px">{{ $ico }}
+                            <div style="font-weight:700;font-size:13px;margin-bottom:10px">{!! $ico !!}
                                 {{ $def }}</div>
                             <div class="form-row">
                                 <div class="form-group mb-0">
@@ -127,7 +127,7 @@
                     @endforeach
                 </div>
             </div>
-            {{-- ── FONT & STYLE ── --}}
+            
             <div class="card mb-3">
                 <div class="card-header">
                     <h3>🎨 Fonts & Typography</h3>
@@ -159,7 +159,7 @@
                 </div>
             </div>
 
-            {{-- ── TILE DESIGNER ── --}}
+            
             <div class="card mb-3">
                 <div class="card-header">
                     <h3>🖼 Tile Designer</h3>
@@ -168,10 +168,10 @@
                 </div>
                 <div class="card-body" style="padding:0">
 
-                    @foreach ([['fotobomb', '📷', 'Foto Bomb / Selfie Wall'], ['voting', '🏆', 'Athlete of the Day / Voting'], ['lottery', '🎰', 'Lottery / Tickets'], ['membership', '⭐', 'Membership / Community']] as [$mod, $ico, $modLabel])
+                    @foreach ([['fotobomb', '<i data-lucide="camera" class="lucide-icon"></i>', 'Foto Bomb / Selfie Wall'], ['voting', '<i data-lucide="trophy" class="lucide-icon"></i>', 'Athlete of the Day / Voting'], ['lottery', '<i data-lucide="ticket" class="lucide-icon"></i>', 'Lottery / Tickets'], ['membership', '<i data-lucide="star" class="lucide-icon"></i>', 'Membership / Community']] as [$mod, $ico, $modLabel])
                         @php $tc = isset($event) ? $event->tileConfig($mod) : []; @endphp
                         <div style="border-bottom:1px solid var(--border);padding:18px 20px">
-                            <div style="font-weight:700;font-size:14px;margin-bottom:14px">{{ $ico }}
+                            <div style="font-weight:700;font-size:14px;margin-bottom:14px">{!! $ico !!}
                                 {{ $modLabel }}</div>
                             <div class="form-row" style="margin-bottom:12px">
                                 <div class="form-group mb-0">
@@ -226,7 +226,7 @@
                                                 style="position:absolute;top:-6px;right:-6px;background:var(--red);border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer">
                                                 <input type="checkbox" name="tile_{{ $mod }}_clear_image"
                                                     value="1" style="display:none"
-                                                    onchange="this.closest('label').style.opacity=this.checked?.4:1"> ✕
+                                                    onchange="this.closest('label').style.opacity=this.checked?.4:1"> <i data-lucide="x" class="lucide-icon"></i>
                                             </label>
                                         </div>
                                     @endif
@@ -244,7 +244,7 @@
                 </div>
             </div>
 
-            {{-- ── EXTRA FORM FIELDS ── --}}
+            
             <div class="card mb-3">
                 <div class="card-header">
                     <h3>➕ Extra Form Fields</h3>
@@ -252,9 +252,9 @@
                 </div>
                 <div class="card-body">
 
-                    {{-- Lottery extra fields --}}
+                    
                     <div style="margin-bottom:24px">
-                        <div style="font-weight:700;font-size:13px;margin-bottom:10px">🎰 Lottery — Extra Fields</div>
+                        <div style="font-weight:700;font-size:13px;margin-bottom:10px"><i data-lucide="ticket" class="lucide-icon"></i> Lottery — Extra Fields</div>
                         <div id="lotteryExtraFields">
                             @foreach (old('lottery_field_label', array_column($event->lottery_extra_fields ?? [], 'label')) as $i => $lbl)
                                 @php
@@ -282,7 +282,7 @@
                                             name="lottery_field_required[]" value="1"
                                             {{ $reqs[$i] ?? false ? 'checked' : '' }}> Required</label>
                                     <button type="button" onclick="this.closest('.extra-field-row').remove()"
-                                        class="btn btn-danger btn-sm">✕</button>
+                                        class="btn btn-danger btn-sm"><i data-lucide="x" class="lucide-icon"></i></button>
                                 </div>
                             @endforeach
                         </div>
@@ -290,9 +290,9 @@
                             onclick="addExtraField('lotteryExtraFields','lottery')">+ Add Field</button>
                     </div>
 
-                    {{-- Membership extra fields --}}
+                    
                     <div>
-                        <div style="font-weight:700;font-size:13px;margin-bottom:10px">⭐ Membership — Extra Fields</div>
+                        <div style="font-weight:700;font-size:13px;margin-bottom:10px"><i data-lucide="star" class="lucide-icon"></i> Membership — Extra Fields</div>
                         <div id="membershipExtraFields">
                             @foreach (old('membership_field_label', array_column($event->membership_extra_fields ?? [], 'label')) as $i => $lbl)
                                 @php
@@ -320,7 +320,7 @@
                                             name="membership_field_required[]" value="1"
                                             {{ $mreqs[$i] ?? false ? 'checked' : '' }}> Required</label>
                                     <button type="button" onclick="this.closest('.extra-field-row').remove()"
-                                        class="btn btn-danger btn-sm">✕</button>
+                                        class="btn btn-danger btn-sm"><i data-lucide="x" class="lucide-icon"></i></button>
                                 </div>
                             @endforeach
                         </div>
@@ -330,10 +330,10 @@
                 </div>
             </div>
 
-            {{-- Voting Candidates --}}
+            
             <div class="card mb-3">
                 <div class="card-header">
-                    <h3>🏆 Voting Candidates</h3>
+                    <h3><i data-lucide="trophy" class="lucide-icon"></i> Voting Candidates</h3>
                     <button type="button" class="btn btn-secondary btn-sm" onclick="addCandidate()">+ Add</button>
                 </div>
                 <div class="card-body">
@@ -354,7 +354,7 @@
                                         <input name="candidate_positions[]" class="form-control"
                                             value="{{ $position }}" placeholder="Position (optional)">
                                         <button type="button" onclick="this.closest('.candidate-row').remove()"
-                                            class="btn btn-danger btn-sm">✕</button>
+                                            class="btn btn-danger btn-sm"><i data-lucide="x" class="lucide-icon"></i></button>
                                     </div>
                                 </div>
                             @endforeach
@@ -365,7 +365,7 @@
                                     <input name="candidate_positions[]" class="form-control"
                                         placeholder="Position (optional)">
                                     <button type="button" onclick="this.closest('.candidate-row').remove()"
-                                        class="btn btn-danger btn-sm">✕</button>
+                                        class="btn btn-danger btn-sm"><i data-lucide="x" class="lucide-icon"></i></button>
                                 </div>
                             </div>
                         @endif
@@ -374,10 +374,10 @@
                 </div>
             </div>
 
-            {{-- Vidiwall Settings --}}
+            
             <div class="card mb-3">
                 <div class="card-header">
-                    <h3>📺 Vidiwall Settings</h3>
+                    <h3><i data-lucide="monitor-play" class="lucide-icon"></i> Vidiwall Settings</h3>
                 </div>
                 <div class="card-body">
                     <div class="form-group">
@@ -413,10 +413,10 @@
                     </div>
                 </div>
             </div>
-            {{-- Privacy Policy --}}
+            
             <div class="card mb-3">
                 <div class="card-header">
-                    <h3>🔒 Data Protection / Privacy Policy</h3>
+                    <h3><i data-lucide="lock" class="lucide-icon"></i> Data Protection / Privacy Policy</h3>
                 </div>
                 <div class="card-body">
                     <div class="form-group">
@@ -432,11 +432,11 @@
                 </div>
             </div>
 
-            {{-- Vidiwall Settings --}}
+            
 
             <div style="display:flex;gap:10px">
                 <button type="submit"
-                    class="btn btn-primary btn-lg">{{ isset($event) ? '✓ Save Changes' : '+ Create Event' }}</button>
+                    class="btn btn-primary btn-lg">{!! isset($event) ? '<i data-lucide="check" class="lucide-icon"></i> Save Changes' : '+ Create Event' !!}</button>
                 <a href="{{ isset($event) ? route('admin.events.show', $event) : route('admin.events.index') }}"
                     class="btn btn-secondary btn-lg">Cancel</a>
             </div>
@@ -453,7 +453,7 @@
             row.innerHTML = `<input name="candidate_names[]" class="form-control" placeholder="Athlete name">
         <div style="display:flex;gap:6px">
             <input name="candidate_positions[]" class="form-control" placeholder="Position (optional)">
-            <button type="button" onclick="this.closest('.candidate-row').remove()" class="btn btn-danger btn-sm">✕</button>
+            <button type="button" onclick="this.closest('.candidate-row').remove()" class="btn btn-danger btn-sm"><i data-lucide="x" class="lucide-icon"></i></button>
         </div>`;
             document.getElementById('candidates').appendChild(row);
         }
@@ -501,7 +501,7 @@
             <option value="select">Select</option>
         </select>
         <label class="form-check" style="white-space:nowrap"><input type="checkbox" name="${prefix}_field_required[]" value="1"> Required</label>
-        <button type="button" onclick="this.closest('.extra-field-row').remove()" class="btn btn-danger btn-sm">✕</button>`;
+        <button type="button" onclick="this.closest('.extra-field-row').remove()" class="btn btn-danger btn-sm"><i data-lucide="x" class="lucide-icon"></i></button>`;
             document.getElementById(containerId).appendChild(row);
         }
     </script>

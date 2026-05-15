@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 @section('title', 'Members — ' . $event->name)
-@section('page-title', '⭐ Members')
+@section('page-title', '<i data-lucide="star" class="lucide-icon"></i> Members')
 
 @section('topbar-actions')
     <a href="{{ route('admin.membership.export', $event) }}" class="btn btn-ghost btn-sm">⬇ CSV</a>
@@ -34,7 +34,7 @@
                 </div>
                 <button class="btn btn-secondary btn-sm">Search</button>
                 @if ($search)
-                    <a href="{{ route('admin.membership.index', $event) }}" class="btn btn-ghost btn-sm">✕</a>
+                    <a href="{{ route('admin.membership.index', $event) }}" class="btn btn-ghost btn-sm"><i data-lucide="x" class="lucide-icon"></i></a>
                 @endif
             </form>
         </div>
@@ -69,7 +69,7 @@
                             @endforeach
                             <td>
                                 @if ($member->newsletter_opt_in)
-                                    <span class="badge badge-approved">✓ Yes</span>
+                                    <span class="badge badge-approved"><i data-lucide="check" class="lucide-icon"></i> Yes</span>
                                 @else
                                     <span class="badge badge-inactive">No</span>
                                 @endif
@@ -80,7 +80,7 @@
                                 <form method="POST" action="{{ route('admin.membership.destroy', $member) }}"
                                     onsubmit="return confirm('Remove this member?')">
                                     @csrf @method('DELETE')
-                                    <button class="btn btn-ghost btn-sm" style="color:var(--red)" title="Remove">🗑</button>
+                                    <button class="btn btn-ghost btn-sm" style="color:var(--red)" title="Remove"><i data-lucide="trash-2" class="lucide-icon"></i></button>
                                 </form>
                             </td>
                         </tr>

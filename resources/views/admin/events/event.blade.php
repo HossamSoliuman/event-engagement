@@ -283,7 +283,7 @@
         }
 
         .btn-main.loading::after {
-            content: ' ⏳';
+            content: ' <i data-lucide="hourglass" class="lucide-icon"></i>';
         }
 
         /* Vote cards */
@@ -392,7 +392,7 @@
 
 <body>
 
-    <!-- Header -->
+    
     <div class="event-header">
         <div class="logo-wrap">
             @if ($event->logo_path)
@@ -403,33 +403,33 @@
         </div>
     </div>
 
-    <!-- Module Navigation -->
+    
     <div class="module-nav" id="moduleNav">
         @if ($event->module_fotobomb)
-            <button class="nav-pill active" data-section="fotobomb">📷 {{ $event->fotobomb_title }}</button>
+            <button class="nav-pill active" data-section="fotobomb"><i data-lucide="camera" class="lucide-icon"></i> {{ $event->fotobomb_title }}</button>
         @endif
         @if ($event->module_lottery)
-            <button class="nav-pill" data-section="lottery">🎰 {{ $event->lottery_title }}</button>
+            <button class="nav-pill" data-section="lottery"><i data-lucide="ticket" class="lucide-icon"></i> {{ $event->lottery_title }}</button>
         @endif
         @if ($event->module_voting)
-            <button class="nav-pill" data-section="voting">🏆 {{ $event->voting_title }}</button>
+            <button class="nav-pill" data-section="voting"><i data-lucide="trophy" class="lucide-icon"></i> {{ $event->voting_title }}</button>
         @endif
         @if ($event->module_membership)
-            <button class="nav-pill" data-section="membership">⭐ {{ $event->membership_title }}</button>
+            <button class="nav-pill" data-section="membership"><i data-lucide="star" class="lucide-icon"></i> {{ $event->membership_title }}</button>
         @endif
     </div>
 
-    <!-- FOTO BOMB Section -->
+    
     @if ($event->module_fotobomb)
         <div class="section active" id="fotobomb">
-            <h2 class="section-title">📷 {{ $event->fotobomb_title }}</h2>
+            <h2 class="section-title"><i data-lucide="camera" class="lucide-icon"></i> {{ $event->fotobomb_title }}</h2>
             <p class="section-desc">Snap a photo and we might put it on the big screen! 🎬</p>
 
             <img id="preview" class="preview-img" src="" alt="Preview">
 
             <div class="upload-zone" id="uploadZone">
                 <input type="file" id="photoInput" accept="image/*" capture="environment">
-                <div class="upload-icon">📸</div>
+                <div class="upload-icon"><i data-lucide="camera" class="lucide-icon"></i></div>
                 <p><strong>Tap to take a photo</strong><br>or choose from your gallery<br><small>JPG, PNG, WEBP — max
                         10MB</small></p>
             </div>
@@ -444,17 +444,17 @@
                     <input type="tel" class="field" id="fotoPhone" placeholder="+20 1xx xxx xxxx">
                 </div>
                 <button class="btn-main" id="uploadBtn" onclick="submitFoto()" disabled>
-                    🚀 Send to Vidiwall
+                     Send to Vidiwall
                 </button>
             </div>
         </div>
     @endif
 
-    <!-- LOTTERY Section -->
+    
     @if ($event->module_lottery)
         <div class="section" id="lottery">
-            <h2 class="section-title">🎰 {{ $event->lottery_title }}</h2>
-            <p class="section-desc">Enter your details for a chance to win tonight's prize! Winner announced live. 🏆
+            <h2 class="section-title"><i data-lucide="ticket" class="lucide-icon"></i> {{ $event->lottery_title }}</h2>
+            <p class="section-desc">Enter your details for a chance to win tonight's prize! Winner announced live. <i data-lucide="trophy" class="lucide-icon"></i>
             </p>
 
             <div class="glass-card">
@@ -470,15 +470,15 @@
                     <label class="field-label">Email (optional)</label>
                     <input type="email" class="field" id="lotteryEmail" placeholder="your@email.com">
                 </div>
-                <button class="btn-main" onclick="submitLottery()">🎰 Enter the Draw</button>
+                <button class="btn-main" onclick="submitLottery()"><i data-lucide="ticket" class="lucide-icon"></i> Enter the Draw</button>
             </div>
         </div>
     @endif
 
-    <!-- VOTING Section -->
+    
     @if ($event->module_voting)
         <div class="section" id="voting">
-            <h2 class="section-title">🏆 {{ $event->voting_title }}</h2>
+            <h2 class="section-title"><i data-lucide="trophy" class="lucide-icon"></i> {{ $event->voting_title }}</h2>
             <p class="section-desc">Cast your vote! Results are shown live on the big screen.</p>
 
             @php $options = $event->voting_options ?? []; @endphp
@@ -500,10 +500,10 @@
         </div>
     @endif
 
-    <!-- MEMBERSHIP Section -->
+    
     @if ($event->module_membership)
         <div class="section" id="membership">
-            <h2 class="section-title">⭐ {{ $event->membership_title }}</h2>
+            <h2 class="section-title"><i data-lucide="star" class="lucide-icon"></i> {{ $event->membership_title }}</h2>
             <p class="section-desc">Join the community and stay connected with exclusive updates, events, and offers.
             </p>
 
@@ -530,12 +530,12 @@
                         style="accent-color:var(--primary); width:18px; height:18px;">
                     Subscribe to newsletter & updates
                 </label>
-                <button class="btn-main" onclick="submitMembership()">⭐ Join Now</button>
+                <button class="btn-main" onclick="submitMembership()"><i data-lucide="star" class="lucide-icon"></i> Join Now</button>
             </div>
         </div>
     @endif
 
-    <!-- Sponsor -->
+    
     @if ($event->sponsor_logo_path)
         <div class="sponsor-bar">
             <p>Sponsored by</p>
@@ -543,7 +543,7 @@
         </div>
     @endif
 
-    <!-- Toast notification -->
+    
     <div id="toast"></div>
 
     <script>
@@ -603,7 +603,7 @@
             if (!selectedFile) return showToast('Please select a photo first.', true);
             const btn = document.getElementById('uploadBtn');
             btn.disabled = true;
-            btn.textContent = '⏳ Uploading...';
+            btn.textContent = '<i data-lucide="hourglass" class="lucide-icon"></i> Uploading...';
 
             const fd = new FormData();
             fd.append('photo', selectedFile);
@@ -619,17 +619,17 @@
                     selectedFile = null;
                     document.getElementById('preview').classList.remove('shown');
                     document.getElementById('uploadZone').style.display = '';
-                    btn.textContent = '🚀 Send to Vidiwall';
+                    btn.textContent = ' Send to Vidiwall';
                     btn.disabled = true;
                 } else {
                     showToast(data.message || 'Upload failed.', true);
                     btn.disabled = false;
-                    btn.textContent = '🚀 Send to Vidiwall';
+                    btn.textContent = ' Send to Vidiwall';
                 }
             } catch {
                 showToast('Network error. Please try again.', true);
                 btn.disabled = false;
-                btn.textContent = '🚀 Send to Vidiwall';
+                btn.textContent = ' Send to Vidiwall';
             }
         }
 
