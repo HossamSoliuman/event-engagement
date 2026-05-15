@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - demo
-      - production
+      - main
 
 jobs:
   deploy-demo:
@@ -33,7 +33,7 @@ jobs:
   deploy-production:
     name: SSH Deploy (Production)
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/production'
+    if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
 
@@ -42,7 +42,7 @@ jobs:
 
       - name: Deploy via SSH (rsync)
         env:
-          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+          SSHPASS: ${{ secrets.SSH_PASSWORD }}
         run: |
           sshpass -e rsync -avz --delete \
             -e "ssh -o StrictHostKeyChecking=no -p 22" \
