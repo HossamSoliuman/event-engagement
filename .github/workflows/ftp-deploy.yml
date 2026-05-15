@@ -44,10 +44,12 @@ jobs:
         env:
           SSHPASS: ${{ secrets.SSH_PASSWORD }}
         run: |
-          sshpass -e rsync -avz --delete \
+          sshpass -e rsync -avz \
             -e "ssh -o StrictHostKeyChecking=no -p 22" \
             --exclude='.git*' \
             --exclude='node_modules/' \
             --exclude='storage/logs/' \
+            --exclude='storage/app/public/' \
+            --exclude='vendor/' \
             --exclude='.env' \
             ./ leuzfnqd@host268.checkdomain.de:~/showmeonscreen.com/
