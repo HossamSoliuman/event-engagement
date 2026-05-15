@@ -1,14 +1,16 @@
-name: FTP Deploy
+name: Deploy
 
 on:
   push:
     branches:
       - demo
+      - production
 
 jobs:
-  deploy:
+  deploy-demo:
+    name: FTP Deploy (Demo)
     runs-on: ubuntu-latest
-
+    if: github.ref == 'refs/heads/demo'
     steps:
       - uses: actions/checkout@v4
 
@@ -27,3 +29,25 @@ jobs:
             **/node_modules/**
             **/storage/logs/**
             **/.env
+
+  deploy-production:
+    name: SSH Deploy (Production)
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/production'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Deploy via SSH (rsync)
+        env:
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+        run: |
+          sshpass -e rsync -avz --delete \
+            -e "ssh -o StrictHostKeyChecking=no -p 22" \
+            --exclude='.git*' \
+            --exclude='node_modules/' \
+            --exclude='storage/logs/' \
+            --exclude='.env' \
+            ./ leuzfnqd@host268.checkdomain.de:~/showmeonscreen.com/
