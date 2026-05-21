@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\FotoModerationController;
 use App\Http\Controllers\Admin\LotteryAdminController;
 use App\Http\Controllers\Admin\VotingAdminController;
 use App\Http\Controllers\Admin\MembershipAdminController;
+use App\Http\Controllers\Admin\QuizAdminController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\VidiwallController;
@@ -16,12 +17,14 @@ use App\Http\Controllers\Moderator\FotoModerationController as ModeratorFotoCont
 use App\Http\Controllers\Moderator\LotteryController as ModeratorLotteryController;
 use App\Http\Controllers\Moderator\VotingController as ModeratorVotingController;
 use App\Http\Controllers\Moderator\MembershipController as ModeratorMembershipController;
+use App\Http\Controllers\Moderator\QuizController as ModeratorQuizController;
 use App\Http\Controllers\Auth\AdminAuthController;
 use App\Http\Controllers\Guest\EventPageController;
 use App\Http\Controllers\Guest\FotoBombController;
 use App\Http\Controllers\Guest\VoteController;
 use App\Http\Controllers\Guest\LotteryController;
 use App\Http\Controllers\Guest\MembershipController;
+use App\Http\Controllers\Guest\QuizController as GuestQuizController;
 use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Route;
 
@@ -31,6 +34,9 @@ Route::post('/e/{slug}/foto/upload', [FotoBombController::class, 'upload'])->nam
 Route::post('/e/{slug}/vote',        [VoteController::class, 'store'])->name('vote.store');
 Route::post('/e/{slug}/lottery',     [LotteryController::class, 'enter'])->name('lottery.enter');
 Route::post('/e/{slug}/membership',  [MembershipController::class, 'signup'])->name('membership.signup');
+Route::get('/e/{slug}/quiz/status',  [GuestQuizController::class, 'status'])->name('quiz.guest.status');
+Route::get('/e/{slug}/quiz/results', [GuestQuizController::class, 'results'])->name('quiz.guest.results');
+Route::post('/e/{slug}/quiz/answer', [GuestQuizController::class, 'answer'])->name('quiz.guest.answer');
 
 Route::get('/screen/{slug}',      [VidiwallController::class, 'show'])->name('vidiwall.show');
 Route::get('/screen/{slug}/feed', [VidiwallController::class, 'feed'])->name('vidiwall.feed');
@@ -80,6 +86,16 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::delete('membership/{member}',               [MembershipAdminController::class, 'destroy'])->name('membership.destroy');
         Route::get('events/{event}/membership/export',     [MembershipAdminController::class, 'export'])->name('membership.export');
         Route::resource('users', UserController::class)->middleware('superadmin');
+
+        Route::get('events/{event}/quiz',                         [QuizAdminController::class, 'index'])->name('quiz.index');
+        Route::post('events/{event}/quiz/questions',              [QuizAdminController::class, 'storeQuestion'])->name('quiz.questions.store');
+        Route::put('quiz/questions/{question}',                   [QuizAdminController::class, 'updateQuestion'])->name('quiz.questions.update');
+        Route::delete('quiz/questions/{question}',                [QuizAdminController::class, 'destroyQuestion'])->name('quiz.questions.destroy');
+        Route::post('events/{event}/quiz/start',                  [QuizAdminController::class, 'startRound'])->name('quiz.start');
+        Route::post('events/{event}/quiz/end',                    [QuizAdminController::class, 'endRound'])->name('quiz.end');
+        Route::get('events/{event}/quiz/{round}/leaderboard',     [QuizAdminController::class, 'leaderboard'])->name('quiz.leaderboard');
+        Route::post('quiz/rounds/{round}/reset',                  [QuizAdminController::class, 'resetRound'])->name('quiz.rounds.reset');
+        Route::get('events/{event}/quiz/export',                  [QuizAdminController::class, 'export'])->name('quiz.export');
 
         Route::get('events/{event}/moderators',          [EventModeratorController::class, 'index'])->name('events.moderators');
         Route::post('events/{event}/moderators',         [EventModeratorController::class, 'store'])->name('events.moderators.store');
@@ -131,5 +147,15 @@ Route::prefix('moderator')->name('moderator.')->middleware(['auth', 'event.moder
     Route::get('{event}/membership',                   [ModeratorMembershipController::class, 'index'])->name('membership.index');
     Route::delete('{event}/membership/{member}',       [ModeratorMembershipController::class, 'destroy'])->name('membership.destroy');
     Route::get('{event}/membership/export',            [ModeratorMembershipController::class, 'export'])->name('membership.export');
+
+    Route::get('{event}/quiz',                               [ModeratorQuizController::class, 'index'])->name('quiz.index');
+    Route::post('{event}/quiz/questions',                    [ModeratorQuizController::class, 'storeQuestion'])->name('quiz.questions.store');
+    Route::put('{event}/quiz/questions/{question}',          [ModeratorQuizController::class, 'updateQuestion'])->name('quiz.questions.update');
+    Route::delete('{event}/quiz/questions/{question}',       [ModeratorQuizController::class, 'destroyQuestion'])->name('quiz.questions.destroy');
+    Route::post('{event}/quiz/start',                        [ModeratorQuizController::class, 'startRound'])->name('quiz.start');
+    Route::post('{event}/quiz/end',                          [ModeratorQuizController::class, 'endRound'])->name('quiz.end');
+    Route::get('{event}/quiz/{round}/leaderboard',           [ModeratorQuizController::class, 'leaderboard'])->name('quiz.leaderboard');
+    Route::post('{event}/quiz/rounds/{round}/reset',         [ModeratorQuizController::class, 'resetRound'])->name('quiz.rounds.reset');
+    Route::get('{event}/quiz/export',                        [ModeratorQuizController::class, 'export'])->name('quiz.export');
 });
 

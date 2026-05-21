@@ -41,6 +41,7 @@ $fontH = $event->font_heading ?: 'Syne';
         #screen-voting .mod-header-title .lucide-icon, #screen-voting .section-title .lucide-icon, #screen-voting .s-icon .lucide-icon { color: var(--acc); }
         #screen-lottery .mod-header-title .lucide-icon, #screen-lottery .section-title .lucide-icon, #screen-lottery .s-icon .lucide-icon { color: #6366f1; }
         #screen-membership .mod-header-title .lucide-icon, #screen-membership .section-title .lucide-icon, #screen-membership .s-icon .lucide-icon { color: #22c55e; }
+        #screen-quiz .mod-header-title .lucide-icon, #screen-quiz .section-title .lucide-icon, #screen-quiz .s-icon .lucide-icon { color: #f59e0b; }
 
         html {
             -webkit-tap-highlight-color: transparent;
@@ -312,6 +313,11 @@ $fontH = $event->font_heading ?: 'Syne';
 
         .tile-membership {
             --tile-accent: #22c55e
+        }
+
+        .tile-quiz {
+            background: linear-gradient(160deg, #1c1200 0%, #0a0800 100%);
+            --tile-accent: #f59e0b
         }
 
         .land-footer {
@@ -931,7 +937,7 @@ $fontH = $event->font_heading ?: 'Syne';
         </div>
 
         <div class="tile-grid">
-            @foreach ([['fotobomb', '<i data-lucide="camera" class="lucide-icon"></i>', $event->fotobomb_title, '#FF3D00'], ['voting', '<i data-lucide="trophy" class="lucide-icon"></i>', $event->voting_title, '#FFD700'], ['lottery', '<i data-lucide="ticket" class="lucide-icon"></i>', $event->lottery_title, '#6366f1'], ['membership', '<i data-lucide="star" class="lucide-icon"></i>', $event->membership_title, '#22c55e']] as [$mod, $defaultIcon, $defaultName, $defaultAccent])
+            @foreach ([['fotobomb', '<i data-lucide="camera" class="lucide-icon"></i>', $event->fotobomb_title, '#FF3D00'], ['voting', '<i data-lucide="trophy" class="lucide-icon"></i>', $event->voting_title, '#FFD700'], ['lottery', '<i data-lucide="ticket" class="lucide-icon"></i>', $event->lottery_title, '#6366f1'], ['membership', '<i data-lucide="star" class="lucide-icon"></i>', $event->membership_title, '#22c55e'], ['quiz', '<i data-lucide="help-circle" class="lucide-icon"></i>', $event->quiz_title, '#f59e0b']] as [$mod, $defaultIcon, $defaultName, $defaultAccent])
                 @if (!$event->{'module_' . $mod})
                     @continue
                 @endif
@@ -955,6 +961,7 @@ $fontH = $event->font_heading ?: 'Syne';
                                 => 'background:linear-gradient(160deg,color-mix(in srgb,var(--acc) 28%,#111),color-mix(in srgb,var(--acc) 8%,#080808))',
                             'lottery' => 'background:linear-gradient(160deg,#1a1040,#080520)',
                             'membership' => 'background:linear-gradient(160deg,#071a07,#020d02)',
+                            'quiz' => 'background:linear-gradient(160deg,#1c1200,#0a0800)',
                         };
 
                     $accentStyle = match ($mod) {
@@ -962,6 +969,7 @@ $fontH = $event->font_heading ?: 'Syne';
                         'voting' => 'background:var(--acc)',
                         'lottery' => 'background:#6366f1',
                         'membership' => 'background:#22c55e',
+                        'quiz' => 'background:#f59e0b',
                     };
                 @endphp
 
@@ -1030,6 +1038,9 @@ $fontH = $event->font_heading ?: 'Syne';
                                     'membership' => $event->membership_desc
                                         ? \Illuminate\Support\Str::limit($event->membership_desc, 30)
                                         : 'Join the community',
+                                    'quiz' => $event->quiz_desc
+                                        ? \Illuminate\Support\Str::limit($event->quiz_desc, 30)
+                                        : 'Fastest answer wins',
                                 } }}
                         </div>
                         <div class="tile-name">{{ $defaultName }}</div>
@@ -1288,6 +1299,93 @@ $fontH = $event->font_heading ?: 'Syne';
                     <h3 data-en="Welcome to the Club!" data-de="Willkommen im Club!">Welcome to the Club!</h3>
                     <p data-en="Membership confirmed. Stay tuned for exclusive updates."
                         data-de="Mitgliedschaft bestätigt. Bleib dran für exklusive Updates.">Membership confirmed.</p>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if ($event->module_quiz)
+        <div class="module-screen" id="screen-quiz">
+            <div class="mod-header">
+                <button class="mod-back" onclick="closeModule('quiz')">←</button>
+                <div class="mod-header-title"><i data-lucide="help-circle" class="lucide-icon"></i> {{ $event->quiz_title }}</div>
+            </div>
+            <div class="mod-body">
+                <style>
+                    .quiz-timer-bar-wrap{background:rgba(255,255,255,.1);border-radius:6px;height:8px;overflow:hidden;margin-bottom:6px}
+                    .quiz-timer-bar{height:100%;background:#f59e0b;border-radius:6px;transition:width .1s linear}
+                    .quiz-timer-secs{font-size:13px;font-weight:700;color:#f59e0b;text-align:right;margin-bottom:14px}
+                    .quiz-opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+                    .quiz-opt-btn{background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.15);border-radius:12px;padding:14px 10px;font-size:15px;font-weight:600;color:#fff;cursor:pointer;text-align:left;transition:background .15s,border-color .15s}
+                    .quiz-opt-btn:active{transform:scale(.97)}
+                    .quiz-opt-btn.correct{background:rgba(34,197,94,.18);border-color:#22c55e;color:#86efac}
+                    .quiz-opt-btn.wrong{background:rgba(239,68,68,.15);border-color:#ef4444;color:#fca5a5}
+                    .quiz-opt-btn.reveal{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.4);color:rgba(134,239,172,.7)}
+                    .quiz-opt-btn:disabled{cursor:default}
+                    .quiz-q-counter{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:10px}
+                    .quiz-q-text{font-size:17px;font-weight:700;line-height:1.4;margin-bottom:4px}
+                    .quiz-feedback{margin-top:14px;padding:12px 14px;border-radius:10px;font-size:14px;font-weight:600;display:none}
+                    .quiz-feedback.ok{background:rgba(34,197,94,.15);color:#86efac;display:block}
+                    .quiz-feedback.bad{background:rgba(239,68,68,.13);color:#fca5a5;display:block}
+                    .quiz-waiting{text-align:center;padding:40px 20px}
+                    .quiz-waiting-pulse{width:60px;height:60px;border-radius:50%;background:#f59e0b;margin:0 auto 18px;animation:qpulse 1.6s ease-in-out infinite}
+                    @keyframes qpulse{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.12);opacity:1}}
+                    .quiz-results{padding:20px}
+                    .quiz-winner-card{background:linear-gradient(135deg,rgba(245,158,11,.18),rgba(245,158,11,.06));border:1.5px solid rgba(245,158,11,.35);border-radius:14px;padding:20px;text-align:center;margin-bottom:18px}
+                    .quiz-lb-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:14px}
+                    .quiz-lb-rank{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0}
+                    .quiz-lb-name{flex:1;font-weight:600}
+                    .quiz-lb-score{font-size:12px;color:rgba(255,255,255,.55)}
+                    .quiz-name-screen{padding:20px}
+                </style>
+
+                <div id="quizNameScreen" class="quiz-name-screen">
+                    <p class="section-title"><i data-lucide="help-circle" class="lucide-icon"></i> {{ $event->quiz_title }}</p>
+                    <p class="section-desc" style="margin-bottom:20px">{{ $event->quiz_desc }}</p>
+                    <div class="glass">
+                        <div class="field-group">
+                            <label class="field-label">Your Name</label>
+                            <input type="text" class="field" id="quizGuestName" placeholder="Enter your name" autocomplete="name">
+                        </div>
+                        <button class="btn-main" id="quizStartBtn" onclick="quizEnter()">Start Quiz</button>
+                    </div>
+                </div>
+
+                <div id="quizWaitingScreen" style="display:none">
+                    <div class="quiz-waiting">
+                        <div class="quiz-waiting-pulse"></div>
+                        <p class="section-title" style="margin-bottom:8px">Waiting for Quiz...</p>
+                        <p style="color:rgba(255,255,255,.5);font-size:14px">The quiz will start soon. Stay on this screen.</p>
+                    </div>
+                </div>
+
+                <div id="quizActiveScreen" style="display:none;padding:20px">
+                    <div class="quiz-q-counter" id="quizQCounter">Question 1 of 3</div>
+                    <div class="quiz-timer-bar-wrap"><div class="quiz-timer-bar" id="quizTimerBar" style="width:100%"></div></div>
+                    <div class="quiz-timer-secs" id="quizTimerSecs">30</div>
+                    <div class="quiz-q-text" id="quizQText"></div>
+                    <div class="quiz-opts" id="quizOpts"></div>
+                    <div class="quiz-feedback" id="quizFeedback"></div>
+                </div>
+
+                <div id="quizCompleteScreen" style="display:none;padding:20px;text-align:center">
+                    <div class="s-icon"><i data-lucide="check-circle" class="lucide-icon"></i></div>
+                    <h3 style="font-size:22px;font-weight:800;margin-bottom:8px">Quiz Complete!</h3>
+                    <p id="quizSummaryText" style="color:rgba(255,255,255,.6);font-size:15px;margin-bottom:20px"></p>
+                    <div id="quizAnswerSummary" style="text-align:left;margin-bottom:20px"></div>
+                    <p style="color:rgba(255,255,255,.4);font-size:13px">Waiting for results...</p>
+                </div>
+
+                <div id="quizResultsScreen" style="display:none">
+                    <div class="quiz-results">
+                        <p class="section-title" style="margin-bottom:14px">Results</p>
+                        <div class="quiz-winner-card" id="quizWinnerCard" style="display:none">
+                            <div style="font-size:28px;margin-bottom:8px">🏆</div>
+                            <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#f59e0b;margin-bottom:4px">Winner</div>
+                            <div style="font-size:20px;font-weight:800" id="quizWinnerName"></div>
+                        </div>
+                        <div id="quizLeaderboard"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1610,6 +1708,197 @@ $fontH = $event->font_heading ?: 'Syne';
             if (txt) txt.textContent = lang === 'de' ? 'Auf die Vidiwall' : 'Send to Vidiwall';
             document.getElementById('uploadProgress').style.display = 'none';
             document.getElementById('uploadProgressFill').style.width = '0%';
+        }
+        let quizState = 'idle';
+        let quizGuestName = '';
+        let quizSessionToken = localStorage.getItem('eb_quiz_token') || (() => {
+            const t = Math.random().toString(36).slice(2) + Date.now().toString(36);
+            localStorage.setItem('eb_quiz_token', t);
+            return t;
+        })();
+        let quizQuestions = [];
+        let quizCurrentIdx = 0;
+        let quizRoundId = null;
+        let quizTimerInterval = null;
+        let quizTimeLimitMs = 30000;
+        let quizQuestionStartTime = null;
+        let quizAnswered = false;
+        let quizResults = [];
+        let quizPollInterval = null;
+        let quizAnsweredRoundId = null;
+
+        function quizShow(id) {
+            ['quizNameScreen','quizWaitingScreen','quizActiveScreen','quizCompleteScreen','quizResultsScreen'].forEach(s => {
+                const el = document.getElementById(s);
+                if (el) el.style.display = s === id ? '' : 'none';
+            });
+        }
+
+        function quizEnter() {
+            quizGuestName = document.getElementById('quizGuestName').value.trim();
+            if (!quizGuestName) { toast('Please enter your name.', true); return; }
+            quizShow('quizWaitingScreen');
+            quizState = 'waiting';
+            quizStartPolling();
+        }
+
+        function quizStartPolling() {
+            clearInterval(quizPollInterval);
+            quizPollInterval = setInterval(quizPoll, 3000);
+            quizPoll();
+        }
+
+        async function quizPoll() {
+            try {
+                const r = await fetch(`/e/${SLUG}/quiz/status`);
+                const d = await r.json();
+                if (d.status === 'active' && d.round_id !== quizRoundId) {
+                    if (quizAnsweredRoundId === d.round_id) return;
+                    quizRoundId = d.round_id;
+                    quizQuestions = d.questions;
+                    quizTimeLimitMs = (d.time_limit_seconds || 30) * 1000;
+                    quizCurrentIdx = 0;
+                    quizResults = [];
+                    quizState = 'active';
+                    clearInterval(quizPollInterval);
+                    quizShowQuestion();
+                } else if (d.status === 'finished' && quizState === 'complete') {
+                    quizShowResults(d.round_id);
+                } else if (d.status === 'finished' && quizState === 'idle') {
+                    quizShowResults(d.round_id);
+                }
+            } catch {}
+        }
+
+        function quizShowQuestion() {
+            if (quizCurrentIdx >= quizQuestions.length) {
+                quizShowComplete();
+                return;
+            }
+            const q = quizQuestions[quizCurrentIdx];
+            document.getElementById('quizQCounter').textContent = `Question ${quizCurrentIdx + 1} of ${quizQuestions.length}`;
+            document.getElementById('quizQText').textContent = q.question_text;
+            const labels = ['A', 'B', 'C', 'D'];
+            document.getElementById('quizOpts').innerHTML = q.options.map((opt, i) =>
+                `<button class="quiz-opt-btn" id="qopt${i}" onclick="quizSelectAnswer(${i})">${labels[i]}. ${opt}</button>`
+            ).join('');
+            document.getElementById('quizFeedback').className = 'quiz-feedback';
+            quizAnswered = false;
+            quizShow('quizActiveScreen');
+            quizStartQuestionTimer(q.time_limit_seconds || 30);
+            quizQuestionStartTime = performance.now();
+        }
+
+        function quizStartQuestionTimer(secs) {
+            clearInterval(quizTimerInterval);
+            const totalMs = secs * 1000;
+            const bar = document.getElementById('quizTimerBar');
+            const secsEl = document.getElementById('quizTimerSecs');
+            const start = performance.now();
+            quizTimerInterval = setInterval(() => {
+                const elapsed = performance.now() - start;
+                const remaining = Math.max(0, totalMs - elapsed);
+                const pct = (remaining / totalMs) * 100;
+                bar.style.width = pct + '%';
+                bar.style.background = pct < 30 ? '#ef4444' : pct < 60 ? '#f59e0b' : '#f59e0b';
+                secsEl.textContent = Math.ceil(remaining / 1000);
+                if (remaining <= 0) {
+                    clearInterval(quizTimerInterval);
+                    if (!quizAnswered) quizTimeUp();
+                }
+            }, 100);
+        }
+
+        async function quizSelectAnswer(idx) {
+            if (quizAnswered) return;
+            quizAnswered = true;
+            const timeTakenMs = Math.round(performance.now() - quizQuestionStartTime);
+            clearInterval(quizTimerInterval);
+            const q = quizQuestions[quizCurrentIdx];
+            document.querySelectorAll('.quiz-opt-btn').forEach(b => b.disabled = true);
+            try {
+                const d = await post(`/e/${SLUG}/quiz/answer`, {
+                    quiz_question_id: q.id,
+                    selected_option: idx,
+                    time_taken_ms: timeTakenMs,
+                    session_token: quizSessionToken,
+                    guest_name: quizGuestName,
+                });
+                quizResults.push({ question: q.question_text, correct: d.correct, correctText: d.correct_text });
+                const fb = document.getElementById('quizFeedback');
+                document.querySelectorAll('.quiz-opt-btn').forEach((b, i) => {
+                    if (i === q.correct_option) b.classList.add('reveal');
+                    else if (i === idx && !d.correct) b.classList.add('wrong');
+                });
+                document.getElementById(`qopt${idx}`)?.classList.add(d.correct ? 'correct' : 'wrong');
+                fb.textContent = d.correct ? 'Correct!' : `Wrong! The answer is: ${d.correct_text}`;
+                fb.className = 'quiz-feedback ' + (d.correct ? 'ok' : 'bad');
+            } catch {
+                quizResults.push({ question: q.question_text, correct: false, correctText: '' });
+            }
+            setTimeout(() => {
+                quizCurrentIdx++;
+                quizShowQuestion();
+            }, 1800);
+        }
+
+        function quizTimeUp() {
+            quizAnswered = true;
+            const q = quizQuestions[quizCurrentIdx];
+            document.querySelectorAll('.quiz-opt-btn').forEach((b, i) => {
+                b.disabled = true;
+                if (i === q.correct_option) b.classList.add('reveal');
+            });
+            const fb = document.getElementById('quizFeedback');
+            fb.textContent = 'Time\'s up! The answer was: ' + (q.options[q.correct_option] || '');
+            fb.className = 'quiz-feedback bad';
+            quizResults.push({ question: q.question_text, correct: false, correctText: q.options[q.correct_option] || '' });
+            setTimeout(() => {
+                quizCurrentIdx++;
+                quizShowQuestion();
+            }, 1800);
+        }
+
+        function quizShowComplete() {
+            quizState = 'complete';
+            quizAnsweredRoundId = quizRoundId;
+            const correctCount = quizResults.filter(r => r.correct).length;
+            document.getElementById('quizSummaryText').textContent = `You got ${correctCount} out of ${quizResults.length} correct!`;
+            const summaryEl = document.getElementById('quizAnswerSummary');
+            summaryEl.innerHTML = quizResults.map((r, i) =>
+                `<div style="display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.07)">
+                    <div style="font-size:16px;flex-shrink:0">${r.correct ? '' : ''}</div>
+                    <div><div style="font-size:13px;font-weight:600;margin-bottom:2px">Q${i+1}: ${r.question}</div>${!r.correct && r.correctText ? `<div style="font-size:12px;color:rgba(255,255,255,.45)">Answer: ${r.correctText}</div>` : ''}</div>
+                </div>`
+            ).join('');
+            quizShow('quizCompleteScreen');
+            quizStartPolling();
+        }
+
+        async function quizShowResults(roundId) {
+            clearInterval(quizPollInterval);
+            try {
+                const r = await fetch(`/e/${SLUG}/quiz/results`);
+                const d = await r.json();
+                if (d.status !== 'finished') return;
+                const winnerCard = document.getElementById('quizWinnerCard');
+                if (d.winner) {
+                    document.getElementById('quizWinnerName').textContent = d.winner.guest_name;
+                    winnerCard.style.display = '';
+                } else {
+                    winnerCard.style.display = 'none';
+                }
+                const lb = document.getElementById('quizLeaderboard');
+                lb.innerHTML = (d.leaderboard || []).map(row =>
+                    `<div class="quiz-lb-row">
+                        <div class="quiz-lb-rank">${row.rank}</div>
+                        <div class="quiz-lb-name">${row.guest_name}</div>
+                        <div class="quiz-lb-score">${row.correct_count} correct &middot; ${(row.total_ms/1000).toFixed(1)}s</div>
+                    </div>`
+                ).join('');
+                quizShow('quizResultsScreen');
+                quizState = 'results';
+            } catch {}
         }
 
         function resetFoto() {

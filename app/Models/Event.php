@@ -28,14 +28,17 @@ class Event extends Model
         'module_lottery',
         'module_voting',
         'module_membership',
+        'module_quiz',
         'fotobomb_title',
         'lottery_title',
         'voting_title',
         'membership_title',
+        'quiz_title',
         'fotobomb_desc',
         'lottery_desc',
         'voting_desc',
         'membership_desc',
+        'quiz_desc',
         'voting_options',
         'voting_closed',
         'lottery_drawn',
@@ -55,6 +58,7 @@ class Event extends Model
         'tile_voting_config',
         'tile_lottery_config',
         'tile_membership_config',
+        'tile_quiz_config',
         'lottery_extra_fields',
         'membership_extra_fields',
         'starts_at',
@@ -67,6 +71,7 @@ class Event extends Model
         'module_lottery' => 'boolean',
         'module_voting' => 'boolean',
         'module_membership' => 'boolean',
+        'module_quiz' => 'boolean',
         'voting_closed' => 'boolean',
         'lottery_drawn' => 'boolean',
         'vidiwall_show_uploader' => 'boolean',
@@ -77,6 +82,7 @@ class Event extends Model
         'tile_voting_config'      => 'array',
         'tile_lottery_config'     => 'array',
         'tile_membership_config'  => 'array',
+        'tile_quiz_config'        => 'array',
         'lottery_extra_fields'    => 'array',
         'membership_extra_fields' => 'array',
     ];
@@ -111,6 +117,22 @@ class Event extends Model
     public function activityLog()
     {
         return $this->hasMany(ActivityLog::class);
+    }
+    public function quizQuestions()
+    {
+        return $this->hasMany(QuizQuestion::class);
+    }
+    public function quizRounds()
+    {
+        return $this->hasMany(QuizRound::class);
+    }
+    public function quizAnswers()
+    {
+        return $this->hasMany(QuizAnswer::class);
+    }
+    public function activeQuizRound(): ?QuizRound
+    {
+        return $this->quizRounds()->where('status', 'active')->latest()->first();
     }
     public function getGuestUrl(): string
     {
@@ -204,7 +226,11 @@ class Event extends Model
             'link_url'      => '',
             'link_external' => false,
         ];
-        return array_merge($defaults, $this->$field ?? []);
+        $config = $this->$field ?? [];
+        if (!is_array($config)) {
+            $config = [];
+        }
+        return array_merge($defaults, $config);
     }
 
     public function getTileImageUrl(string $module): ?string
