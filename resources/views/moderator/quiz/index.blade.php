@@ -45,7 +45,12 @@
             @forelse ($questions as $q)
                 <div style="border-bottom:1px solid var(--border);padding:14px 18px" id="question-row-{{ $q->id }}">
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px">
-                        <div style="font-weight:600;font-size:13px;flex:1">{{ $q->question_text }}</div>
+                        <div style="display:flex;align-items:flex-start;gap:10px;flex:1">
+                            @if ($q->sponsor_logo_url)
+                                <img src="{{ $q->sponsor_logo_url }}" alt="Sponsor" style="height:28px;width:auto;border-radius:4px;background:#fff;padding:2px;flex-shrink:0">
+                            @endif
+                            <div style="font-weight:600;font-size:13px">{{ $q->question_text }}</div>
+                        </div>
                         <div style="display:flex;gap:6px;flex-shrink:0">
                             <button class="btn btn-ghost btn-sm" onclick="toggleEdit({{ $q->id }})"><i data-lucide="pencil" class="lucide-icon"></i></button>
                             <form method="POST" action="{{ route('moderator.quiz.questions.destroy', [$event, $q]) }}" onsubmit="return confirm('Delete this question?')">
@@ -67,7 +72,7 @@
                     </div>
 
                     <div id="edit-form-{{ $q->id }}" style="display:none;margin-top:12px">
-                        <form method="POST" action="{{ route('moderator.quiz.questions.update', [$event, $q]) }}">
+                        <form method="POST" action="{{ route('moderator.quiz.questions.update', [$event, $q]) }}" enctype="multipart/form-data">
                             @csrf @method('PUT')
                             <div class="form-group">
                                 <label class="form-label">Question</label>
@@ -85,6 +90,18 @@
                                     <input type="text" name="options[]" class="form-control" value="{{ $opt }}" required>
                                 </div>
                             @endforeach
+                            <div class="form-group">
+                                <label class="form-label">Sponsor logo (optional)</label>
+                                @if ($q->sponsor_logo_url)
+                                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                                        <img src="{{ $q->sponsor_logo_url }}" alt="Sponsor" style="height:32px;width:auto;border-radius:4px;background:#fff;padding:2px">
+                                        <label style="font-weight:400;font-size:12px;cursor:pointer">
+                                            <input type="checkbox" name="sponsor_logo_clear" value="1"> Remove logo
+                                        </label>
+                                    </div>
+                                @endif
+                                <input type="file" name="sponsor_logo" class="form-control" accept="image/*">
+                            </div>
                             <div style="display:flex;gap:8px">
                                 <button type="submit" class="btn btn-primary btn-sm">Save</button>
                                 <button type="button" class="btn btn-ghost btn-sm" onclick="toggleEdit({{ $q->id }})">Cancel</button>
@@ -104,7 +121,7 @@
         <div class="card">
             <div class="card-header"><h3>Add Question</h3></div>
             <div class="card-body">
-                <form method="POST" action="{{ route('moderator.quiz.questions.store', $event) }}">
+                <form method="POST" action="{{ route('moderator.quiz.questions.store', $event) }}" enctype="multipart/form-data">
                     @csrf
                     @if ($errors->any())
                         <div class="alert alert-danger mb-3">{{ $errors->first() }}</div>
@@ -125,6 +142,11 @@
                             <input type="text" name="options[]" class="form-control" placeholder="Option {{ chr(65 + $i) }}" value="{{ old('options.' . $i) }}" required>
                         </div>
                     @endfor
+                    <div class="form-group">
+                        <label class="form-label">Sponsor logo for this question (optional)</label>
+                        <input type="file" name="sponsor_logo" class="form-control" accept="image/*">
+                        <div class="text-muted text-xs" style="margin-top:4px">Shown to guests with this question. PNG/JPG, max 2MB.</div>
+                    </div>
                     <button type="submit" class="btn btn-primary">Add Question</button>
                 </form>
             </div>
@@ -152,12 +174,13 @@
                                 <input type="number" name="time_limit_seconds" class="form-control" value="30" min="5" max="300" required>
                             </div>
                             <div class="form-group mb-0">
-                                <label class="form-label">Questions in round</label>
+                                <label class="form-label">Questions each guest answers</label>
                                 <input type="number" name="questions_per_round" class="form-control" value="{{ min(3, $questions->where('is_active', true)->count()) }}" min="1" max="{{ $questions->where('is_active', true)->count() }}" required>
                             </div>
                         </div>
                         <div class="form-group" style="margin-top:16px">
-                            <label class="form-label">Select questions for this round *</label>
+                            <label class="form-label">Question pool for this round *</label>
+                            <div class="text-muted text-xs" style="margin-bottom:8px">Each guest gets a random, shuffled subset of this size drawn from the questions you select below.</div>
                             <div style="max-height:260px;overflow-y:auto;border:1px solid var(--border);border-radius:8px">
                                 @foreach ($questions->where('is_active', true) as $q)
                                     <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer">
@@ -170,6 +193,32 @@
                         <button type="submit" class="btn btn-primary" onclick="return validateRoundForm()">Start Round</button>
                     </form>
                 @endif
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header"><h3><i data-lucide="trophy" class="lucide-icon"></i> End Screen / Winner Message</h3></div>
+            <div class="card-body">
+                <form method="POST" action="{{ route('moderator.quiz.settings', $event) }}" enctype="multipart/form-data">
+                    @csrf
+                    <div class="form-group">
+                        <label class="form-label">Message shown when the quiz ends</label>
+                        <textarea name="quiz_winner_text" class="form-control" rows="2" placeholder="e.g. The winner will be presented live at the end of the event!">{{ old('quiz_winner_text', $event->quiz_winner_text) }}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">End screen sponsor logo (optional)</label>
+                        @if ($event->quiz_end_sponsor_logo_url)
+                            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                                <img src="{{ $event->quiz_end_sponsor_logo_url }}" alt="Sponsor" style="height:36px;width:auto;border-radius:4px;background:#fff;padding:2px">
+                                <label style="font-weight:400;font-size:12px;cursor:pointer">
+                                    <input type="checkbox" name="quiz_end_sponsor_logo_clear" value="1"> Remove logo
+                                </label>
+                            </div>
+                        @endif
+                        <input type="file" name="quiz_end_sponsor_logo" class="form-control" accept="image/*">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save End Screen</button>
+                </form>
             </div>
         </div>
 
@@ -235,7 +284,7 @@
             return false;
         }
         if (checked.length < perRound) {
-            alert('You selected fewer questions than the round size. Select more or reduce the question count.');
+            alert('The pool has fewer questions than each guest should answer. Select more questions or reduce the per-guest count.');
             return false;
         }
         return true;

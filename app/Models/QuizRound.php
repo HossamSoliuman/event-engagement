@@ -4,8 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
 
 class QuizRound extends Model
@@ -20,7 +20,7 @@ class QuizRound extends Model
     ];
 
     protected $casts = [
-        'started_at'  => 'datetime',
+        'started_at' => 'datetime',
         'finished_at' => 'datetime',
     ];
 
@@ -39,6 +39,21 @@ class QuizRound extends Model
         return $this->belongsToMany(QuizQuestion::class, 'quiz_round_questions')
             ->withPivot('sort_order')
             ->orderBy('quiz_round_questions.sort_order');
+    }
+
+    /**
+     * The randomized subset of pool questions a single guest answers, in a
+     * per-guest shuffled order. Seeded by the session token so the same guest
+     * always receives the same questions for this round.
+     */
+    public function questionsForSession(string $sessionToken): Collection
+    {
+        $perGuest = $this->questions_per_round ?: 3;
+
+        return $this->questions()->get()
+            ->shuffle(crc32($sessionToken.'|'.$this->id))
+            ->take($perGuest)
+            ->values();
     }
 
     public function isActive(): bool

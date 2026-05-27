@@ -1363,6 +1363,9 @@ $fontH = $event->font_heading ?: 'Syne';
                     <div class="quiz-q-counter" id="quizQCounter">Question 1 of 3</div>
                     <div class="quiz-timer-bar-wrap"><div class="quiz-timer-bar" id="quizTimerBar" style="width:100%"></div></div>
                     <div class="quiz-timer-secs" id="quizTimerSecs">30</div>
+                    <div id="quizQSponsorWrap" style="display:none;text-align:center;margin-bottom:12px">
+                        <img id="quizQSponsor" alt="Sponsor" style="max-height:46px;width:auto;max-width:70%;background:#fff;border-radius:8px;padding:6px 10px">
+                    </div>
                     <div class="quiz-q-text" id="quizQText"></div>
                     <div class="quiz-opts" id="quizOpts"></div>
                     <div class="quiz-feedback" id="quizFeedback"></div>
@@ -1378,6 +1381,10 @@ $fontH = $event->font_heading ?: 'Syne';
 
                 <div id="quizResultsScreen" style="display:none">
                     <div class="quiz-results">
+                        <div id="quizEndSponsorWrap" style="display:none;text-align:center;margin-bottom:16px">
+                            <img id="quizEndSponsor" alt="Sponsor" style="max-height:60px;width:auto;max-width:80%;background:#fff;border-radius:10px;padding:8px 12px">
+                        </div>
+                        <div id="quizWinnerText" style="display:none;text-align:center;font-size:15px;font-weight:600;line-height:1.5;color:#f59e0b;margin-bottom:18px"></div>
                         <p class="section-title" style="margin-bottom:14px">Results</p>
                         <div class="quiz-winner-card" id="quizWinnerCard" style="display:none">
                             <div style="font-size:28px;margin-bottom:8px">🏆</div>
@@ -1750,7 +1757,7 @@ $fontH = $event->font_heading ?: 'Syne';
 
         async function quizPoll() {
             try {
-                const r = await fetch(`/e/${SLUG}/quiz/status`);
+                const r = await fetch(`/e/${SLUG}/quiz/status?session_token=${encodeURIComponent(quizSessionToken)}`);
                 const d = await r.json();
                 if (d.status === 'active' && d.round_id !== quizRoundId) {
                     if (quizAnsweredRoundId === d.round_id) return;
@@ -1777,6 +1784,13 @@ $fontH = $event->font_heading ?: 'Syne';
             }
             const q = quizQuestions[quizCurrentIdx];
             document.getElementById('quizQCounter').textContent = `Question ${quizCurrentIdx + 1} of ${quizQuestions.length}`;
+            const sponsorWrap = document.getElementById('quizQSponsorWrap');
+            if (q.sponsor_logo_url) {
+                document.getElementById('quizQSponsor').src = q.sponsor_logo_url;
+                sponsorWrap.style.display = '';
+            } else {
+                sponsorWrap.style.display = 'none';
+            }
             document.getElementById('quizQText').textContent = q.question_text;
             const labels = ['A', 'B', 'C', 'D'];
             document.getElementById('quizOpts').innerHTML = q.options.map((opt, i) =>
@@ -1881,6 +1895,20 @@ $fontH = $event->font_heading ?: 'Syne';
                 const r = await fetch(`/e/${SLUG}/quiz/results`);
                 const d = await r.json();
                 if (d.status !== 'finished') return;
+                const endSponsorWrap = document.getElementById('quizEndSponsorWrap');
+                if (d.end_sponsor_logo_url) {
+                    document.getElementById('quizEndSponsor').src = d.end_sponsor_logo_url;
+                    endSponsorWrap.style.display = '';
+                } else {
+                    endSponsorWrap.style.display = 'none';
+                }
+                const winnerTextEl = document.getElementById('quizWinnerText');
+                if (d.winner_text) {
+                    winnerTextEl.textContent = d.winner_text;
+                    winnerTextEl.style.display = '';
+                } else {
+                    winnerTextEl.style.display = 'none';
+                }
                 const winnerCard = document.getElementById('quizWinnerCard');
                 if (d.winner) {
                     document.getElementById('quizWinnerName').textContent = d.winner.guest_name;
