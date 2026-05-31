@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('quiz_questions', function (Blueprint $table) {
-            $table->string('sponsor_logo_path')->nullable()->after('correct_option');
+            // $table->string('sponsor_logo_path')->nullable()->after('correct_option');
         });
     }
 
