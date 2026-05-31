@@ -17,7 +17,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->string('qr_code_path')->nullable();
             $table->string('logo_path')->nullable();
-            // $table->string('sponsor_logo_path')->nullable();
+            $table->string('sponsor_logo_path')->nullable();
             $table->string('background_image_path')->nullable();
             $table->string('primary_color', 7)->default('#FF3D00');
             $table->string('secondary_color', 7)->default('#0D0D1A');
@@ -29,14 +29,14 @@ return new class extends Migration
             $table->boolean('module_voting')->default(true);
             $table->boolean('module_membership')->default(true);
             // Module titles
-            // $table->string('fotobomb_title')->default('Foto Bomb');
+            $table->string('fotobomb_title')->default('Foto Bomb');
             $table->string('lottery_title')->default('Win Today');
             $table->string('voting_title')->default('Athlete of the Day');
             $table->string('membership_title')->default('Become a Member');
             // Module descriptions
             $table->string('fotobomb_desc')->nullable()->default('Snap a photo and get it on the big screen');
             $table->string('lottery_desc')->nullable()->default('Enter the draw for a chance to win tonight prize');
-            // $table->string('voting_desc')->nullable()->default('Vote for your Athlete of the Day. Results shown live');
+            $table->string('voting_desc')->nullable()->default('Vote for your Athlete of the Day. Results shown live');
             $table->string('membership_desc')->nullable()->default('Join the community and get exclusive updates.');
             // Voting
             $table->json('voting_options')->nullable();
@@ -48,7 +48,7 @@ return new class extends Migration
             // Vidiwall settings
             $table->boolean('vidiwall_show_uploader')->default(true);
             $table->boolean('vidiwall_slideshow_mode')->default(false);
-            // $table->integer('vidiwall_slideshow_interval')->default(8); // seconds
+            $table->integer('vidiwall_slideshow_interval')->default(8); // seconds
             $table->string('vidiwall_overlay_text')->nullable();
             // Timestamps
             $table->timestamp('starts_at')->nullable();
@@ -69,11 +69,11 @@ return new class extends Migration
             $table->string('uploader_name')->nullable();
             $table->string('uploader_phone')->nullable();
             $table->string('uploader_session')->nullable();
-            // $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
+            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
             $table->boolean('on_screen')->default(false);
             $table->integer('display_order')->default(0);
             $table->text('admin_note')->nullable();
-            // $table->timestamp('approved_at')->nullable();
+            $table->timestamp('approved_at')->nullable();
             $table->timestamp('displayed_at')->nullable();
             $table->unsignedBigInteger('approved_by')->nullable();
             $table->foreign('approved_by')->references('id')->on('users')->nullOnDelete();
