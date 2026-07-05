@@ -14,6 +14,7 @@ class EventController extends Controller
     public function index()
     {
         $events = Event::withCount(['fotoUploads', 'lotteryEntries', 'votes', 'memberships'])->latest()->paginate(15);
+
         return view('admin.events.index', compact('events'));
     }
 
@@ -25,7 +26,7 @@ class EventController extends Controller
     public function store(Request $request)
     {
         $data = $this->validateEvent($request);
-        $data['slug'] = Str::slug($data['name']) . '-' . Str::lower(Str::random(4));
+        $data['slug'] = Str::slug($data['name']).'-'.Str::lower(Str::random(4));
         $data = $this->handleUploads($request, $data, $event ?? null);
         $data['voting_options'] = $this->parseVotingOptions($request);
 
@@ -36,6 +37,7 @@ class EventController extends Controller
         }
 
         ActivityLog::record('event.created', ['name' => $event->name], $event->id);
+
         return redirect()->route('admin.events.show', $event)->with('success', 'Event created and QR generated!');
     }
 
@@ -46,12 +48,13 @@ class EventController extends Controller
             'lotteryEntries',
             'votes',
             'memberships',
-            'fotoUploads as pending_count'  => fn($q) => $q->where('status', 'pending'),
-            'fotoUploads as approved_count' => fn($q) => $q->where('status', 'approved'),
+            'fotoUploads as pending_count' => fn ($q) => $q->where('status', 'pending'),
+            'fotoUploads as approved_count' => fn ($q) => $q->where('status', 'approved'),
         ]);
-        $tallies   = $event->getVoteTallies();
-        $onScreen  = $event->getOnScreenFotos()->first();
+        $tallies = $event->getVoteTallies();
+        $onScreen = $event->getOnScreenFotos()->first();
         $recentLog = $event->activityLog()->with('user')->latest()->limit(10)->get();
+
         return view('admin.events.show', compact('event', 'tallies', 'onScreen', 'recentLog'));
     }
 
@@ -69,6 +72,7 @@ class EventController extends Controller
 
         $event->update($data);
         ActivityLog::record('event.updated', ['name' => $event->name], $event->id);
+
         return redirect()->route('admin.events.show', $event)->with('success', 'Event updated!');
     }
 
@@ -106,23 +110,25 @@ class EventController extends Controller
     {
         $event->generateQrCode();
         ActivityLog::record('event.qr_generated', [], $event->id);
+
         return back()->with('success', 'QR code regenerated!');
     }
 
     public function toggleModule(Request $request, Event $event)
     {
         $module = $request->validate(['module' => 'required|in:fotobomb,lottery,voting,membership,quiz'])['module'];
-        $field  = "module_{$module}";
-        $event->update([$field => !$event->$field]);
-        ActivityLog::record("event.module_toggled", ['module' => $module, 'enabled' => $event->fresh()->$field], $event->id);
+        $field = "module_{$module}";
+        $event->update([$field => ! $event->$field]);
+        ActivityLog::record('event.module_toggled', ['module' => $module, 'enabled' => $event->fresh()->$field], $event->id);
+
         return response()->json(['enabled' => $event->fresh()->$field]);
     }
 
     public function duplicate(Event $event)
     {
         $new = $event->replicate();
-        $new->name = $event->name . ' (Copy)';
-        $new->slug = Str::slug($event->name) . '-' . Str::lower(Str::random(4));
+        $new->name = $event->name.' (Copy)';
+        $new->slug = Str::slug($event->name).'-'.Str::lower(Str::random(4));
         $new->is_active = false;
         $new->qr_code_path = null;
         $new->lottery_drawn = false;
@@ -133,6 +139,7 @@ class EventController extends Controller
             $new->generateQrCode();
         } catch (\Exception $e) {
         }
+
         return redirect()->route('admin.events.edit', $new)->with('success', 'Event duplicated!');
     }
 
@@ -141,39 +148,49 @@ class EventController extends Controller
     private function validateEvent(Request $request, ?Event $event = null): array
     {
         return $request->validate([
-            'name'                        => 'required|string|max:255',
-            'subtitle'                    => 'nullable|string|max:255',
-            'description'                 => 'nullable|string',
-            'primary_color'               => 'nullable|string|max:7',
-            'secondary_color'             => 'nullable|string|max:7',
-            'accent_color'                => 'nullable|string|max:7',
-            'fotobomb_title'              => 'nullable|string|max:100',
-            'lottery_title'               => 'nullable|string|max:100',
-            'voting_title'                => 'nullable|string|max:100',
-            'membership_title'            => 'nullable|string|max:100',
-            'quiz_title'                  => 'nullable|string|max:100',
-            'fotobomb_desc'               => 'nullable|string|max:255',
-            'lottery_desc'                => 'nullable|string|max:255',
-            'voting_desc'                 => 'nullable|string|max:255',
-            'membership_desc'             => 'nullable|string|max:255',
-            'quiz_desc'                   => 'nullable|string|max:255',
-            'vidiwall_overlay_text'       => 'nullable|string|max:255',
+            'name' => 'required|string|max:255',
+            'subtitle' => 'nullable|string|max:255',
+            'description' => 'nullable|string',
+            'primary_color' => 'nullable|string|max:7',
+            'secondary_color' => 'nullable|string|max:7',
+            'accent_color' => 'nullable|string|max:7',
+            'fotobomb_title' => 'nullable|string|max:100',
+            'lottery_title' => 'nullable|string|max:100',
+            'voting_title' => 'nullable|string|max:100',
+            'membership_title' => 'nullable|string|max:100',
+            'quiz_title' => 'nullable|string|max:100',
+            'fotobomb_desc' => 'nullable|string|max:255',
+            'lottery_desc' => 'nullable|string|max:255',
+            'voting_desc' => 'nullable|string|max:255',
+            'membership_desc' => 'nullable|string|max:255',
+            'quiz_desc' => 'nullable|string|max:255',
+            'vidiwall_overlay_text' => 'nullable|string|max:255',
             'vidiwall_slideshow_interval' => 'nullable|integer|min:3|max:60',
-            'privacy_policy_text'         => 'nullable|string|max:2000',
-            'privacy_policy_url'          => 'nullable|url|max:500',
-            'font_heading'                => 'nullable|string|max:100',
-            'font_body'                   => 'nullable|string|max:100',
-            'starts_at'                   => 'nullable|date',
-            'ends_at'                     => 'nullable|date',
-            'logo'                        => 'nullable|image|max:2048',
-            'sponsor_logo'                => 'nullable|image|max:2048',
+            'landing_style' => 'nullable|in:classic,clean',
+            'landing_hero_title' => 'nullable|string|max:255',
+            'landing_hero_sub' => 'nullable|string|max:255',
+            'frame_top_text' => 'nullable|string|max:100',
+            'frame_bottom_text' => 'nullable|string|max:100',
+            'frame_side_text' => 'nullable|string|max:100',
+            'frame_color' => 'nullable|string|max:7',
+            'frame_text_color' => 'nullable|string|max:7',
+            'frame_logo' => 'nullable|image|max:2048',
+            'privacy_policy_text' => 'nullable|string|max:2000',
+            'privacy_policy_url' => 'nullable|url|max:500',
+            'font_heading' => 'nullable|string|max:100',
+            'font_body' => 'nullable|string|max:100',
+            'starts_at' => 'nullable|date',
+            'ends_at' => 'nullable|date',
+            'logo' => 'nullable|image|max:2048',
+            'sponsor_logo' => 'nullable|image|max:2048',
             // tile images
-            'tile_fotobomb_image'         => 'nullable|image|max:3072',
-            'tile_voting_image'           => 'nullable|image|max:3072',
-            'tile_lottery_image'          => 'nullable|image|max:3072',
-            'tile_membership_image'       => 'nullable|image|max:3072',
+            'tile_fotobomb_image' => 'nullable|image|max:3072',
+            'tile_voting_image' => 'nullable|image|max:3072',
+            'tile_lottery_image' => 'nullable|image|max:3072',
+            'tile_membership_image' => 'nullable|image|max:3072',
         ]);
     }
+
     private function handleUploads(Request $request, array $data, ?Event $event = null): array
     {
         if ($request->hasFile('logo')) {
@@ -183,20 +200,40 @@ class EventController extends Controller
             $data['sponsor_logo_path'] = $request->file('sponsor_logo')->store('logos', 'public');
         }
 
-        $data['vidiwall_show_uploader']  = $request->boolean('vidiwall_show_uploader');
+        $data['vidiwall_show_uploader'] = $request->boolean('vidiwall_show_uploader');
         $data['vidiwall_slideshow_mode'] = $request->boolean('vidiwall_slideshow_mode');
+
+        // Vidiwall sponsor frame config
+        $existingFrame = isset($event) ? $event->frameConfig() : [];
+        $frame = [
+            'enabled' => $request->boolean('frame_enabled'),
+            'frame_color' => $request->input('frame_color', $existingFrame['frame_color'] ?? ''),
+            'text_color' => $request->input('frame_text_color', $existingFrame['text_color'] ?? '#ffffff'),
+            'top_text' => $request->input('frame_top_text', $existingFrame['top_text'] ?? ''),
+            'bottom_text' => $request->input('frame_bottom_text', $existingFrame['bottom_text'] ?? ''),
+            'side_text' => $request->input('frame_side_text', $existingFrame['side_text'] ?? ''),
+            'logo_path' => $existingFrame['logo_path'] ?? null,
+        ];
+        if ($request->hasFile('frame_logo')) {
+            $frame['logo_path'] = $request->file('frame_logo')->store('frames', 'public');
+        }
+        if ($request->input('frame_clear_logo')) {
+            $frame['logo_path'] = null;
+        }
+        unset($data['frame_top_text'], $data['frame_bottom_text'], $data['frame_side_text'], $data['frame_color'], $data['frame_text_color'], $data['frame_logo']);
+        $data['vidiwall_frame_config'] = $frame;
 
         // Build per-tile configs
         foreach (['fotobomb', 'voting', 'lottery', 'membership', 'quiz'] as $mod) {
-            $field      = "tile_{$mod}_config";
-            $existing   = (isset($event) ? ($event->$field ?? []) : []);
-            $config     = [
-                'label'         => $request->input("tile_{$mod}_label", $existing['label'] ?? ''),
-                'sublabel'      => $request->input("tile_{$mod}_sublabel", $existing['sublabel'] ?? ''),
-                'bg_color'      => $request->input("tile_{$mod}_bg_color", $existing['bg_color'] ?? ''),
-                'link_url'      => $request->input("tile_{$mod}_link_url", $existing['link_url'] ?? ''),
+            $field = "tile_{$mod}_config";
+            $existing = (isset($event) ? ($event->$field ?? []) : []);
+            $config = [
+                'label' => $request->input("tile_{$mod}_label", $existing['label'] ?? ''),
+                'sublabel' => $request->input("tile_{$mod}_sublabel", $existing['sublabel'] ?? ''),
+                'bg_color' => $request->input("tile_{$mod}_bg_color", $existing['bg_color'] ?? ''),
+                'link_url' => $request->input("tile_{$mod}_link_url", $existing['link_url'] ?? ''),
                 'link_external' => $request->boolean("tile_{$mod}_link_external"),
-                'image_path'    => $existing['image_path'] ?? null,
+                'image_path' => $existing['image_path'] ?? null,
             ];
             if ($request->hasFile("tile_{$mod}_image")) {
                 $config['image_path'] = $request->file("tile_{$mod}_image")->store("tiles/{$mod}", 'public');
@@ -211,10 +248,12 @@ class EventController extends Controller
         // Extra custom fields for lottery
         $lotteryFields = [];
         foreach ($request->input('lottery_field_label', []) as $i => $label) {
-            if (empty(trim($label))) continue;
+            if (empty(trim($label))) {
+                continue;
+            }
             $lotteryFields[] = [
-                'label'    => trim($label),
-                'type'     => $request->input("lottery_field_type.$i", 'text'),
+                'label' => trim($label),
+                'type' => $request->input("lottery_field_type.$i", 'text'),
                 'required' => (bool) $request->input("lottery_field_required.$i", false),
             ];
         }
@@ -223,10 +262,12 @@ class EventController extends Controller
         // Extra custom fields for membership
         $memberFields = [];
         foreach ($request->input('membership_field_label', []) as $i => $label) {
-            if (empty(trim($label))) continue;
+            if (empty(trim($label))) {
+                continue;
+            }
             $memberFields[] = [
-                'label'    => trim($label),
-                'type'     => $request->input("membership_field_type.$i", 'text'),
+                'label' => trim($label),
+                'type' => $request->input("membership_field_type.$i", 'text'),
                 'required' => (bool) $request->input("membership_field_required.$i", false),
             ];
         }
@@ -235,21 +276,23 @@ class EventController extends Controller
         return $data;
     }
 
-
     private function parseVotingOptions(Request $request): string
     {
-        $names     = $request->input('candidate_names', []);
+        $names = $request->input('candidate_names', []);
         $positions = $request->input('candidate_positions', []);
-        $options   = [];
+        $options = [];
         foreach ($names as $i => $name) {
-            if (empty(trim($name))) continue;
+            if (empty(trim($name))) {
+                continue;
+            }
             $options[] = [
-                'name'     => trim($name),
-                'slug'     => Str::slug($name),
+                'name' => trim($name),
+                'slug' => Str::slug($name),
                 'position' => $positions[$i] ?? null,
-                'image'    => null,
+                'image' => null,
             ];
         }
+
         return json_encode($options ?: []);
     }
 }

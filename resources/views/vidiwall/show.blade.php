@@ -1,3 +1,11 @@
+@php
+    $frame = $event->frameConfig();
+    $frameOn = (bool) $frame['enabled'];
+    $frameColor = $frame['frame_color'] ?: $event->primary_color;
+    $frameInk = $frame['text_color'] ?: '#ffffff';
+    $frameLogo = $event->frame_logo_url;
+    $frameBottomText = $frame['bottom_text'] !== '' ? $frame['bottom_text'] : $frame['top_text'];
+@endphp
 <!DOCTYPE html>
 <html lang="en">
 
@@ -12,6 +20,8 @@
             --p: {{ $event->primary_color }};
             --bg: {{ $event->secondary_color }};
             --acc: {{ $event->accent_color }};
+            --frame-c: {{ $frameColor }};
+            --frame-t: {{ $frameInk }};
         }
 
         *,
@@ -74,6 +84,100 @@
             display: flex;
             align-items: center;
             justify-content: center
+        }
+
+        .stage-main {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+
+        /* ── Sponsor frame ─────────────────────────────────────────── */
+        .stage.framed {
+            display: grid;
+            grid-template-areas: "ftop ftop ftop" "fleft fmain fright" "fbot fbot fbot";
+            grid-template-rows: clamp(44px, 7vh, 88px) 1fr clamp(44px, 7vh, 88px);
+            grid-template-columns: clamp(34px, 4.5vw, 76px) 1fr clamp(34px, 4.5vw, 76px);
+            background: var(--frame-c)
+        }
+
+        .stage.framed .stage-main {
+            grid-area: fmain;
+            background: var(--bg)
+        }
+
+        .fr-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 36px;
+            overflow: hidden;
+            white-space: nowrap;
+            padding: 0 20px;
+            color: var(--frame-t);
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            letter-spacing: .24em;
+            text-transform: uppercase;
+            font-size: clamp(13px, 1.6vw, 21px)
+        }
+
+        .fr-top {
+            grid-area: ftop
+        }
+
+        .fr-bottom {
+            grid-area: fbot
+        }
+
+        .fr-bar img {
+            height: 58%;
+            max-height: 46px;
+            width: auto;
+            object-fit: contain
+        }
+
+        .fr-rail {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            color: var(--frame-t);
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            letter-spacing: .3em;
+            text-transform: uppercase;
+            font-size: clamp(10px, 1.1vw, 15px)
+        }
+
+        .fr-left {
+            grid-area: fleft
+        }
+
+        .fr-right {
+            grid-area: fright
+        }
+
+        .fr-rail span {
+            writing-mode: vertical-rl
+        }
+
+        .fr-left span {
+            transform: rotate(180deg)
+        }
+
+        .stage.framed .photo-frame img {
+            max-height: 66vh;
+            max-width: 58vw
+        }
+
+        .stage.framed .video-frame video {
+            max-height: 66vh;
+            max-width: 62vw
         }
 
         .stage-bg {
@@ -338,13 +442,32 @@
             <div class="v-clock" id="clock">--:--:--</div>
         </header>
 
-        <div class="stage" id="stage">
+        <div class="stage{{ $frameOn ? ' framed' : '' }}" id="stage">
+            @if ($frameOn)
+                <div class="fr-bar fr-top">
+                    @if ($frameLogo)
+                        <img src="{{ $frameLogo }}" alt="">
+                    @endif
+                    @if ($frame['top_text'])
+                        <span>{{ $frame['top_text'] }}</span>
+                    @endif
+                    @if ($frameLogo && $frame['top_text'])
+                        <img src="{{ $frameLogo }}" alt="">
+                    @endif
+                </div>
+                <div class="fr-rail fr-left">
+                    @if ($frame['side_text'])
+                        <span>{{ $frame['side_text'] }}</span>
+                    @endif
+                </div>
+            @endif
+            <div class="stage-main">
             <div class="stage-bg" id="stageBg"></div>
 
-            
+
             <div class="idle" id="idleState">
                 <div class="idle-icon">&#128247;</div>
-                <div class="idle-title">Foto Bomb</div>
+                <div class="idle-title">{{ $event->name }}</div>
                 <div class="idle-sub">Scan the QR · Upload your photo or video · Go live!</div>
                 @if ($event->qr_code_path)
                     <img src="{{ $event->qr_code_url }}" class="idle-qr" alt="QR">
@@ -383,6 +506,25 @@
             @if ($event->vidiwall_overlay_text)
                 <div class="overlay-text" id="overlayText" style="display:none">
                     <span class="overlay-pill">{{ $event->vidiwall_overlay_text }}</span>
+                </div>
+            @endif
+            </div>
+            @if ($frameOn)
+                <div class="fr-rail fr-right">
+                    @if ($frame['side_text'])
+                        <span>{{ $frame['side_text'] }}</span>
+                    @endif
+                </div>
+                <div class="fr-bar fr-bottom">
+                    @if ($frameLogo)
+                        <img src="{{ $frameLogo }}" alt="">
+                    @endif
+                    @if ($frameBottomText)
+                        <span>{{ $frameBottomText }}</span>
+                    @endif
+                    @if ($frameLogo && $frameBottomText)
+                        <img src="{{ $frameLogo }}" alt="">
+                    @endif
                 </div>
             @endif
         </div>

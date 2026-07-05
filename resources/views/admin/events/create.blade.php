@@ -100,7 +100,55 @@
                 </div>
             </div>
 
-            
+
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h3>✨ Landing Page Style</h3>
+                    <div class="text-muted text-xs">How the guest landing page looks when fans scan the QR code.</div>
+                </div>
+                <div class="card-body">
+                    @php $currentStyle = old('landing_style', $event->landing_style ?? 'classic'); @endphp
+                    <div class="form-row" style="margin-bottom:16px">
+                        <label
+                            style="display:block;border:2px solid {{ $currentStyle === 'classic' ? 'var(--primary, #6366f1)' : 'var(--border)' }};border-radius:10px;padding:14px;cursor:pointer"
+                            onclick="this.style.borderColor='var(--primary, #6366f1)';document.getElementById('styleCardClean').style.borderColor='var(--border)'">
+                            <input type="radio" name="landing_style" value="classic"
+                                {{ $currentStyle === 'classic' ? 'checked' : '' }} style="margin-right:8px">
+                            <strong>Classic</strong>
+                            <div class="form-hint" style="margin-top:6px">Dark, immersive tiles with gradients and
+                                background photos. Good for concerts &amp; club nights.</div>
+                        </label>
+                        <label id="styleCardClean"
+                            style="display:block;border:2px solid {{ $currentStyle === 'clean' ? 'var(--primary, #6366f1)' : 'var(--border)' }};border-radius:10px;padding:14px;cursor:pointer"
+                            onclick="this.style.borderColor='var(--primary, #6366f1)';this.previousElementSibling.style.borderColor='var(--border)'">
+                            <input type="radio" name="landing_style" value="clean"
+                                {{ $currentStyle === 'clean' ? 'checked' : '' }} style="margin-right:8px">
+                            <strong>Clean / Sponsor</strong>
+                            <div class="form-hint" style="margin-top:6px">Premium broadcast look: solid brand background,
+                                white sponsor cards with centered logos. Ideal for sponsored events (Ski Austria style).
+                            </div>
+                        </label>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group mb-0">
+                            <label class="form-label">Hero Headline</label>
+                            <input name="landing_hero_title" class="form-control"
+                                value="{{ old('landing_hero_title', $event->landing_hero_title ?? '') }}"
+                                placeholder="Your Fan Experience starts here.">
+                        </div>
+                        <div class="form-group mb-0">
+                            <label class="form-label">Hero Subline</label>
+                            <input name="landing_hero_sub" class="form-control"
+                                value="{{ old('landing_hero_sub', $event->landing_hero_sub ?? '') }}"
+                                placeholder="Be part of the show. Tap a tile to get started.">
+                        </div>
+                    </div>
+                    <div class="form-hint" style="margin-top:8px">Leave blank to use the default text (with EN/DE
+                        translation). Custom text is shown as-is in both languages.</div>
+                </div>
+            </div>
+
+
             <div class="card mb-3">
                 <div class="card-header">
                     <h3>Module Content</h3>
@@ -410,6 +458,89 @@
                             max="60"
                             value="{{ old('vidiwall_slideshow_interval', $event->vidiwall_slideshow_interval ?? 8) }}"
                             style="width:120px">
+                    </div>
+
+                    @php $fc = isset($event) ? $event->frameConfig() : []; @endphp
+                    <div style="border-top:1px solid var(--border);margin-top:18px;padding-top:16px">
+                        <label class="form-check" style="margin-bottom:4px">
+                            <input type="checkbox" name="frame_enabled" id="frameToggle" value="1"
+                                {{ old('frame_enabled', $fc['enabled'] ?? false) ? 'checked' : '' }}
+                                onchange="document.getElementById('frameSettings').style.display=this.checked?'':'none'">
+                            <strong>Sponsor frame around photos &amp; QR screen</strong>
+                        </label>
+                        <div class="form-hint" style="margin-bottom:12px">Draws a branded frame (like a TV sponsor board)
+                            around every photo, video and the idle QR screen on the vidiwall.</div>
+
+                        <div id="frameSettings"
+                            style="{{ old('frame_enabled', $fc['enabled'] ?? false) ? '' : 'display:none' }}">
+                            <div class="form-row" style="margin-bottom:12px">
+                                <div class="form-group mb-0">
+                                    <label class="form-label">Frame Colour</label>
+                                    <div style="display:flex;gap:8px;align-items:center">
+                                        <input type="color" value="{{ old('frame_color', $fc['frame_color'] ?: '#cc0000') }}"
+                                            style="width:36px;height:36px;padding:2px;border-radius:6px;border:1px solid var(--border);background:var(--dark);cursor:pointer;flex-shrink:0"
+                                            oninput="document.getElementById('frame_color').value=this.value">
+                                        <input type="text" name="frame_color" id="frame_color" class="form-control"
+                                            style="font-family:monospace;font-size:12px" maxlength="7"
+                                            value="{{ old('frame_color', $fc['frame_color'] ?? '') }}"
+                                            placeholder="Blank = event primary colour">
+                                    </div>
+                                </div>
+                                <div class="form-group mb-0">
+                                    <label class="form-label">Frame Text Colour</label>
+                                    <div style="display:flex;gap:8px;align-items:center">
+                                        <input type="color" value="{{ old('frame_text_color', $fc['text_color'] ?: '#ffffff') }}"
+                                            style="width:36px;height:36px;padding:2px;border-radius:6px;border:1px solid var(--border);background:var(--dark);cursor:pointer;flex-shrink:0"
+                                            oninput="document.getElementById('frame_text_color').value=this.value">
+                                        <input type="text" name="frame_text_color" id="frame_text_color"
+                                            class="form-control" style="font-family:monospace;font-size:12px"
+                                            maxlength="7"
+                                            value="{{ old('frame_text_color', $fc['text_color'] ?? '#ffffff') }}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-row" style="margin-bottom:12px">
+                                <div class="form-group mb-0">
+                                    <label class="form-label">Top Bar Text</label>
+                                    <input type="text" name="frame_top_text" class="form-control"
+                                        value="{{ old('frame_top_text', $fc['top_text'] ?? '') }}"
+                                        placeholder="e.g. Audi Vorsprung durch Technik">
+                                </div>
+                                <div class="form-group mb-0">
+                                    <label class="form-label">Bottom Bar Text</label>
+                                    <input type="text" name="frame_bottom_text" class="form-control"
+                                        value="{{ old('frame_bottom_text', $fc['bottom_text'] ?? '') }}"
+                                        placeholder="Blank = same as top bar">
+                                </div>
+                            </div>
+                            <div class="form-row" style="margin-bottom:12px">
+                                <div class="form-group mb-0">
+                                    <label class="form-label">Side Rail Text (vertical)</label>
+                                    <input type="text" name="frame_side_text" class="form-control"
+                                        value="{{ old('frame_side_text', $fc['side_text'] ?? '') }}"
+                                        placeholder="e.g. Audi FIS Ski World Cup">
+                                </div>
+                                <div class="form-group mb-0">
+                                    <label class="form-label">Frame Sponsor Logo (shown in bars)</label>
+                                    <div style="display:flex;gap:12px;align-items:center">
+                                        @if (!empty($fc['logo_path']))
+                                            <div style="position:relative;flex-shrink:0">
+                                                <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($fc['logo_path']) }}"
+                                                    style="height:36px;border-radius:6px;border:1px solid var(--border);background:#fff;padding:2px">
+                                                <label
+                                                    style="position:absolute;top:-6px;right:-6px;background:var(--red);border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer">
+                                                    <input type="checkbox" name="frame_clear_logo" value="1"
+                                                        style="display:none"
+                                                        onchange="this.closest('label').style.opacity=this.checked?.4:1">
+                                                    <i data-lucide="x" class="lucide-icon"></i>
+                                                </label>
+                                            </div>
+                                        @endif
+                                        <input type="file" name="frame_logo" class="form-control" accept="image/*">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

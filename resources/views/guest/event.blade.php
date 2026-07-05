@@ -839,6 +839,263 @@ $fontH = $event->font_heading ?: 'Syne';
             background: rgba(239, 68, 68, .15);
             color: #f87171
         }
+
+        /* ── Clean / Sponsor landing style ─────────────────────────── */
+        #landing.landing-clean {
+            position: relative;
+            background: var(--bg);
+            background-image: radial-gradient(ellipse at 50% -12%, color-mix(in srgb, var(--p) 16%, transparent) 0%, transparent 58%)
+        }
+
+        .cl-watermark {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none
+        }
+
+        .cl-watermark img {
+            position: absolute;
+            right: -16%;
+            top: 5%;
+            width: 92vw;
+            max-width: 540px;
+            opacity: .045;
+            filter: brightness(0) invert(1);
+            transform: rotate(-8deg)
+        }
+
+        .cl-header {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            padding: max(env(safe-area-inset-top, 0px), 46px) 22px 0;
+            flex-shrink: 0
+        }
+
+        .cl-logo {
+            height: 42px;
+            width: auto;
+            max-width: 38vw;
+            object-fit: contain;
+            display: block
+        }
+
+        .cl-divider {
+            width: 1px;
+            height: 30px;
+            background: rgba(255, 255, 255, .3);
+            flex-shrink: 0
+        }
+
+        .cl-wordmark {
+            font-family: var(--font-h);
+            font-size: clamp(14px, 4.4vw, 19px);
+            font-weight: 800;
+            letter-spacing: .22em;
+            text-transform: uppercase;
+            color: #fff;
+            line-height: 1.3
+        }
+
+        .cl-hero {
+            position: relative;
+            text-align: center;
+            padding: 30px 28px 4px;
+            flex-shrink: 0
+        }
+
+        .cl-hero-title {
+            font-family: var(--font-h);
+            font-weight: 800;
+            font-size: clamp(21px, 6vw, 28px);
+            line-height: 1.3;
+            color: #fff
+        }
+
+        .cl-hero-sub {
+            margin-top: 10px;
+            font-size: clamp(13px, 3.8vw, 15px);
+            line-height: 1.55;
+            color: var(--muted)
+        }
+
+        .cl-grid {
+            position: relative;
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            padding: 26px 18px 10px;
+            align-content: start
+        }
+
+        .cl-card {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            aspect-ratio: 1.42;
+            border-radius: 16px;
+            background: var(--cl-card-bg, #fff);
+            color: var(--cl-card-ink, #101828);
+            box-shadow: 0 14px 34px rgba(0, 0, 0, .32);
+            cursor: pointer;
+            overflow: hidden;
+            padding: 15px 14px 13px;
+            text-align: center;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            transition: transform .18s ease
+        }
+
+        .cl-card:active {
+            transform: scale(.965)
+        }
+
+        .cl-card-media {
+            flex: 1;
+            min-height: 0;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+
+        .cl-card-media img {
+            max-height: 100%;
+            max-width: 76%;
+            object-fit: contain
+        }
+
+        .cl-card-media .lucide-icon {
+            width: 36px;
+            height: 36px;
+            color: var(--cl-icon, var(--p))
+        }
+
+        .cl-grid .cl-card:nth-child(odd):last-child {
+            grid-column: 1 / -1;
+            aspect-ratio: 3
+        }
+
+        .cl-card-rule {
+            width: 84%;
+            height: 1px;
+            background: currentColor;
+            opacity: .18;
+            margin: 10px 0 8px;
+            flex-shrink: 0
+        }
+
+        .cl-card-label {
+            font-size: 10.5px;
+            font-weight: 700;
+            letter-spacing: .15em;
+            text-transform: uppercase;
+            line-height: 1.35;
+            opacity: .85
+        }
+
+        .cl-card-sub {
+            font-size: 9px;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            opacity: .5;
+            margin-top: 3px
+        }
+
+        .cl-hashtag {
+            position: relative;
+            text-align: center;
+            font-family: var(--font-h);
+            font-weight: 800;
+            font-size: clamp(19px, 5.6vw, 25px);
+            color: #fff;
+            padding: 10px 20px 0;
+            flex-shrink: 0
+        }
+
+        .cl-footer {
+            position: relative;
+            text-align: center;
+            padding: 14px 20px max(env(safe-area-inset-bottom, 14px), 18px);
+            font-size: 11px;
+            color: var(--muted);
+            flex-shrink: 0
+        }
+
+        .cl-footer a {
+            color: var(--muted);
+            text-decoration: underline;
+            text-underline-offset: 2px
+        }
+
+        @keyframes clRise {
+            from {
+                opacity: 0;
+                transform: translateY(14px)
+            }
+
+            to {
+                opacity: 1;
+                transform: none
+            }
+        }
+
+        .landing-clean .cl-header,
+        .landing-clean .cl-hero,
+        .landing-clean .cl-card,
+        .landing-clean .cl-hashtag,
+        .landing-clean .cl-footer {
+            animation: clRise .5s cubic-bezier(.22, 1, .36, 1) both
+        }
+
+        .landing-clean .cl-hero {
+            animation-delay: .06s
+        }
+
+        .landing-clean .cl-card:nth-child(1) {
+            animation-delay: .12s
+        }
+
+        .landing-clean .cl-card:nth-child(2) {
+            animation-delay: .18s
+        }
+
+        .landing-clean .cl-card:nth-child(3) {
+            animation-delay: .24s
+        }
+
+        .landing-clean .cl-card:nth-child(4) {
+            animation-delay: .3s
+        }
+
+        .landing-clean .cl-card:nth-child(5) {
+            animation-delay: .36s
+        }
+
+        .landing-clean .cl-hashtag {
+            animation-delay: .42s
+        }
+
+        .landing-clean .cl-footer {
+            animation-delay: .48s
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+
+            .landing-clean .cl-header,
+            .landing-clean .cl-hero,
+            .landing-clean .cl-card,
+            .landing-clean .cl-hashtag,
+            .landing-clean .cl-footer {
+                animation: none
+            }
+        }
     </style>
 </head>
 
@@ -897,7 +1154,102 @@ $fontH = $event->font_heading ?: 'Syne';
     </div>
 
     
-    <div id="landing">
+    @php
+        $isClean = ($event->landing_style ?? 'classic') === 'clean';
+        $heroTitle = $event->landing_hero_title;
+        $heroSub = $event->landing_hero_sub;
+
+        // Card background + auto-contrast ink for the clean tile style
+        $cardInk = function (?string $hex): array {
+            $hex = ltrim((string) $hex, '#');
+            if (strlen($hex) === 3) {
+                $hex = preg_replace('/(.)/', '$1$1', $hex);
+            }
+            if (strlen($hex) !== 6 || !ctype_xdigit($hex)) {
+                return ['#ffffff', '#101828'];
+            }
+            $lum =
+                (0.299 * hexdec(substr($hex, 0, 2)) +
+                    0.587 * hexdec(substr($hex, 2, 2)) +
+                    0.114 * hexdec(substr($hex, 4, 2))) /
+                255;
+
+            return ['#' . $hex, $lum > 0.55 ? '#101828' : '#ffffff'];
+        };
+    @endphp
+    <div id="landing" @if ($isClean) class="landing-clean" @endif>
+        @if ($isClean)
+            @if ($event->logo_path)
+                <div class="cl-watermark" aria-hidden="true"><img src="{{ $event->logo_url }}" alt=""></div>
+            @endif
+
+            <header class="cl-header">
+                @if ($event->logo_path)
+                    <img src="{{ $event->logo_url }}" class="cl-logo" alt="{{ $event->name }}">
+                    <div class="cl-divider"></div>
+                @endif
+                <div class="cl-wordmark">{{ $event->subtitle ?: $event->name }}</div>
+            </header>
+
+            <div class="cl-hero">
+                <div class="cl-hero-title"
+                    @unless ($heroTitle) data-en="Your Fan Experience starts here." data-de="Deine Fan Experience startet hier." @endunless>
+                    {{ $heroTitle ?: 'Your Fan Experience starts here.' }}</div>
+                <div class="cl-hero-sub"
+                    @unless ($heroSub) data-en="Be part of the show. Tap a tile to get started." data-de="Sei Teil des Erlebnisses. Tippe auf eine Kachel." @endunless>
+                    {{ $heroSub ?: 'Be part of the show. Tap a tile to get started.' }}</div>
+            </div>
+
+            <div class="cl-grid">
+                @foreach ([['fotobomb', 'camera'], ['voting', 'trophy'], ['lottery', 'ticket'], ['membership', 'star'], ['quiz', 'help-circle']] as [$mod, $iconName])
+                    @continue(!$event->{'module_' . $mod})
+                    @php
+                        $tc = $event->tileConfig($mod);
+                        $imgUrl = $event->getTileImageUrl($mod);
+                        if (!$imgUrl) {
+                            $imgUrl = match (true) {
+                                $mod === 'fotobomb' && !empty($event->sponsor_logo_path) => $event->sponsor_logo_url,
+                                $mod === 'voting' && !empty($event->logo_path) => $event->logo_url,
+                                default => null,
+                            };
+                        }
+                        [$cardBg, $cardInkColor] = $cardInk($tc['bg_color'] ?? '');
+                        $linkUrl = $tc['link_url'] ?? '';
+                        $isLink = !empty($linkUrl);
+                        $external = $tc['link_external'] ?? false;
+                        $capsLabel = $tc['label'] ?: $event->{$mod . '_title'};
+                    @endphp
+                    <div class="cl-card"
+                        style="--cl-card-bg:{{ $cardBg }};--cl-card-ink:{{ $cardInkColor }}{{ !empty($tc['bg_color']) ? ';--cl-icon:' . $cardInkColor : '' }}"
+                        onclick="{{ $isLink
+                            ? "window.open('" . addslashes($linkUrl) . "','" . ($external ? '_blank' : '_self') . "')"
+                            : "openModule('{$mod}')" }}">
+                        <div class="cl-card-media">
+                            @if ($imgUrl)
+                                <img src="{{ $imgUrl }}" alt="">
+                            @else
+                                <i data-lucide="{{ $iconName }}" class="lucide-icon"></i>
+                            @endif
+                        </div>
+                        <div class="cl-card-rule"></div>
+                        <div class="cl-card-label">{{ $capsLabel }}</div>
+                        @if (!empty($tc['sublabel']))
+                            <div class="cl-card-sub">{{ $tc['sublabel'] }}</div>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+
+            @if ($event->vidiwall_overlay_text)
+                <div class="cl-hashtag">{{ $event->vidiwall_overlay_text }}</div>
+            @endif
+            <div class="cl-footer">© {{ now()->year }} EventBomb
+                @if ($privacyUrl !== '#')
+                    · <a href="{{ $privacyUrl }}" target="_blank" data-en="Privacy Policy"
+                        data-de="Datenschutz">Privacy Policy</a>
+                @endif
+            </div>
+        @else
         <div class="land-header" style="display:flex;align-items:center;justify-content:center;padding:22px 18px 10px;">
             <div class="land-brand" style="display:flex;align-items:center;gap:16px;max-width:100%;">
                 @if ($event->logo_path)
@@ -929,11 +1281,12 @@ $fontH = $event->font_heading ?: 'Syne';
         @endif
 
         <div class="land-hero">
-            <div class="land-hero-text" data-en="Your Fan Experience starts here."
-                data-de="Deine Fan Experience startet hier.">Your Fan Experience starts here.</div>
-            <div class="land-hero-sub" data-en="Be part of the show. Tap a tile to get started."
-                data-de="Sei Teil des Erlebnisses. Tippe auf eine Kachel.">Be part of the show. Tap a tile to get
-                started.</div>
+            <div class="land-hero-text"
+                @unless ($heroTitle) data-en="Your Fan Experience starts here." data-de="Deine Fan Experience startet hier." @endunless>
+                {{ $heroTitle ?: 'Your Fan Experience starts here.' }}</div>
+            <div class="land-hero-sub"
+                @unless ($heroSub) data-en="Be part of the show. Tap a tile to get started." data-de="Sei Teil des Erlebnisses. Tippe auf eine Kachel." @endunless>
+                {{ $heroSub ?: 'Be part of the show. Tap a tile to get started.' }}</div>
         </div>
 
         <div class="tile-grid">
@@ -1055,6 +1408,7 @@ $fontH = $event->font_heading ?: 'Syne';
             @endif
             <div class="land-footer-sub">© {{ now()->year }} EventBomb</div>
         </div>
+        @endif
     </div>
 
     

@@ -49,6 +49,10 @@ class Event extends Model
         'vidiwall_slideshow_mode',
         'vidiwall_slideshow_interval',
         'vidiwall_overlay_text',
+        'vidiwall_frame_config',
+        'landing_style',
+        'landing_hero_title',
+        'landing_hero_sub',
         'privacy_policy_text',
         'starts_at',
         'ends_at',
@@ -81,6 +85,7 @@ class Event extends Model
         'vidiwall_slideshow_mode' => 'boolean',
         'starts_at' => 'datetime',
         'ends_at' => 'datetime',
+        'vidiwall_frame_config' => 'array',
         'tile_fotobomb_config' => 'array',
         'tile_voting_config' => 'array',
         'tile_lottery_config' => 'array',
@@ -278,6 +283,37 @@ class Event extends Model
 
         return ! empty($config['image_path'])
             ? Storage::disk('public')->url($config['image_path'])
+            : null;
+    }
+
+    /**
+     * @return array{enabled: bool, frame_color: string, text_color: string, top_text: string, bottom_text: string, side_text: string, logo_path: ?string}
+     */
+    public function frameConfig(): array
+    {
+        $defaults = [
+            'enabled' => false,
+            'frame_color' => '',
+            'text_color' => '#ffffff',
+            'top_text' => '',
+            'bottom_text' => '',
+            'side_text' => '',
+            'logo_path' => null,
+        ];
+        $config = $this->vidiwall_frame_config ?? [];
+        if (! is_array($config)) {
+            $config = [];
+        }
+
+        return array_merge($defaults, $config);
+    }
+
+    public function getFrameLogoUrlAttribute(): ?string
+    {
+        $config = $this->frameConfig();
+
+        return ! empty($config['logo_path'])
+            ? Storage::disk('public')->url($config['logo_path'])
             : null;
     }
 }
