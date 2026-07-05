@@ -316,4 +316,33 @@ class Event extends Model
             ? Storage::disk('public')->url($config['logo_path'])
             : null;
     }
+
+    public function isLightColor(?string $hex): bool
+    {
+        $hex = ltrim((string) $hex, '#');
+
+        if (strlen($hex) === 3) {
+            $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
+        }
+
+        if (strlen($hex) !== 6 || ! ctype_xdigit($hex)) {
+            return false;
+        }
+
+        $r = hexdec(substr($hex, 0, 2));
+        $g = hexdec(substr($hex, 2, 2));
+        $b = hexdec(substr($hex, 4, 2));
+
+        return ((($r * 299) + ($g * 587) + ($b * 114)) / 1000) > 150;
+    }
+
+    public function readableInk(?string $hex, string $light = '#111827', string $dark = '#ffffff'): string
+    {
+        return $this->isLightColor($hex) ? $light : $dark;
+    }
+
+    public function hasLightBackground(): bool
+    {
+        return $this->isLightColor($this->secondary_color);
+    }
 }

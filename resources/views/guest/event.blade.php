@@ -14,15 +14,18 @@ $fontH = $event->font_heading ?: 'Syne';
         href="https://fonts.googleapis.com/css2?family={{ urlencode($fontH) }}:wght@700;800&family={{ urlencode($fontB) }}:wght@300;400;500;600&display=swap"
         rel="stylesheet">
 
+    @php $lightBg = $event->hasLightBackground(); @endphp
     <style>
         :root {
             --p: {{ $event->primary_color }};
             --bg: {{ $event->secondary_color }};
             --acc: {{ $event->accent_color }};
-            --text: #f0f0f8;
-            --muted: rgba(240, 240, 248, .55);
-            --border: rgba(255, 255, 255, .12);
-            --card: rgba(255, 255, 255, .07);
+            --on-p: {{ $event->readableInk($event->primary_color) }};
+            --on-acc: {{ $event->readableInk($event->accent_color) }};
+            --text: {{ $lightBg ? '#16162a' : '#f0f0f8' }};
+            --muted: {{ $lightBg ? 'rgba(20, 20, 40, .6)' : 'rgba(240, 240, 248, .55)' }};
+            --border: {{ $lightBg ? 'rgba(0, 0, 0, .14)' : 'rgba(255, 255, 255, .12)' }};
+            --card: {{ $lightBg ? 'rgba(0, 0, 0, .05)' : 'rgba(255, 255, 255, .07)' }};
             --r: 18px;
             --font-h: '{{ $fontH }}', sans-serif;
             --font-b: '{{ $fontB }}', sans-serif;
@@ -368,7 +371,7 @@ $fontH = $event->font_heading ?: 'Syne';
 
         .lang-btn.active {
             background: var(--p);
-            color: #fff
+            color: var(--on-p)
         }
 
         .module-screen {
@@ -555,7 +558,7 @@ $fontH = $event->font_heading ?: 'Syne';
         .btn-main {
             width: 100%;
             background: var(--p);
-            color: #fff;
+            color: var(--on-p);
             border: none;
             border-radius: 12px;
             padding: 15px;
@@ -648,6 +651,7 @@ $fontH = $event->font_heading ?: 'Syne';
             height: 46px;
             border-radius: 50%;
             background: linear-gradient(135deg, var(--p), var(--acc));
+            color: var(--on-p);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -808,7 +812,7 @@ $fontH = $event->font_heading ?: 'Syne';
 
         .media-toggle-btn.active {
             background: var(--p);
-            color: #fff
+            color: var(--on-p)
         }
 
         .preview-video {
@@ -1531,7 +1535,7 @@ $fontH = $event->font_heading ?: 'Syne';
                         @endforeach
                         {!! $gdprSnippet('lottery') !!}
                         <button class="btn-main" onclick="submitLottery()">
-                            <span data-en='<i data-lucide="ticket" class="lucide-icon"></i> Enter the Draw' data-de='<i data-lucide="ticket" class="lucide-icon"></i> Jetzt teilnehmen'><i data-lucide="ticket" class="lucide-icon"></i> Enter the Draw</span>
+                            <span data-html data-en='<i data-lucide="ticket" class="lucide-icon"></i> Enter the Draw' data-de='<i data-lucide="ticket" class="lucide-icon"></i> Jetzt teilnehmen'><i data-lucide="ticket" class="lucide-icon"></i> Enter the Draw</span>
                         </button>
                     </div>
                 </div>
@@ -1585,7 +1589,7 @@ $fontH = $event->font_heading ?: 'Syne';
                     </div>
                     <div id="voteAction">
                         {!! $gdprSnippet('vote') !!}
-                        <button class="btn-main" id="voteBtn" onclick="submitVote()"> <span
+                        <button class="btn-main" id="voteBtn" onclick="submitVote()"> <span data-html
                                 data-en='<i data-lucide="check-square" class="lucide-icon"></i> Cast My Vote' data-de='<i data-lucide="check-square" class="lucide-icon"></i> Abstimmen'><i data-lucide="check-square" class="lucide-icon"></i> Cast My Vote</span>
                         </button>
                     </div>
@@ -1644,7 +1648,7 @@ $fontH = $event->font_heading ?: 'Syne';
                                 data-de="Newsletter &amp; Angebote erhalten">Subscribe to news &amp;
                                 offers</span></label>
                         {!! $gdprSnippet('member') !!}
-                        <button class="btn-main" onclick="submitMembership()"> <span data-en='<i data-lucide="star" class="lucide-icon"></i> Join Now'
+                        <button class="btn-main" onclick="submitMembership()"> <span data-html data-en='<i data-lucide="star" class="lucide-icon"></i> Join Now'
                                 data-de='<i data-lucide="star" class="lucide-icon"></i> Jetzt beitreten'><i data-lucide="star" class="lucide-icon"></i> Join Now</span></button>
                     </div>
                 </div>
@@ -1772,11 +1776,19 @@ $fontH = $event->font_heading ?: 'Syne';
             document.querySelectorAll('[data-en]').forEach(el => {
                 if (el.tagName === 'INPUT') return;
                 const v = el.dataset[l] || el.dataset.en;
-                if (v !== undefined) el.textContent = v;
+                if (v === undefined) return;
+                if (el.hasAttribute('data-html')) {
+                    el.innerHTML = v;
+                } else {
+                    el.textContent = v;
+                }
             });
             document.querySelectorAll('[data-ph-' + l + ']').forEach(el => {
                 el.placeholder = el.dataset['ph' + l.charAt(0).toUpperCase() + l.slice(1)] || el.placeholder;
             });
+            if (window.lucide) {
+                lucide.createIcons();
+            }
         }
         setLang(lang);
 

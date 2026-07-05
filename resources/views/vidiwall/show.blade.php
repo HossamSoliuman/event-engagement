@@ -20,6 +20,8 @@
             --p: {{ $event->primary_color }};
             --bg: {{ $event->secondary_color }};
             --acc: {{ $event->accent_color }};
+            --on-p: {{ $event->readableInk($event->primary_color) }};
+            --on-acc: {{ $event->readableInk($event->accent_color) }};
             --frame-c: {{ $frameColor }};
             --frame-t: {{ $frameInk }};
         }
@@ -298,7 +300,7 @@
             left: 18px;
             z-index: 4;
             background: var(--p);
-            color: #fff;
+            color: var(--on-p);
             font-family: 'Syne', sans-serif;
             font-size: 11px;
             font-weight: 800;
@@ -388,6 +390,7 @@
             gap: 16px;
             padding: 0 36px;
             background: var(--p);
+            color: var(--on-p);
             border-top: 2px solid var(--acc)
         }
 
