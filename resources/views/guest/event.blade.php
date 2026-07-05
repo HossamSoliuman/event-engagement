@@ -39,6 +39,9 @@ $fontH = $event->font_heading ?: 'Syne';
             padding: 0
         }
         .lucide-icon { width: 1em; height: 1em; vertical-align: text-bottom; stroke-width: 2px; }
+        .s-icon .lucide-icon, .uz-icon .lucide-icon, .cl-card-media .lucide-icon, .tile-icon .lucide-icon { stroke-width: 1.5px; }
+        @keyframes ebspin { to { transform: rotate(360deg); } }
+        .lucide-spin { animation: ebspin .9s linear infinite; }
 
         #screen-fotobomb .mod-header-title .lucide-icon, #screen-fotobomb .section-title .lucide-icon, #screen-fotobomb .s-icon .lucide-icon, #screen-fotobomb .uz-icon .lucide-icon { color: var(--p); }
         #screen-voting .mod-header-title .lucide-icon, #screen-voting .section-title .lucide-icon, #screen-voting .s-icon .lucide-icon { color: var(--acc); }
@@ -1205,7 +1208,7 @@ $fontH = $event->font_heading ?: 'Syne';
             </div>
 
             <div class="cl-grid">
-                @foreach ([['fotobomb', 'camera'], ['voting', 'trophy'], ['lottery', 'ticket'], ['membership', 'star'], ['quiz', 'help-circle']] as [$mod, $iconName])
+                @foreach ([['fotobomb', 'camera'], ['voting', 'trophy'], ['lottery', 'ticket'], ['membership', 'crown'], ['quiz', 'brain']] as [$mod, $iconName])
                     @continue(!$event->{'module_' . $mod})
                     @php
                         $tc = $event->tileConfig($mod);
@@ -1294,7 +1297,7 @@ $fontH = $event->font_heading ?: 'Syne';
         </div>
 
         <div class="tile-grid">
-            @foreach ([['fotobomb', '<i data-lucide="camera" class="lucide-icon"></i>', $event->fotobomb_title, '#FF3D00'], ['voting', '<i data-lucide="trophy" class="lucide-icon"></i>', $event->voting_title, '#FFD700'], ['lottery', '<i data-lucide="ticket" class="lucide-icon"></i>', $event->lottery_title, '#6366f1'], ['membership', '<i data-lucide="star" class="lucide-icon"></i>', $event->membership_title, '#22c55e'], ['quiz', '<i data-lucide="help-circle" class="lucide-icon"></i>', $event->quiz_title, '#f59e0b']] as [$mod, $defaultIcon, $defaultName, $defaultAccent])
+            @foreach ([['fotobomb', '<i data-lucide="camera" class="lucide-icon"></i>', $event->fotobomb_title, '#FF3D00'], ['voting', '<i data-lucide="trophy" class="lucide-icon"></i>', $event->voting_title, '#FFD700'], ['lottery', '<i data-lucide="ticket" class="lucide-icon"></i>', $event->lottery_title, '#6366f1'], ['membership', '<i data-lucide="crown" class="lucide-icon"></i>', $event->membership_title, '#22c55e'], ['quiz', '<i data-lucide="brain" class="lucide-icon"></i>', $event->quiz_title, '#f59e0b']] as [$mod, $defaultIcon, $defaultName, $defaultAccent])
                 @if (!$event->{'module_' . $mod})
                     @continue
                 @endif
@@ -1382,9 +1385,10 @@ $fontH = $event->font_heading ?: 'Syne';
 
                     <div class="tile-body">
                         <div class="tile-label">
-                            {{ $isLink
-                                ? '🔗 ' . __('Tap to visit')
-                                : match ($mod) {
+                            @if ($isLink)
+                                <i data-lucide="external-link" class="lucide-icon"></i> {{ __('Tap to visit') }}
+                            @else
+                                {{ match ($mod) {
                                     'fotobomb' => $event->fotobomb_desc
                                         ? \Illuminate\Support\Str::limit($event->fotobomb_desc, 30)
                                         : 'Upload your photo',
@@ -1399,6 +1403,7 @@ $fontH = $event->font_heading ?: 'Syne';
                                         ? \Illuminate\Support\Str::limit($event->quiz_desc, 30)
                                         : 'Fastest answer wins',
                                 } }}
+                            @endif
                         </div>
                         <div class="tile-name">{{ $defaultName }}</div>
                     </div>
@@ -1419,7 +1424,7 @@ $fontH = $event->font_heading ?: 'Syne';
     @if ($event->module_fotobomb)
         <div class="module-screen" id="screen-fotobomb">
             <div class="mod-header">
-                <button class="mod-back" onclick="closeModule('fotobomb')">←</button>
+                <button class="mod-back" onclick="closeModule('fotobomb')"><i data-lucide="arrow-left" class="lucide-icon"></i></button>
                 <div class="mod-header-title">{{ $event->fotobomb_title }}</div>
             </div>
             <div class="mod-body">
@@ -1487,7 +1492,7 @@ $fontH = $event->font_heading ?: 'Syne';
                     </div>
                 </div>
                 <div class="success-state" id="fotoSuccess" style="display:none">
-                    <div class="s-icon">&#127881;</div>
+                    <div class="s-icon"><i data-lucide="party-popper" class="lucide-icon"></i></div>
                     <h3 id="fotoSuccessTitle" data-en="Submitted!" data-de="Eingereicht!">Submitted!</h3>
                     <p data-en="Watch the big screen — you might be up next!"
                         data-de="Schau auf die Leinwand — vielleicht bist du als nächstes dran!">Watch the big screen —
@@ -1503,7 +1508,7 @@ $fontH = $event->font_heading ?: 'Syne';
     @if ($event->module_lottery)
         <div class="module-screen" id="screen-lottery">
             <div class="mod-header">
-                <button class="mod-back" onclick="closeModule('lottery')">←</button>
+                <button class="mod-back" onclick="closeModule('lottery')"><i data-lucide="arrow-left" class="lucide-icon"></i></button>
                 <div class="mod-header-title"><i data-lucide="ticket" class="lucide-icon"></i> {{ $event->lottery_title }}</div>
             </div>
             <div class="mod-body">
@@ -1540,7 +1545,7 @@ $fontH = $event->font_heading ?: 'Syne';
                     </div>
                 </div>
                 <div class="success-state" id="lotterySuccess" style="display:none">
-                    <div class="s-icon">🎟</div>
+                    <div class="s-icon"><i data-lucide="ticket-check" class="lucide-icon"></i></div>
                     <h3 data-en="You're In!" data-de="Du bist dabei!">You're In!</h3>
                     <p data-en="Good luck! The winner will be announced live."
                         data-de="Viel Glück! Der Gewinner wird live bekannt gegeben.">Good luck! The winner will be
@@ -1554,7 +1559,7 @@ $fontH = $event->font_heading ?: 'Syne';
     @if ($event->module_voting)
         <div class="module-screen" id="screen-voting">
             <div class="mod-header">
-                <button class="mod-back" onclick="closeModule('voting')">←</button>
+                <button class="mod-back" onclick="closeModule('voting')"><i data-lucide="arrow-left" class="lucide-icon"></i></button>
                 <div class="mod-header-title"><i data-lucide="trophy" class="lucide-icon"></i> {{ $event->voting_title }}</div>
             </div>
             <div class="mod-body">
@@ -1608,12 +1613,12 @@ $fontH = $event->font_heading ?: 'Syne';
     @if ($event->module_membership)
         <div class="module-screen" id="screen-membership">
             <div class="mod-header">
-                <button class="mod-back" onclick="closeModule('membership')">←</button>
-                <div class="mod-header-title"><i data-lucide="star" class="lucide-icon"></i> {{ $event->membership_title }}</div>
+                <button class="mod-back" onclick="closeModule('membership')"><i data-lucide="arrow-left" class="lucide-icon"></i></button>
+                <div class="mod-header-title"><i data-lucide="crown" class="lucide-icon"></i> {{ $event->membership_title }}</div>
             </div>
             <div class="mod-body">
                 <div id="memberForm">
-                    <p class="section-title"><i data-lucide="star" class="lucide-icon"></i> {{ $event->membership_title }}</p>
+                    <p class="section-title"><i data-lucide="crown" class="lucide-icon"></i> {{ $event->membership_title }}</p>
                     <p class="section-desc">{{ $event->membership_desc }}</p>
                     <div class="glass">
                         <div class="field-group"><label class="field-label" data-en="Full Name *"
@@ -1648,12 +1653,12 @@ $fontH = $event->font_heading ?: 'Syne';
                                 data-de="Newsletter &amp; Angebote erhalten">Subscribe to news &amp;
                                 offers</span></label>
                         {!! $gdprSnippet('member') !!}
-                        <button class="btn-main" onclick="submitMembership()"> <span data-html data-en='<i data-lucide="star" class="lucide-icon"></i> Join Now'
-                                data-de='<i data-lucide="star" class="lucide-icon"></i> Jetzt beitreten'><i data-lucide="star" class="lucide-icon"></i> Join Now</span></button>
+                        <button class="btn-main" onclick="submitMembership()"> <span data-html data-en='<i data-lucide="crown" class="lucide-icon"></i> Join Now'
+                                data-de='<i data-lucide="crown" class="lucide-icon"></i> Jetzt beitreten'><i data-lucide="crown" class="lucide-icon"></i> Join Now</span></button>
                     </div>
                 </div>
                 <div class="success-state" id="memberSuccess" style="display:none">
-                    <div class="s-icon"><i data-lucide="star" class="lucide-icon"></i></div>
+                    <div class="s-icon"><i data-lucide="crown" class="lucide-icon"></i></div>
                     <h3 data-en="Welcome to the Club!" data-de="Willkommen im Club!">Welcome to the Club!</h3>
                     <p data-en="Membership confirmed. Stay tuned for exclusive updates."
                         data-de="Mitgliedschaft bestätigt. Bleib dran für exklusive Updates.">Membership confirmed.</p>
@@ -1665,8 +1670,8 @@ $fontH = $event->font_heading ?: 'Syne';
     @if ($event->module_quiz)
         <div class="module-screen" id="screen-quiz">
             <div class="mod-header">
-                <button class="mod-back" onclick="closeModule('quiz')">←</button>
-                <div class="mod-header-title"><i data-lucide="help-circle" class="lucide-icon"></i> {{ $event->quiz_title }}</div>
+                <button class="mod-back" onclick="closeModule('quiz')"><i data-lucide="arrow-left" class="lucide-icon"></i></button>
+                <div class="mod-header-title"><i data-lucide="brain" class="lucide-icon"></i> {{ $event->quiz_title }}</div>
             </div>
             <div class="mod-body">
                 <style>
@@ -1698,7 +1703,7 @@ $fontH = $event->font_heading ?: 'Syne';
                 </style>
 
                 <div id="quizNameScreen" class="quiz-name-screen">
-                    <p class="section-title"><i data-lucide="help-circle" class="lucide-icon"></i> {{ $event->quiz_title }}</p>
+                    <p class="section-title"><i data-lucide="brain" class="lucide-icon"></i> {{ $event->quiz_title }}</p>
                     <p class="section-desc" style="margin-bottom:20px">{{ $event->quiz_desc }}</p>
                     <div class="glass">
                         <div class="field-group">
@@ -1745,7 +1750,7 @@ $fontH = $event->font_heading ?: 'Syne';
                         <div id="quizWinnerText" style="display:none;text-align:center;font-size:15px;font-weight:600;line-height:1.5;color:#f59e0b;margin-bottom:18px"></div>
                         <p class="section-title" style="margin-bottom:14px">Results</p>
                         <div class="quiz-winner-card" id="quizWinnerCard" style="display:none">
-                            <div style="font-size:28px;margin-bottom:8px">🏆</div>
+                            <div style="font-size:28px;margin-bottom:8px;color:#f59e0b"><i data-lucide="trophy" class="lucide-icon"></i></div>
                             <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#f59e0b;margin-bottom:4px">Winner</div>
                             <div style="font-size:20px;font-weight:800" id="quizWinnerName"></div>
                         </div>
@@ -1940,7 +1945,7 @@ $fontH = $event->font_heading ?: 'Syne';
             const btn = document.getElementById('uploadBtn');
             const txt = document.getElementById('uploadBtnText');
             btn.disabled = true;
-            if (txt) txt.textContent = '⌛';
+            if (txt) { txt.innerHTML = '<i data-lucide="loader-circle" class="lucide-icon lucide-spin"></i>'; window.lucide && lucide.createIcons(); }
             const prog = document.getElementById('uploadProgress'),
                 fill = document.getElementById('uploadProgressFill');
             prog.style.display = 'block';
