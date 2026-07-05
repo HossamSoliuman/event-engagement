@@ -943,8 +943,6 @@ $fontH = $event->font_heading ?: 'Syne';
             position: relative;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
             aspect-ratio: 1.42;
             border-radius: 16px;
             background: var(--cl-card-bg, #fff);
@@ -952,7 +950,6 @@ $fontH = $event->font_heading ?: 'Syne';
             box-shadow: 0 14px 34px rgba(0, 0, 0, .32);
             cursor: pointer;
             overflow: hidden;
-            padding: 15px 14px 13px;
             text-align: center;
             -webkit-tap-highlight-color: transparent;
             user-select: none;
@@ -969,13 +966,15 @@ $fontH = $event->font_heading ?: 'Syne';
             width: 100%;
             display: flex;
             align-items: center;
-            justify-content: center
+            justify-content: center;
+            overflow: hidden
         }
 
         .cl-card-media img {
-            max-height: 100%;
-            max-width: 76%;
-            object-fit: contain
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block
         }
 
         .cl-card-media .lucide-icon {
@@ -989,12 +988,21 @@ $fontH = $event->font_heading ?: 'Syne';
             aspect-ratio: 3
         }
 
+        .cl-card-foot {
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            padding: 10px 12px 12px
+        }
+
         .cl-card-rule {
-            width: 84%;
+            width: 100%;
             height: 1px;
             background: currentColor;
             opacity: .18;
-            margin: 10px 0 8px;
+            margin: 0 0 8px;
             flex-shrink: 0
         }
 
@@ -1238,11 +1246,13 @@ $fontH = $event->font_heading ?: 'Syne';
                                 <i data-lucide="{{ $iconName }}" class="lucide-icon"></i>
                             @endif
                         </div>
-                        <div class="cl-card-rule"></div>
-                        <div class="cl-card-label">{{ $capsLabel }}</div>
-                        @if (!empty($tc['sublabel']))
-                            <div class="cl-card-sub">{{ $tc['sublabel'] }}</div>
-                        @endif
+                        <div class="cl-card-foot">
+                            <div class="cl-card-rule"></div>
+                            <div class="cl-card-label">{{ $capsLabel }}</div>
+                            @if (!empty($tc['sublabel']))
+                                <div class="cl-card-sub">{{ $tc['sublabel'] }}</div>
+                            @endif
+                        </div>
                     </div>
                 @endforeach
             </div>
