@@ -424,111 +424,73 @@
                     <h3><i data-lucide="monitor-play" class="lucide-icon"></i> Vidiwall Settings</h3>
                 </div>
                 <div class="card-body">
-                    <div class="form-row">
-                        <div>
-                            <label class="form-check">
-                                <input type="checkbox" name="vidiwall_show_uploader"
-                                    {{ $event->vidiwall_show_uploader ?? true ? 'checked' : '' }}>
-                                Show uploader name on vidiwall
-                            </label>
-                        </div>
-                        <div>
-                            <label class="form-check">
-                                <input type="checkbox" name="vidiwall_slideshow_mode" id="slideshowToggle"
-                                    {{ $event->vidiwall_slideshow_mode ?? false ? 'checked' : '' }}
-                                    onchange="toggleSlideshow()">
-                                Slideshow mode (rotate approved photos)
-                            </label>
-                        </div>
-                    </div>
-                    <div id="slideshowInterval"
-                        style="{{ $event->vidiwall_slideshow_mode ?? false ? '' : 'display:none' }};margin-top:12px">
-                        <label class="form-label">Slideshow interval (seconds)</label>
-                        <input type="number" name="vidiwall_slideshow_interval" class="form-control" min="3"
-                            max="60"
-                            value="{{ old('vidiwall_slideshow_interval', $event->vidiwall_slideshow_interval ?? 8) }}"
-                            style="width:120px">
-                    </div>
+                    <p class="form-hint" style="margin-bottom:16px">The vidiwall screen shows the sponsor frame, the
+                        event name and a large QR code. Fill in the frame text and branding below — leave a field blank
+                        to hide that piece.</p>
 
                     @php $fc = isset($event) ? $event->frameConfig() : []; @endphp
-                    <div style="border-top:1px solid var(--border);margin-top:18px;padding-top:16px">
-                        <label class="form-check" style="margin-bottom:4px">
-                            <input type="checkbox" name="frame_enabled" id="frameToggle" value="1"
-                                {{ old('frame_enabled', $fc['enabled'] ?? false) ? 'checked' : '' }}
-                                onchange="document.getElementById('frameSettings').style.display=this.checked?'':'none'">
-                            <strong>Sponsor frame around photos &amp; QR screen</strong>
-                        </label>
-                        <div class="form-hint" style="margin-bottom:12px">Draws a branded frame (like a TV sponsor board)
-                            around every photo, video and the idle QR screen on the vidiwall.</div>
-
-                        <div id="frameSettings"
-                            style="{{ old('frame_enabled', $fc['enabled'] ?? false) ? '' : 'display:none' }}">
-                            <div class="form-row" style="margin-bottom:12px">
-                                <div class="form-group mb-0">
-                                    <label class="form-label">Frame Colour</label>
-                                    <div style="display:flex;gap:8px;align-items:center">
-                                        <input type="color" value="{{ old('frame_color', $fc['frame_color'] ?: '#cc0000') }}"
-                                            style="width:36px;height:36px;padding:2px;border-radius:6px;border:1px solid var(--border);background:var(--dark);cursor:pointer;flex-shrink:0"
-                                            oninput="document.getElementById('frame_color').value=this.value">
-                                        <input type="text" name="frame_color" id="frame_color" class="form-control"
-                                            style="font-family:monospace;font-size:12px" maxlength="7"
-                                            value="{{ old('frame_color', $fc['frame_color'] ?? '') }}"
-                                            placeholder="Blank = event primary colour">
-                                    </div>
-                                </div>
-                                <div class="form-group mb-0">
-                                    <label class="form-label">Frame Text Colour</label>
-                                    <div style="display:flex;gap:8px;align-items:center">
-                                        <input type="color" value="{{ old('frame_text_color', $fc['text_color'] ?: '#ffffff') }}"
-                                            style="width:36px;height:36px;padding:2px;border-radius:6px;border:1px solid var(--border);background:var(--dark);cursor:pointer;flex-shrink:0"
-                                            oninput="document.getElementById('frame_text_color').value=this.value">
-                                        <input type="text" name="frame_text_color" id="frame_text_color"
-                                            class="form-control" style="font-family:monospace;font-size:12px"
-                                            maxlength="7"
-                                            value="{{ old('frame_text_color', $fc['text_color'] ?? '#ffffff') }}">
-                                    </div>
-                                </div>
+                    <div class="form-row" style="margin-bottom:12px">
+                        <div class="form-group mb-0">
+                            <label class="form-label">Frame Colour</label>
+                            <div style="display:flex;gap:8px;align-items:center">
+                                <input type="color" value="{{ old('frame_color', $fc['frame_color'] ?: '#cc0000') }}"
+                                    style="width:36px;height:36px;padding:2px;border-radius:6px;border:1px solid var(--border);background:var(--dark);cursor:pointer;flex-shrink:0"
+                                    oninput="document.getElementById('frame_color').value=this.value">
+                                <input type="text" name="frame_color" id="frame_color" class="form-control"
+                                    style="font-family:monospace;font-size:12px" maxlength="7"
+                                    value="{{ old('frame_color', $fc['frame_color'] ?? '') }}"
+                                    placeholder="Blank = event primary colour">
                             </div>
-                            <div class="form-row" style="margin-bottom:12px">
-                                <div class="form-group mb-0">
-                                    <label class="form-label">Top Bar Text</label>
-                                    <input type="text" name="frame_top_text" class="form-control"
-                                        value="{{ old('frame_top_text', $fc['top_text'] ?? '') }}"
-                                        placeholder="e.g. Audi Vorsprung durch Technik">
-                                </div>
-                                <div class="form-group mb-0">
-                                    <label class="form-label">Bottom Bar Text</label>
-                                    <input type="text" name="frame_bottom_text" class="form-control"
-                                        value="{{ old('frame_bottom_text', $fc['bottom_text'] ?? '') }}"
-                                        placeholder="Blank = same as top bar">
-                                </div>
+                        </div>
+                        <div class="form-group mb-0">
+                            <label class="form-label">Frame Text Colour</label>
+                            <div style="display:flex;gap:8px;align-items:center">
+                                <input type="color" value="{{ old('frame_text_color', $fc['text_color'] ?: '#ffffff') }}"
+                                    style="width:36px;height:36px;padding:2px;border-radius:6px;border:1px solid var(--border);background:var(--dark);cursor:pointer;flex-shrink:0"
+                                    oninput="document.getElementById('frame_text_color').value=this.value">
+                                <input type="text" name="frame_text_color" id="frame_text_color"
+                                    class="form-control" style="font-family:monospace;font-size:12px" maxlength="7"
+                                    value="{{ old('frame_text_color', $fc['text_color'] ?? '#ffffff') }}">
                             </div>
-                            <div class="form-row" style="margin-bottom:12px">
-                                <div class="form-group mb-0">
-                                    <label class="form-label">Side Rail Text (vertical)</label>
-                                    <input type="text" name="frame_side_text" class="form-control"
-                                        value="{{ old('frame_side_text', $fc['side_text'] ?? '') }}"
-                                        placeholder="e.g. Audi FIS Ski World Cup">
-                                </div>
-                                <div class="form-group mb-0">
-                                    <label class="form-label">Frame Sponsor Logo (shown in bars)</label>
-                                    <div style="display:flex;gap:12px;align-items:center">
-                                        @if (!empty($fc['logo_path']))
-                                            <div style="position:relative;flex-shrink:0">
-                                                <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($fc['logo_path']) }}"
-                                                    style="height:36px;border-radius:6px;border:1px solid var(--border);background:#fff;padding:2px">
-                                                <label
-                                                    style="position:absolute;top:-6px;right:-6px;background:var(--red);border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer">
-                                                    <input type="checkbox" name="frame_clear_logo" value="1"
-                                                        style="display:none"
-                                                        onchange="this.closest('label').style.opacity=this.checked?.4:1">
-                                                    <i data-lucide="x" class="lucide-icon"></i>
-                                                </label>
-                                            </div>
-                                        @endif
-                                        <input type="file" name="frame_logo" class="form-control" accept="image/*">
+                        </div>
+                    </div>
+                    <div class="form-row" style="margin-bottom:12px">
+                        <div class="form-group mb-0">
+                            <label class="form-label">Top Bar Text</label>
+                            <input type="text" name="frame_top_text" class="form-control"
+                                value="{{ old('frame_top_text', $fc['top_text'] ?? '') }}"
+                                placeholder="e.g. Audi Vorsprung durch Technik">
+                        </div>
+                        <div class="form-group mb-0">
+                            <label class="form-label">Bottom Bar Text</label>
+                            <input type="text" name="frame_bottom_text" class="form-control"
+                                value="{{ old('frame_bottom_text', $fc['bottom_text'] ?? '') }}"
+                                placeholder="Blank = same as top bar">
+                        </div>
+                    </div>
+                    <div class="form-row" style="margin-bottom:12px">
+                        <div class="form-group mb-0">
+                            <label class="form-label">Side Rail Text (vertical)</label>
+                            <input type="text" name="frame_side_text" class="form-control"
+                                value="{{ old('frame_side_text', $fc['side_text'] ?? '') }}"
+                                placeholder="e.g. Audi FIS Ski World Cup">
+                        </div>
+                        <div class="form-group mb-0">
+                            <label class="form-label">Frame Sponsor Logo (shown in bars)</label>
+                            <div style="display:flex;gap:12px;align-items:center">
+                                @if (!empty($fc['logo_path']))
+                                    <div style="position:relative;flex-shrink:0">
+                                        <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($fc['logo_path']) }}"
+                                            style="height:36px;border-radius:6px;border:1px solid var(--border);background:#fff;padding:2px">
+                                        <label
+                                            style="position:absolute;top:-6px;right:-6px;background:var(--red);border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer">
+                                            <input type="checkbox" name="frame_clear_logo" value="1" style="display:none"
+                                                onchange="this.closest('label').style.opacity=this.checked?.4:1">
+                                            <i data-lucide="x" class="lucide-icon"></i>
+                                        </label>
                                     </div>
-                                </div>
+                                @endif
+                                <input type="file" name="frame_logo" class="form-control" accept="image/*">
                             </div>
                         </div>
                     </div>
@@ -579,10 +541,6 @@
             document.getElementById('candidates').appendChild(row);
         }
 
-        function toggleSlideshow() {
-            document.getElementById('slideshowInterval').style.display =
-                document.getElementById('slideshowToggle').checked ? '' : 'none';
-        }
         // Font live preview
         function updateFontPreview() {
             const h = document.getElementById('fontHeadingInput')?.value || 'Syne';

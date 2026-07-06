@@ -165,7 +165,6 @@ class EventController extends Controller
             'membership_desc' => 'nullable|string|max:255',
             'quiz_desc' => 'nullable|string|max:255',
             'vidiwall_overlay_text' => 'nullable|string|max:255',
-            'vidiwall_slideshow_interval' => 'nullable|integer|min:3|max:60',
             'landing_style' => 'nullable|in:classic,clean',
             'landing_wordmark' => 'nullable|string|max:60',
             'landing_hero_title' => 'nullable|string|max:255',
@@ -201,13 +200,10 @@ class EventController extends Controller
             $data['sponsor_logo_path'] = $request->file('sponsor_logo')->store('logos', 'public');
         }
 
-        $data['vidiwall_show_uploader'] = $request->boolean('vidiwall_show_uploader');
-        $data['vidiwall_slideshow_mode'] = $request->boolean('vidiwall_slideshow_mode');
-
         // Vidiwall sponsor frame config
         $existingFrame = isset($event) ? $event->frameConfig() : [];
         $frame = [
-            'enabled' => $request->boolean('frame_enabled'),
+            'enabled' => true,
             'frame_color' => $request->input('frame_color', $existingFrame['frame_color'] ?? ''),
             'text_color' => $request->input('frame_text_color', $existingFrame['text_color'] ?? '#ffffff'),
             'top_text' => $request->input('frame_top_text', $existingFrame['top_text'] ?? ''),
