@@ -1186,7 +1186,7 @@ $fontH = $event->font_heading ?: 'Syne';
 
     
     @php
-        $isClean = ($event->landing_style ?? 'classic') === 'clean';
+        $isClean = true;
         $wordmark = $event->landing_wordmark ?: 'FAN EXPERIENCE';
         $heroTitle = $event->landing_hero_title;
         $heroSub = $event->landing_hero_sub;
@@ -1279,9 +1279,7 @@ $fontH = $event->font_heading ?: 'Syne';
                 @endforeach
             </div>
 
-            @if ($event->vidiwall_overlay_text)
-                <div class="cl-hashtag">{{ $event->vidiwall_overlay_text }}</div>
-            @endif
+            <div class="cl-hashtag">{{ $event->vidiwall_overlay_text ?: $event->name }}</div>
             <div class="cl-footer">© {{ now()->year }} EventBomb
                 @if ($privacyUrl !== '#')
                     · <a href="{{ $privacyUrl }}" target="_blank" data-en="Privacy Policy"

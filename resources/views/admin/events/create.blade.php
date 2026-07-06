@@ -103,39 +103,18 @@
 
             <div class="card mb-3">
                 <div class="card-header">
-                    <h3>✨ Landing Page Style</h3>
-                    <div class="text-muted text-xs">How the guest landing page looks when fans scan the QR code.</div>
+                    <h3>✨ Landing Page</h3>
+                    <div class="text-muted text-xs">The text fans see when they scan the QR code. Leave any field blank
+                        to fall back to a sensible default.</div>
                 </div>
                 <div class="card-body">
-                    @php $currentStyle = old('landing_style', $event->landing_style ?? 'classic'); @endphp
-                    <div class="form-row" style="margin-bottom:16px">
-                        <label
-                            style="display:block;border:2px solid {{ $currentStyle === 'classic' ? 'var(--primary, #6366f1)' : 'var(--border)' }};border-radius:10px;padding:14px;cursor:pointer"
-                            onclick="this.style.borderColor='var(--primary, #6366f1)';document.getElementById('styleCardClean').style.borderColor='var(--border)'">
-                            <input type="radio" name="landing_style" value="classic"
-                                {{ $currentStyle === 'classic' ? 'checked' : '' }} style="margin-right:8px">
-                            <strong>Classic</strong>
-                            <div class="form-hint" style="margin-top:6px">Dark, immersive tiles with gradients and
-                                background photos. Good for concerts &amp; club nights.</div>
-                        </label>
-                        <label id="styleCardClean"
-                            style="display:block;border:2px solid {{ $currentStyle === 'clean' ? 'var(--primary, #6366f1)' : 'var(--border)' }};border-radius:10px;padding:14px;cursor:pointer"
-                            onclick="this.style.borderColor='var(--primary, #6366f1)';this.previousElementSibling.style.borderColor='var(--border)'">
-                            <input type="radio" name="landing_style" value="clean"
-                                {{ $currentStyle === 'clean' ? 'checked' : '' }} style="margin-right:8px">
-                            <strong>Clean / Sponsor</strong>
-                            <div class="form-hint" style="margin-top:6px">Premium broadcast look: solid brand background,
-                                white sponsor cards with centered logos. Ideal for sponsored events (Ski Austria style).
-                            </div>
-                        </label>
-                    </div>
                     <div class="form-group">
                         <label class="form-label">Experience Label</label>
                         <input name="landing_wordmark" class="form-control"
                             value="{{ old('landing_wordmark', $event->landing_wordmark ?? '') }}"
                             placeholder="FAN EXPERIENCE">
-                        <div class="form-hint" style="margin-top:6px">Short wordmark shown next to the logo in the header
-                            (Clean style). Leave blank for “FAN EXPERIENCE”.</div>
+                        <div class="form-hint" style="margin-top:6px">Short wordmark shown next to the logo in the header.
+                            Leave blank for “FAN EXPERIENCE”.</div>
                     </div>
                     <div class="form-row">
                         <div class="form-group mb-0">
@@ -154,6 +133,14 @@
                     <div class="form-hint" style="margin-top:8px">Leave blank to use the default text (with EN/DE
                         translation). Wrap a phrase in <code>**asterisks**</code> to make it bold, e.g.
                         <code>Deine **Fan Experience** startet hier.</code></div>
+                    <div class="form-group" style="margin-top:16px">
+                        <label class="form-label">Hashtag</label>
+                        <input name="vidiwall_overlay_text" class="form-control"
+                            value="{{ old('vidiwall_overlay_text', $event->vidiwall_overlay_text ?? '') }}"
+                            placeholder="#skiverrueckt">
+                        <div class="form-hint" style="margin-top:6px">Large hashtag shown at the bottom of the landing
+                            page. Leave blank to use the event name.</div>
+                    </div>
                 </div>
             </div>
 
@@ -437,12 +424,6 @@
                     <h3><i data-lucide="monitor-play" class="lucide-icon"></i> Vidiwall Settings</h3>
                 </div>
                 <div class="card-body">
-                    <div class="form-group">
-                        <label class="form-label">Overlay Text (shown on vidiwall)</label>
-                        <input name="vidiwall_overlay_text" class="form-control"
-                            value="{{ old('vidiwall_overlay_text', $event->vidiwall_overlay_text ?? '') }}"
-                            placeholder="e.g. #ChampionshipNight · Tag us @event">
-                    </div>
                     <div class="form-row">
                         <div>
                             <label class="form-check">

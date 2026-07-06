@@ -504,13 +504,6 @@
 
             
             <div class="slide-progress" id="slideProgress" style="width:0;display:none"></div>
-
-            
-            @if ($event->vidiwall_overlay_text)
-                <div class="overlay-text" id="overlayText" style="display:none">
-                    <span class="overlay-pill">{{ $event->vidiwall_overlay_text }}</span>
-                </div>
-            @endif
             </div>
             @if ($frameOn)
                 <div class="fr-rail fr-right">

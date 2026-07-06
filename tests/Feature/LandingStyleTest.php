@@ -10,15 +10,41 @@ class LandingStyleTest extends TestCase
 {
     use DatabaseTransactions;
 
-    public function test_landing_page_defaults_to_classic_style(): void
+    public function test_landing_page_always_renders_clean_layout(): void
     {
         $event = Event::factory()->create();
 
         $response = $this->get("/e/{$event->slug}");
 
         $response->assertStatus(200);
-        $response->assertDontSee('class="landing-clean"', false);
-        $response->assertSee('land-header', false);
+        $response->assertSee('landing-clean', false);
+        $response->assertSee('cl-grid', false);
+    }
+
+    public function test_landing_hashtag_falls_back_to_event_name(): void
+    {
+        $event = Event::factory()->create([
+            'name' => 'Championship Night',
+            'vidiwall_overlay_text' => null,
+        ]);
+
+        $response = $this->get("/e/{$event->slug}");
+
+        $response->assertStatus(200);
+        $response->assertSee('cl-hashtag', false);
+        $response->assertSee('Championship Night');
+    }
+
+    public function test_landing_shows_custom_hashtag(): void
+    {
+        $event = Event::factory()->create([
+            'vidiwall_overlay_text' => '#skiverrueckt',
+        ]);
+
+        $response = $this->get("/e/{$event->slug}");
+
+        $response->assertStatus(200);
+        $response->assertSee('#skiverrueckt');
     }
 
     public function test_landing_page_renders_clean_style_when_selected(): void
