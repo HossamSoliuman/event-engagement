@@ -850,6 +850,7 @@ $fontH = $event->font_heading ?: 'Syne';
         /* ── Clean / Sponsor landing style ─────────────────────────── */
         #landing.landing-clean {
             position: relative;
+            --sp: clamp(18px, 4.6vw, 30px);
             background: var(--bg);
             background-image: radial-gradient(ellipse at 50% -12%, color-mix(in srgb, var(--p) 16%, transparent) 0%, transparent 58%)
         }
@@ -909,9 +910,12 @@ $fontH = $event->font_heading ?: 'Syne';
 
         .cl-hero {
             position: relative;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
             text-align: center;
-            padding: 22px 18px 0;
-            flex-shrink: 0
+            padding: var(--sp) 18px
         }
 
         .cl-hero-title {
@@ -944,7 +948,7 @@ $fontH = $event->font_heading ?: 'Syne';
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 14px;
-            padding: 22px 18px;
+            padding: var(--sp) 18px;
             align-content: center
         }
 
@@ -1034,19 +1038,22 @@ $fontH = $event->font_heading ?: 'Syne';
 
         .cl-hashtag {
             position: relative;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             text-align: center;
             font-family: var(--font-h);
             font-weight: 800;
             font-size: clamp(19px, 5.6vw, 25px);
             color: #fff;
-            padding: 0 20px;
-            flex-shrink: 0
+            padding: var(--sp) 20px
         }
 
         .cl-footer {
             position: relative;
             text-align: center;
-            padding: 14px 20px max(env(safe-area-inset-bottom, 14px), 18px);
+            padding: var(--sp) 20px max(env(safe-area-inset-bottom, 14px), 18px);
             font-size: 11px;
             color: var(--muted);
             flex-shrink: 0
