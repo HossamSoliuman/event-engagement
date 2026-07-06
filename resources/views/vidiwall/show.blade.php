@@ -50,7 +50,7 @@
             height: 100%;
             display: grid;
             grid-template-areas: "tl ftop tr" "fleft fmain fright" "bl fbot br";
-            grid-template-rows: clamp(54px, 9.5vh, 116px) 1fr clamp(54px, 9.5vh, 116px);
+            grid-template-rows: clamp(38px, 6.4vh, 78px) 1fr clamp(38px, 6.4vh, 78px);
             grid-template-columns: clamp(26px, 3vw, 54px) 1fr clamp(26px, 3vw, 54px);
             background: var(--frame-c)
         }
@@ -60,16 +60,16 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 42px;
+            gap: clamp(16px, 2.4vw, 36px);
             overflow: hidden;
             white-space: nowrap;
-            padding: 0 24px;
+            padding: 0 20px;
             color: var(--frame-t);
             font-family: 'Syne', sans-serif;
             font-weight: 800;
             letter-spacing: .22em;
             text-transform: uppercase;
-            font-size: clamp(22px, 2.9vw, 46px)
+            font-size: clamp(16px, 2.3vw, 38px)
         }
 
         .fr-top {
@@ -81,10 +81,11 @@
         }
 
         .fr-bar img {
-            height: 80%;
-            max-height: 96px;
+            height: 74%;
             width: auto;
-            object-fit: contain
+            max-width: 16%;
+            object-fit: contain;
+            flex: 0 0 auto
         }
 
         .fr-rail {
@@ -152,7 +153,7 @@
             letter-spacing: .01em;
             color: var(--on-bg);
             max-width: 100%;
-            overflow-wrap: break-word;
+            white-space: nowrap;
             flex: 0 0 auto
         }
 
@@ -500,6 +501,7 @@
 
         function showIdle() {
             document.getElementById('idleState').style.display = 'flex';
+            if (window.fitVidiwall) { window.fitVidiwall(); }
             document.getElementById('photoFrame').style.display = 'none';
             document.getElementById('videoFrame').style.display = 'none';
             document.getElementById('uploaderTag').style.display = 'none';
@@ -641,10 +643,34 @@
                 }
             }
 
+            function fitTitle() {
+                var title = document.querySelector('.event-title');
+                var idle = document.getElementById('idleState');
+                var stage = document.getElementById('stage');
+                if (!title || !idle || !stage) {
+                    return;
+                }
+                title.style.fontSize = '';
+                if (idle.style.display === 'none' || idle.offsetParent === null) {
+                    return;
+                }
+                var cs = getComputedStyle(idle);
+                var avail = stage.clientWidth
+                    - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+                var needed = title.scrollWidth;
+                if (needed > avail && avail > 0) {
+                    var current = parseFloat(getComputedStyle(title).fontSize);
+                    title.style.fontSize = Math.max(14, Math.floor(current * avail / needed) - 1) + 'px';
+                }
+            }
+
             function fitAll() {
                 document.querySelectorAll('.fr-bar').forEach(function (el) { fit(el, false); });
                 document.querySelectorAll('.fr-rail').forEach(function (el) { fit(el, true); });
+                fitTitle();
             }
+
+            window.fitVidiwall = fitAll;
 
             window.addEventListener('resize', fitAll);
             window.addEventListener('load', fitAll);
