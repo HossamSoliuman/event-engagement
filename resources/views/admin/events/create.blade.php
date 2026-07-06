@@ -129,22 +129,31 @@
                             </div>
                         </label>
                     </div>
+                    <div class="form-group">
+                        <label class="form-label">Experience Label</label>
+                        <input name="landing_wordmark" class="form-control"
+                            value="{{ old('landing_wordmark', $event->landing_wordmark ?? '') }}"
+                            placeholder="FAN EXPERIENCE">
+                        <div class="form-hint" style="margin-top:6px">Short wordmark shown next to the logo in the header
+                            (Clean style). Leave blank for “FAN EXPERIENCE”.</div>
+                    </div>
                     <div class="form-row">
                         <div class="form-group mb-0">
                             <label class="form-label">Hero Headline</label>
                             <input name="landing_hero_title" class="form-control"
                                 value="{{ old('landing_hero_title', $event->landing_hero_title ?? '') }}"
-                                placeholder="Your Fan Experience starts here.">
+                                placeholder="Deine **Fan Experience** startet hier.">
                         </div>
                         <div class="form-group mb-0">
                             <label class="form-label">Hero Subline</label>
                             <input name="landing_hero_sub" class="form-control"
                                 value="{{ old('landing_hero_sub', $event->landing_hero_sub ?? '') }}"
-                                placeholder="Be part of the show. Tap a tile to get started.">
+                                placeholder="Sei Teil des Stadionentertainments!">
                         </div>
                     </div>
                     <div class="form-hint" style="margin-top:8px">Leave blank to use the default text (with EN/DE
-                        translation). Custom text is shown as-is in both languages.</div>
+                        translation). Wrap a phrase in <code>**asterisks**</code> to make it bold, e.g.
+                        <code>Deine **Fan Experience** startet hier.</code></div>
                 </div>
             </div>
 

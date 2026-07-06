@@ -51,6 +51,7 @@ class Event extends Model
         'vidiwall_overlay_text',
         'vidiwall_frame_config',
         'landing_style',
+        'landing_wordmark',
         'landing_hero_title',
         'landing_hero_sub',
         'privacy_policy_text',

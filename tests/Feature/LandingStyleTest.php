@@ -49,6 +49,43 @@ class LandingStyleTest extends TestCase
         $response->assertSee('Sei Teil des Stadionentertainments!');
     }
 
+    public function test_clean_landing_shows_default_wordmark_when_blank(): void
+    {
+        $event = Event::factory()->cleanStyle()->create([
+            'landing_wordmark' => null,
+        ]);
+
+        $response = $this->get("/e/{$event->slug}");
+
+        $response->assertStatus(200);
+        $response->assertSee('cl-wordmark', false);
+        $response->assertSee('FAN EXPERIENCE');
+    }
+
+    public function test_clean_landing_shows_custom_wordmark(): void
+    {
+        $event = Event::factory()->cleanStyle()->create([
+            'landing_wordmark' => 'Ski Austria',
+        ]);
+
+        $response = $this->get("/e/{$event->slug}");
+
+        $response->assertStatus(200);
+        $response->assertSee('Ski Austria');
+    }
+
+    public function test_clean_landing_renders_bold_emphasis_in_hero(): void
+    {
+        $event = Event::factory()->cleanStyle()->create([
+            'landing_hero_title' => 'Deine **Fan Experience** startet hier.',
+        ]);
+
+        $response = $this->get("/e/{$event->slug}");
+
+        $response->assertStatus(200);
+        $response->assertSee('Deine <strong>Fan Experience</strong> startet hier.', false);
+    }
+
     public function test_clean_landing_uses_tile_label_and_sublabel(): void
     {
         $event = Event::factory()->cleanStyle()->create([

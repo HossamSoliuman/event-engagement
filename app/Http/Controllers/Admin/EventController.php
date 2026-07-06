@@ -167,6 +167,7 @@ class EventController extends Controller
             'vidiwall_overlay_text' => 'nullable|string|max:255',
             'vidiwall_slideshow_interval' => 'nullable|integer|min:3|max:60',
             'landing_style' => 'nullable|in:classic,clean',
+            'landing_wordmark' => 'nullable|string|max:60',
             'landing_hero_title' => 'nullable|string|max:255',
             'landing_hero_sub' => 'nullable|string|max:255',
             'frame_top_text' => 'nullable|string|max:100',

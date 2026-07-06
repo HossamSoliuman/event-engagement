@@ -910,23 +910,32 @@ $fontH = $event->font_heading ?: 'Syne';
         .cl-hero {
             position: relative;
             text-align: center;
-            padding: 30px 28px 4px;
+            padding: 22px 18px 0;
             flex-shrink: 0
         }
 
         .cl-hero-title {
             font-family: var(--font-h);
-            font-weight: 800;
-            font-size: clamp(21px, 6vw, 28px);
-            line-height: 1.3;
+            font-weight: 600;
+            font-size: clamp(14px, 4vw, 18px);
+            line-height: 1.35;
             color: #fff
         }
 
+        .cl-hero-title strong {
+            font-weight: 800
+        }
+
         .cl-hero-sub {
-            margin-top: 10px;
-            font-size: clamp(13px, 3.8vw, 15px);
-            line-height: 1.55;
+            margin-top: 6px;
+            font-size: clamp(12px, 3.4vw, 14px);
+            line-height: 1.5;
             color: var(--muted)
+        }
+
+        .cl-hero-sub strong {
+            font-weight: 700;
+            color: #fff
         }
 
         .cl-grid {
@@ -935,8 +944,8 @@ $fontH = $event->font_heading ?: 'Syne';
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 14px;
-            padding: 26px 18px 10px;
-            align-content: start
+            padding: 22px 18px;
+            align-content: center
         }
 
         .cl-card {
@@ -1030,7 +1039,7 @@ $fontH = $event->font_heading ?: 'Syne';
             font-weight: 800;
             font-size: clamp(19px, 5.6vw, 25px);
             color: #fff;
-            padding: 10px 20px 0;
+            padding: 0 20px;
             flex-shrink: 0
         }
 
@@ -1171,8 +1180,14 @@ $fontH = $event->font_heading ?: 'Syne';
     
     @php
         $isClean = ($event->landing_style ?? 'classic') === 'clean';
+        $wordmark = $event->landing_wordmark ?: 'FAN EXPERIENCE';
         $heroTitle = $event->landing_hero_title;
         $heroSub = $event->landing_hero_sub;
+
+        // Turn **phrase** into <strong>phrase</strong>; content is escaped first so it is safe to echo raw.
+        $emphasize = function (?string $text): string {
+            return preg_replace('/\*\*(.+?)\*\*/s', '<strong>$1</strong>', e((string) $text));
+        };
 
         // Card background + auto-contrast ink for the clean tile style
         $cardInk = function (?string $hex): array {
@@ -1203,16 +1218,16 @@ $fontH = $event->font_heading ?: 'Syne';
                     <img src="{{ $event->logo_url }}" class="cl-logo" alt="{{ $event->name }}">
                     <div class="cl-divider"></div>
                 @endif
-                <div class="cl-wordmark">{{ $event->subtitle ?: $event->name }}</div>
+                <div class="cl-wordmark">{{ $wordmark }}</div>
             </header>
 
             <div class="cl-hero">
                 <div class="cl-hero-title"
-                    @unless ($heroTitle) data-en="Your Fan Experience starts here." data-de="Deine Fan Experience startet hier." @endunless>
-                    {{ $heroTitle ?: 'Your Fan Experience starts here.' }}</div>
+                    @unless ($heroTitle) data-html data-en="Your <strong>Fan Experience</strong> starts here." data-de="Deine <strong>Fan Experience</strong> startet hier." @endunless>
+                    {!! $heroTitle ? $emphasize($heroTitle) : 'Your <strong>Fan Experience</strong> starts here.' !!}</div>
                 <div class="cl-hero-sub"
-                    @unless ($heroSub) data-en="Be part of the show. Tap a tile to get started." data-de="Sei Teil des Erlebnisses. Tippe auf eine Kachel." @endunless>
-                    {{ $heroSub ?: 'Be part of the show. Tap a tile to get started.' }}</div>
+                    @unless ($heroSub) data-html data-en="Be part of the show. <strong>Tap a tile</strong> to get started." data-de="Sei Teil des Erlebnisses. <strong>Tippe auf eine Kachel.</strong>" @endunless>
+                    {!! $heroSub ? $emphasize($heroSub) : 'Be part of the show. <strong>Tap a tile</strong> to get started.' !!}</div>
             </div>
 
             <div class="cl-grid">
