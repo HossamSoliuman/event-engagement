@@ -147,6 +147,84 @@
 
             <div class="card mb-3">
                 <div class="card-header">
+                    <h3><i data-lucide="monitor-play" class="lucide-icon"></i> Vidiwall Settings</h3>
+                </div>
+                <div class="card-body">
+                    <p class="form-hint" style="margin-bottom:16px">The vidiwall screen shows the sponsor frame, the
+                        event name and a large QR code. Fill in the frame text and branding below — leave a field blank
+                        to hide that piece.</p>
+
+                    @php $fc = isset($event) ? $event->frameConfig() : []; @endphp
+                    <div class="form-row" style="margin-bottom:12px">
+                        <div class="form-group mb-0">
+                            <label class="form-label">Frame Colour</label>
+                            <div style="display:flex;gap:8px;align-items:center">
+                                <input type="color" value="{{ old('frame_color', $fc['frame_color'] ?: '#cc0000') }}"
+                                    style="width:36px;height:36px;padding:2px;border-radius:6px;border:1px solid var(--border);background:var(--dark);cursor:pointer;flex-shrink:0"
+                                    oninput="document.getElementById('frame_color').value=this.value">
+                                <input type="text" name="frame_color" id="frame_color" class="form-control"
+                                    style="font-family:monospace;font-size:12px" maxlength="7"
+                                    value="{{ old('frame_color', $fc['frame_color'] ?? '') }}"
+                                    placeholder="Blank = event primary colour">
+                            </div>
+                        </div>
+                        <div class="form-group mb-0">
+                            <label class="form-label">Frame Text Colour</label>
+                            <div style="display:flex;gap:8px;align-items:center">
+                                <input type="color" value="{{ old('frame_text_color', $fc['text_color'] ?: '#ffffff') }}"
+                                    style="width:36px;height:36px;padding:2px;border-radius:6px;border:1px solid var(--border);background:var(--dark);cursor:pointer;flex-shrink:0"
+                                    oninput="document.getElementById('frame_text_color').value=this.value">
+                                <input type="text" name="frame_text_color" id="frame_text_color"
+                                    class="form-control" style="font-family:monospace;font-size:12px" maxlength="7"
+                                    value="{{ old('frame_text_color', $fc['text_color'] ?? '#ffffff') }}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row" style="margin-bottom:12px">
+                        <div class="form-group mb-0">
+                            <label class="form-label">Top Bar Text</label>
+                            <input type="text" name="frame_top_text" class="form-control"
+                                value="{{ old('frame_top_text', $fc['top_text'] ?? '') }}"
+                                placeholder="e.g. Audi Vorsprung durch Technik">
+                        </div>
+                        <div class="form-group mb-0">
+                            <label class="form-label">Bottom Bar Text</label>
+                            <input type="text" name="frame_bottom_text" class="form-control"
+                                value="{{ old('frame_bottom_text', $fc['bottom_text'] ?? '') }}"
+                                placeholder="Blank = same as top bar">
+                        </div>
+                    </div>
+                    <div class="form-row" style="margin-bottom:12px">
+                        <div class="form-group mb-0">
+                            <label class="form-label">Side Rail Text (vertical)</label>
+                            <input type="text" name="frame_side_text" class="form-control"
+                                value="{{ old('frame_side_text', $fc['side_text'] ?? '') }}"
+                                placeholder="e.g. Audi FIS Ski World Cup">
+                        </div>
+                        <div class="form-group mb-0">
+                            <label class="form-label">Frame Sponsor Logo (shown in bars)</label>
+                            <div style="display:flex;gap:12px;align-items:center">
+                                @if (!empty($fc['logo_path']))
+                                    <div style="position:relative;flex-shrink:0">
+                                        <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($fc['logo_path']) }}"
+                                            style="height:36px;border-radius:6px;border:1px solid var(--border);background:#fff;padding:2px">
+                                        <label
+                                            style="position:absolute;top:-6px;right:-6px;background:var(--red);border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer">
+                                            <input type="checkbox" name="frame_clear_logo" value="1" style="display:none"
+                                                onchange="this.closest('label').style.opacity=this.checked?.4:1">
+                                            <i data-lucide="x" class="lucide-icon"></i>
+                                        </label>
+                                    </div>
+                                @endif
+                                <input type="file" name="frame_logo" class="form-control" accept="image/*">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header">
                     <h3>Module Content</h3>
                 </div>
                 <div class="card-body">
@@ -418,84 +496,6 @@
                 </div>
             </div>
 
-            
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h3><i data-lucide="monitor-play" class="lucide-icon"></i> Vidiwall Settings</h3>
-                </div>
-                <div class="card-body">
-                    <p class="form-hint" style="margin-bottom:16px">The vidiwall screen shows the sponsor frame, the
-                        event name and a large QR code. Fill in the frame text and branding below — leave a field blank
-                        to hide that piece.</p>
-
-                    @php $fc = isset($event) ? $event->frameConfig() : []; @endphp
-                    <div class="form-row" style="margin-bottom:12px">
-                        <div class="form-group mb-0">
-                            <label class="form-label">Frame Colour</label>
-                            <div style="display:flex;gap:8px;align-items:center">
-                                <input type="color" value="{{ old('frame_color', $fc['frame_color'] ?: '#cc0000') }}"
-                                    style="width:36px;height:36px;padding:2px;border-radius:6px;border:1px solid var(--border);background:var(--dark);cursor:pointer;flex-shrink:0"
-                                    oninput="document.getElementById('frame_color').value=this.value">
-                                <input type="text" name="frame_color" id="frame_color" class="form-control"
-                                    style="font-family:monospace;font-size:12px" maxlength="7"
-                                    value="{{ old('frame_color', $fc['frame_color'] ?? '') }}"
-                                    placeholder="Blank = event primary colour">
-                            </div>
-                        </div>
-                        <div class="form-group mb-0">
-                            <label class="form-label">Frame Text Colour</label>
-                            <div style="display:flex;gap:8px;align-items:center">
-                                <input type="color" value="{{ old('frame_text_color', $fc['text_color'] ?: '#ffffff') }}"
-                                    style="width:36px;height:36px;padding:2px;border-radius:6px;border:1px solid var(--border);background:var(--dark);cursor:pointer;flex-shrink:0"
-                                    oninput="document.getElementById('frame_text_color').value=this.value">
-                                <input type="text" name="frame_text_color" id="frame_text_color"
-                                    class="form-control" style="font-family:monospace;font-size:12px" maxlength="7"
-                                    value="{{ old('frame_text_color', $fc['text_color'] ?? '#ffffff') }}">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-row" style="margin-bottom:12px">
-                        <div class="form-group mb-0">
-                            <label class="form-label">Top Bar Text</label>
-                            <input type="text" name="frame_top_text" class="form-control"
-                                value="{{ old('frame_top_text', $fc['top_text'] ?? '') }}"
-                                placeholder="e.g. Audi Vorsprung durch Technik">
-                        </div>
-                        <div class="form-group mb-0">
-                            <label class="form-label">Bottom Bar Text</label>
-                            <input type="text" name="frame_bottom_text" class="form-control"
-                                value="{{ old('frame_bottom_text', $fc['bottom_text'] ?? '') }}"
-                                placeholder="Blank = same as top bar">
-                        </div>
-                    </div>
-                    <div class="form-row" style="margin-bottom:12px">
-                        <div class="form-group mb-0">
-                            <label class="form-label">Side Rail Text (vertical)</label>
-                            <input type="text" name="frame_side_text" class="form-control"
-                                value="{{ old('frame_side_text', $fc['side_text'] ?? '') }}"
-                                placeholder="e.g. Audi FIS Ski World Cup">
-                        </div>
-                        <div class="form-group mb-0">
-                            <label class="form-label">Frame Sponsor Logo (shown in bars)</label>
-                            <div style="display:flex;gap:12px;align-items:center">
-                                @if (!empty($fc['logo_path']))
-                                    <div style="position:relative;flex-shrink:0">
-                                        <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($fc['logo_path']) }}"
-                                            style="height:36px;border-radius:6px;border:1px solid var(--border);background:#fff;padding:2px">
-                                        <label
-                                            style="position:absolute;top:-6px;right:-6px;background:var(--red);border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer">
-                                            <input type="checkbox" name="frame_clear_logo" value="1" style="display:none"
-                                                onchange="this.closest('label').style.opacity=this.checked?.4:1">
-                                            <i data-lucide="x" class="lucide-icon"></i>
-                                        </label>
-                                    </div>
-                                @endif
-                                <input type="file" name="frame_logo" class="form-control" accept="image/*">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
             
             <div class="card mb-3">
                 <div class="card-header">
