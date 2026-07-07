@@ -21,7 +21,7 @@
                 </div>
                 <div class="text-sm" style="margin-top:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
                     <span style="font-weight:700;color:{{ $activeRound->side_a_color }}">{{ $activeRound->side_a_name }}</span>
-                    <span class="text-muted">{{ $activeRound->side_a_taps }} vs {{ $activeRound->side_b_taps }}</span>
+                    <span class="text-muted"><span id="fcAdminTapsA">{{ $activeRound->side_a_taps }}</span> vs <span id="fcAdminTapsB">{{ $activeRound->side_b_taps }}</span></span>
                     <span style="font-weight:700;color:{{ $activeRound->side_b_color }}">{{ $activeRound->side_b_name }}</span>
                 </div>
                 <div class="text-muted text-xs" style="margin-top:4px">{{ $activeRound->duration_seconds }}s round · Started {{ $activeRound->started_at?->diffForHumans() }}</div>
@@ -328,5 +328,41 @@
         }
         return true;
     }
+
+    // Live-poll the round state so the admin sees taps update and round
+    // transitions without a manual refresh. While a round stays active we only
+    // patch the counters in place; when the round starts, ends, or is replaced
+    // we reload so the page structure (start form, history) re-renders.
+    (function () {
+        const statusUrl = @json(route('fanclash.guest.status', $event->slug));
+        const shownStatus = @json($activeRound ? 'active' : null);
+        const shownRoundId = @json($activeRound?->id);
+        const tapsAEl = document.getElementById('fcAdminTapsA');
+        const tapsBEl = document.getElementById('fcAdminTapsB');
+
+        async function fcPollState() {
+            let data;
+            try {
+                const res = await fetch(statusUrl, { headers: { Accept: 'application/json' } });
+                if (!res.ok) return;
+                data = await res.json();
+            } catch (e) {
+                return;
+            }
+
+            if (data.status === 'active') {
+                if (shownStatus !== 'active' || data.round_id !== shownRoundId) {
+                    window.location.reload();
+                    return;
+                }
+                if (tapsAEl) tapsAEl.textContent = data.side_a_taps;
+                if (tapsBEl) tapsBEl.textContent = data.side_b_taps;
+            } else if (shownStatus === 'active') {
+                window.location.reload();
+            }
+        }
+
+        setInterval(fcPollState, 2000);
+    })();
 </script>
 @endpush
