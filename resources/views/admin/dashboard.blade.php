@@ -26,7 +26,7 @@
                 <a href="{{ route('event.landing',$activeEvent->slug) }}" target="_blank" class="btn btn-outline btn-sm"><i data-lucide="smartphone" class="lucide-icon"></i> Guest Page</a>
                 <a href="{{ route('vidiwall.show',$activeEvent->slug) }}" target="_blank" class="btn btn-gold btn-sm"><i data-lucide="monitor-play" class="lucide-icon"></i> Vidiwall</a>
                 <a href="{{ route('admin.fotos.index',$activeEvent) }}" class="btn btn-primary btn-sm"><i data-lucide="camera" class="lucide-icon"></i> Moderate Fotos</a>
-                <a href="{{ route('admin.events.show',$activeEvent) }}" class="btn btn-secondary btn-sm">Manage →</a>
+                <a href="{{ route('admin.events.show',$activeEvent) }}" class="btn btn-secondary btn-sm">Manage <i data-lucide="arrow-right" class="lucide-icon"></i></a>
             </div>
         </div>
         @if($activeEvent->qr_code_path)
@@ -100,7 +100,7 @@
     </div>
     @empty
     <div class="empty-state" style="padding:40px">
-        <div>No events yet. <a href="{{ route('admin.events.create') }}" style="color:var(--red)">Create one →</a></div>
+        <div>No events yet. <a href="{{ route('admin.events.create') }}" style="color:var(--red)">Create one <i data-lucide="arrow-right" class="lucide-icon"></i></a></div>
     </div>
     @endforelse
     </div>

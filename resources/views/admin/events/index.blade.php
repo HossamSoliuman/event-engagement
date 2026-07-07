@@ -68,7 +68,7 @@
                                     <div class="empty-icon"><i data-lucide="calendar" class="lucide-icon"></i></div>
                                     <h3>No events yet</h3>
                                     <p><a href="{{ route('admin.events.create') }}" style="color:var(--red)">Create your
-                                            first event →</a></p>
+                                            first event <i data-lucide="arrow-right" class="lucide-icon"></i></a></p>
                                 </div>
                             </td>
                         </tr>

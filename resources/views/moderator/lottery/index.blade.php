@@ -10,7 +10,7 @@
 
 @if($winner)
 <div class="winner-card mb-3">
-    <div style="font-size:48px;margin-bottom:12px">★</div>
+    <div style="margin-bottom:12px"><i data-lucide="trophy" class="lucide-icon" style="width:48px;height:48px;color:var(--gold)"></i></div>
     <h2>Winner: {{ $winner->name }}</h2>
     <p>{{ $winner->phone }} @if($winner->email)· {{ $winner->email }}@endif</p>
     <p class="text-xs text-muted" style="margin-top:8px">Drawn {{ $winner->won_at?->diffForHumans() }}</p>

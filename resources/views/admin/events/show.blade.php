@@ -5,7 +5,7 @@
 @section('topbar-actions')
     <a href="{{ route('admin.events.edit', $event) }}" class="btn btn-secondary btn-sm">Edit</a>
     <form method="POST" action="{{ route('admin.events.generate-qr', $event) }}" style="display:inline">
-        @csrf <button class="btn btn-outline btn-sm">↻ QR</button>
+        @csrf <button class="btn btn-outline btn-sm"><i data-lucide="rotate-cw" class="lucide-icon"></i> QR</button>
     </form>
     <a href="{{ route('admin.events.moderators', $event) }}" class="btn btn-outline btn-sm">Moderators</a>
     <a href="{{ route('vidiwall.show', $event->slug) }}" target="_blank" class="btn btn-gold btn-sm">Vidiwall</a>
@@ -54,7 +54,7 @@
                         <img src="{{ $event->qr_code_url }}"
                             style="width:150px;height:150px;background:#fff;padding:8px;border-radius:10px;display:block">
                         <a href="{{ $event->qr_code_url }}" download class="btn btn-secondary btn-sm"
-                            style="margin-top:8px;width:150px;justify-content:center">⬇ Download</a>
+                            style="margin-top:8px;width:150px;justify-content:center"><i data-lucide="download" class="lucide-icon"></i> Download</a>
                     </div>
                 @endif
                 <div style="flex:1;min-width:160px">
@@ -98,7 +98,7 @@
                 @endforeach
                 <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px">
                     <div>
-                        <div style="font-weight:600;font-size:13px">🌐 Event Active</div>
+                        <div style="font-weight:600;font-size:13px"><i data-lucide="globe" class="lucide-icon"></i> Event Active</div>
                         <div class="text-muted text-xs">Guests can access the event page</div>
                     </div>
                     <span
@@ -118,7 +118,7 @@
                     <a href="{{ route('admin.voting.index', $event) }}" class="btn btn-secondary btn-sm">Full Results</a>
                     @if ($event->voting_closed)
                         <form method="POST" action="{{ route('admin.voting.reopen', $event) }}">@csrf<button
-                                class="btn btn-outline btn-sm">🔓 Reopen</button></form>
+                                class="btn btn-outline btn-sm"><i data-lucide="lock-open" class="lucide-icon"></i> Reopen</button></form>
                     @else
                         <form method="POST" action="{{ route('admin.voting.close', $event) }}">@csrf<button
                                 class="btn btn-outline btn-sm"><i data-lucide="lock" class="lucide-icon"></i> Close Voting</button></form>
@@ -132,7 +132,7 @@
                     <div style="margin-bottom:12px">
                         <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:13px">
                             <span
-                                style="font-weight:{{ $i === 0 ? 700 : 400 }}">{{ $i === 0 ? '🥇' : ($i === 1 ? '🥈' : '🥉') }}
+                                style="font-weight:{{ $i === 0 ? 700 : 400 }}"><i data-lucide="medal" class="lucide-icon" style="color:{{ [0 => '#FFD700', 1 => '#C0C0C0', 2 => '#CD7F32'][$i] ?? '#CD7F32' }}"></i>
                                 {{ $t['candidate_name'] }}</span>
                             <span class="text-muted">{{ $t['total'] }} votes · {{ $pct }}%</span>
                         </div>
@@ -143,7 +143,7 @@
                     </div>
                 @endforeach
                 <div class="text-xs text-muted mt-2">Total: {{ $totalVotes }} votes
-                    {{ $event->voting_closed ? '· <i data-lucide="lock" class="lucide-icon"></i> Closed' : '· 🔓 Open' }}</div>
+                    @if ($event->voting_closed)· <i data-lucide="lock" class="lucide-icon"></i> Closed @else· <i data-lucide="lock-open" class="lucide-icon"></i> Open @endif</div>
             </div>
         </div>
     @endif
@@ -170,7 +170,7 @@
 
                 <div style="flex:1">
                     <div class="font-bold">
-                        {{ $onScreen->isVideo() ? '🎬' : '🖼️' }}
+                        @if ($onScreen->isVideo())<i data-lucide="clapperboard" class="lucide-icon"></i>@else<i data-lucide="image" class="lucide-icon"></i>@endif
                         {{ $onScreen->uploader_name ?? 'Anonymous' }}
                     </div>
                     @if ($onScreen->isVideo() && $onScreen->video_duration)

@@ -3,8 +3,8 @@
 @section('page-title', '<i data-lucide="ticket" class="lucide-icon"></i> Lottery')
 
 @section('topbar-actions')
-    <a href="{{ route('admin.lottery.export', $event) }}" class="btn btn-ghost btn-sm">⬇ CSV</a>
-    <a href="{{ route('admin.events.show', $event) }}" class="btn btn-secondary btn-sm">← Event</a>
+    <a href="{{ route('admin.lottery.export', $event) }}" class="btn btn-ghost btn-sm"><i data-lucide="download" class="lucide-icon"></i> CSV</a>
+    <a href="{{ route('admin.events.show', $event) }}" class="btn btn-secondary btn-sm"><i data-lucide="arrow-left" class="lucide-icon"></i> Event</a>
 @endsection
 
 @section('content')
@@ -19,7 +19,7 @@
             <div class="stat-label">Status</div>
             <div class="stat-value" style="font-size:18px;padding-top:6px">
                 @if ($event->lottery_drawn)
-                    🎉 Winner Drawn
+                    <i data-lucide="party-popper" class="lucide-icon"></i> Winner Drawn
                 @else
                     <i data-lucide="ticket" class="lucide-icon"></i> Open
                 @endif
@@ -30,7 +30,7 @@
     
     @if ($winner && $event->lottery_drawn)
         <div class="winner-card mb-3" id="winnerCard">
-            <div class="trophy"><i data-lucide="trophy" class="lucide-icon"></i></div>
+            <div class="trophy"><i data-lucide="trophy" class="lucide-icon" style="width:52px;height:52px;color:var(--gold)"></i></div>
             <h2>WINNER!</h2>
             <div style="font-size:28px;font-weight:800;color:var(--text);margin:10px 0">{{ $winner->name }}</div>
             <p style="font-size:16px">{{ $winner->phone }}</p>
@@ -42,7 +42,7 @@
             <div style="margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
                 <form method="POST" action="{{ route('admin.lottery.reset', $event) }}">
                     @csrf <button class="btn btn-outline btn-sm"
-                        onclick="return confirm('Reset the lottery? The winner will be cleared.')">↺ Reset Lottery</button>
+                        onclick="return confirm('Reset the lottery? The winner will be cleared.')"><i data-lucide="rotate-ccw" class="lucide-icon"></i> Reset Lottery</button>
                 </form>
             </div>
         </div>
@@ -50,7 +50,7 @@
         
         <div class="card mb-3" style="border-color:rgba(255,215,0,.25)">
             <div class="card-body" style="text-align:center;padding:40px 20px">
-                <div style="font-size:52px;margin-bottom:14px" id="drumRoll"><i data-lucide="ticket" class="lucide-icon"></i></div>
+                <div style="margin-bottom:14px" id="drumRoll"><i data-lucide="ticket" class="lucide-icon" style="width:52px;height:52px"></i></div>
                 <h2 style="font-size:24px;margin-bottom:8px">Ready to Draw!</h2>
                 <p class="text-muted" style="margin-bottom:24px">{{ $totalCount }} entries in the draw. One lucky winner
                     will be selected at random.</p>
@@ -64,7 +64,7 @@
         </div>
     @else
         <div class="empty-state mb-3">
-            <div class="empty-icon">🎟</div>
+            <div class="empty-icon"><i data-lucide="ticket" class="lucide-icon" style="width:44px;height:44px"></i></div>
             <h3>No entries yet</h3>
             <p>Guests need to enter via the lottery module on the event page.</p>
         </div>
@@ -152,15 +152,18 @@
                 const btn = document.getElementById('drawBtn');
                 const icon = document.getElementById('drumRoll');
                 btn.disabled = true;
-                btn.textContent = '🎲 Drawing…';
-                const emojis = ['<i data-lucide="ticket" class="lucide-icon"></i>', '🎲', '🎟', '🎉', '✨', '<i data-lucide="trophy" class="lucide-icon"></i>', '<i data-lucide="star" class="lucide-icon"></i>', '🎊'];
+                btn.innerHTML = '<i data-lucide="dices" class="lucide-icon"></i> Drawing…';
+                lucide.createIcons();
+                const iconNames = ['ticket', 'dices', 'gift', 'party-popper', 'sparkles', 'trophy', 'star'];
                 let i = 0;
                 const spin = setInterval(() => {
-                    icon.textContent = emojis[i++ % emojis.length];
+                    icon.innerHTML = '<i data-lucide="' + iconNames[i++ % iconNames.length] + '" class="lucide-icon" style="width:52px;height:52px"></i>';
+                    lucide.createIcons();
                 }, 120);
                 setTimeout(() => {
                     clearInterval(spin);
-                    icon.textContent = '🎊';
+                    icon.innerHTML = '<i data-lucide="party-popper" class="lucide-icon" style="width:52px;height:52px"></i>';
+                    lucide.createIcons();
                     document.getElementById('drawForm').submit();
                 }, 2800);
             }

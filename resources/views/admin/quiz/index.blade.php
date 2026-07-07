@@ -3,8 +3,8 @@
 @section('page-title', '<i data-lucide="help-circle" class="lucide-icon"></i> Quiz to Win')
 
 @section('topbar-actions')
-    <a href="{{ route('admin.quiz.export', $event) }}" class="btn btn-ghost btn-sm">⬇ CSV</a>
-    <a href="{{ route('admin.events.show', $event) }}" class="btn btn-secondary btn-sm">← Event</a>
+    <a href="{{ route('admin.quiz.export', $event) }}" class="btn btn-ghost btn-sm"><i data-lucide="download" class="lucide-icon"></i> CSV</a>
+    <a href="{{ route('admin.events.show', $event) }}" class="btn btn-secondary btn-sm"><i data-lucide="arrow-left" class="lucide-icon"></i> Event</a>
 @endsection
 
 @section('content')
@@ -65,7 +65,7 @@
                                 <span style="font-weight:700;color:{{ $i === $q->correct_option ? '#4ade80' : 'var(--muted)' }}">{{ chr(65 + $i) }}.</span>
                                 {{ $opt }}
                                 @if ($i === $q->correct_option)
-                                    <span style="color:#4ade80;font-size:10px"> ✓</span>
+                                    <span style="color:#4ade80"> <i data-lucide="check" class="lucide-icon" style="width:12px;height:12px"></i></span>
                                 @endif
                             </div>
                         @endforeach
@@ -257,7 +257,7 @@
                                         <a href="{{ route('admin.quiz.leaderboard', [$event, $round]) }}" class="btn btn-ghost btn-sm">Results</a>
                                         <form method="POST" action="{{ route('admin.quiz.rounds.reset', $round) }}" onsubmit="return confirm('Reset all answers for this round?')">
                                             @csrf
-                                            <button class="btn btn-ghost btn-sm" style="color:var(--muted)">↺</button>
+                                            <button class="btn btn-ghost btn-sm" style="color:var(--muted)" title="Reset round"><i data-lucide="rotate-ccw" class="lucide-icon"></i></button>
                                         </form>
                                     </td>
                                 </tr>

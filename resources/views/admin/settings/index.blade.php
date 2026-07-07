@@ -41,7 +41,7 @@
                         <div class="form-hint">PDF or HTML · max 5MB · replaces any existing file · accessible at a
                             permanent public URL</div>
                     </div>
-                    <button type="submit" class="btn btn-primary">⬆ Upload & Publish</button>
+                    <button type="submit" class="btn btn-primary"><i data-lucide="upload" class="lucide-icon"></i> Upload & Publish</button>
                 </form>
             </div>
         </div>

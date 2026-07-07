@@ -103,7 +103,7 @@
 
             <div class="card mb-3">
                 <div class="card-header">
-                    <h3>✨ Landing Page</h3>
+                    <h3><i data-lucide="sparkles" class="lucide-icon"></i> Landing Page</h3>
                     <div class="text-muted text-xs">The text fans see when they scan the QR code. Leave any field blank
                         to fall back to a sensible default.</div>
                 </div>
@@ -252,7 +252,7 @@
             
             <div class="card mb-3">
                 <div class="card-header">
-                    <h3>🎨 Fonts & Typography</h3>
+                    <h3><i data-lucide="palette" class="lucide-icon"></i> Fonts & Typography</h3>
                 </div>
                 <div class="card-body">
                     <div class="form-hint mb-2" style="margin-bottom:12px">Enter any Google Fonts name. Examples: Oswald ·
@@ -284,7 +284,7 @@
             
             <div class="card mb-3">
                 <div class="card-header">
-                    <h3>🖼 Tile Designer</h3>
+                    <h3><i data-lucide="image" class="lucide-icon"></i> Tile Designer</h3>
                     <div class="text-muted text-xs">Customise each of the 4 landing page tiles. Upload a graphic, set a
                         background colour, or turn a tile into an external link.</div>
                 </div>
@@ -369,7 +369,7 @@
             
             <div class="card mb-3">
                 <div class="card-header">
-                    <h3>➕ Extra Form Fields</h3>
+                    <h3><i data-lucide="plus" class="lucide-icon"></i> Extra Form Fields</h3>
                     <div class="text-muted text-xs">Add custom data fields to the Lottery and Membership forms</div>
                 </div>
                 <div class="card-body">

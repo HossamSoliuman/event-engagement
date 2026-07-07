@@ -161,7 +161,7 @@
         /* ── Search ── */
         .search-bar{position:relative}
         .search-bar input{padding-left:36px}
-        .search-bar::before{content:"<i data-lucide="search" class="lucide-icon"></i>";position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none}
+        .search-bar::before{content:"";position:absolute;left:11px;top:50%;transform:translateY(-50%);width:14px;height:14px;background:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="%237878A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>') center/contain no-repeat;pointer-events:none}
 
         /* ── Helpers ── */
         .flex{display:flex}.items-center{align-items:center}.justify-between{justify-content:space-between}
@@ -179,6 +179,7 @@
         .divider{border:none;border-top:1px solid var(--border);margin:20px 0}
         .empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
         .empty-state .empty-icon{font-size:44px;margin-bottom:14px}
+        .empty-state .empty-icon .lucide-icon{width:44px;height:44px}
         .empty-state h3{font-size:18px;margin-bottom:6px;color:var(--text)}
         .color-swatch{width:28px;height:28px;border-radius:6px;border:2px solid var(--border);cursor:pointer;flex-shrink:0}
 
@@ -194,6 +195,7 @@
         /* ── Winner card ── */
         .winner-card{background:linear-gradient(135deg,rgba(255,215,0,.15),rgba(255,61,0,.08));border:2px solid var(--gold);border-radius:14px;padding:24px;text-align:center}
         .winner-card .trophy{font-size:52px;margin-bottom:12px}
+        .winner-card .trophy .lucide-icon{width:52px;height:52px}
         .winner-card h2{font-size:22px;color:var(--gold)}
         .winner-card p{color:var(--muted);margin-top:6px}
 
@@ -300,7 +302,7 @@
 
 <div class="main-wrap">
     <header class="topbar">
-        <button class="tb-hamburger" onclick="openSidebar()">☰</button>
+        <button class="tb-hamburger" onclick="openSidebar()"><i data-lucide="menu" class="lucide-icon" style="width:22px;height:22px"></i></button>
         <div class="tb-title">@yield('page-title','Dashboard')</div>
         <div class="tb-actions">
             @if($activeEvent ?? null)

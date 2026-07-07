@@ -3,8 +3,8 @@
 @section('page-title', '<i data-lucide="swords" class="lucide-icon"></i> Fan Clash')
 
 @section('topbar-actions')
-    <a href="{{ route('admin.fanclash.export', $event) }}" class="btn btn-ghost btn-sm">⬇ CSV</a>
-    <a href="{{ route('admin.events.show', $event) }}" class="btn btn-secondary btn-sm">← Event</a>
+    <a href="{{ route('admin.fanclash.export', $event) }}" class="btn btn-ghost btn-sm"><i data-lucide="download" class="lucide-icon"></i> CSV</a>
+    <a href="{{ route('admin.events.show', $event) }}" class="btn btn-secondary btn-sm"><i data-lucide="arrow-left" class="lucide-icon"></i> Event</a>
 @endsection
 
 @section('content')
@@ -286,7 +286,7 @@
                                     <td style="display:flex;gap:6px">
                                         <form method="POST" action="{{ route('admin.fanclash.rounds.reset', $round) }}" onsubmit="return confirm('Reset this round (clears taps and participants)?')">
                                             @csrf
-                                            <button class="btn btn-ghost btn-sm" style="color:var(--muted)">↺</button>
+                                            <button class="btn btn-ghost btn-sm" style="color:var(--muted)" title="Reset round"><i data-lucide="rotate-ccw" class="lucide-icon"></i></button>
                                         </form>
                                     </td>
                                 </tr>

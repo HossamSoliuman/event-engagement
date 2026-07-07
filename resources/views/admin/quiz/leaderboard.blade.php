@@ -3,7 +3,7 @@
 @section('page-title', '<i data-lucide="trophy" class="lucide-icon"></i> Quiz Leaderboard — Round #' . $round->id)
 
 @section('topbar-actions')
-    <a href="{{ route('admin.quiz.index', $event) }}" class="btn btn-secondary btn-sm">← Quiz</a>
+    <a href="{{ route('admin.quiz.index', $event) }}" class="btn btn-secondary btn-sm"><i data-lucide="arrow-left" class="lucide-icon"></i> Quiz</a>
 @endsection
 
 @section('content')
@@ -71,9 +71,9 @@
                             <td>
                                 @if ($a)
                                     @if ($a->is_correct)
-                                        <span style="color:#4ade80;font-weight:700" title="{{ number_format($a->time_taken_ms/1000,2) }}s">✓</span>
+                                        <span style="color:#4ade80" title="{{ number_format($a->time_taken_ms/1000,2) }}s"><i data-lucide="check" class="lucide-icon"></i></span>
                                     @else
-                                        <span style="color:var(--red)" title="{{ number_format($a->time_taken_ms/1000,2) }}s">✗</span>
+                                        <span style="color:var(--red)" title="{{ number_format($a->time_taken_ms/1000,2) }}s"><i data-lucide="x" class="lucide-icon"></i></span>
                                     @endif
                                 @else
                                     <span class="text-muted">—</span>

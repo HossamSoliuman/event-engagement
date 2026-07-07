@@ -3,8 +3,8 @@
 @section('page-title', '<i data-lucide="star" class="lucide-icon"></i> Members')
 
 @section('topbar-actions')
-    <a href="{{ route('admin.membership.export', $event) }}" class="btn btn-ghost btn-sm">⬇ CSV</a>
-    <a href="{{ route('admin.events.show', $event) }}" class="btn btn-secondary btn-sm">← Event</a>
+    <a href="{{ route('admin.membership.export', $event) }}" class="btn btn-ghost btn-sm"><i data-lucide="download" class="lucide-icon"></i> CSV</a>
+    <a href="{{ route('admin.events.show', $event) }}" class="btn btn-secondary btn-sm"><i data-lucide="arrow-left" class="lucide-icon"></i> Event</a>
 @endsection
 
 @section('content')

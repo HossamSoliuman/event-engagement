@@ -3,13 +3,13 @@
 @section('page-title','<i data-lucide="trophy" class="lucide-icon"></i> Voting Results')
 
 @section('topbar-actions')
-    <a href="{{ route('admin.voting.export',$event) }}" class="btn btn-ghost btn-sm">⬇ CSV</a>
+    <a href="{{ route('admin.voting.export',$event) }}" class="btn btn-ghost btn-sm"><i data-lucide="download" class="lucide-icon"></i> CSV</a>
     @if($event->voting_closed)
-        <form method="POST" action="{{ route('admin.voting.reopen',$event) }}">@csrf<button class="btn btn-success btn-sm">🔓 Reopen Voting</button></form>
+        <form method="POST" action="{{ route('admin.voting.reopen',$event) }}">@csrf<button class="btn btn-success btn-sm"><i data-lucide="lock-open" class="lucide-icon"></i> Reopen Voting</button></form>
     @else
         <form method="POST" action="{{ route('admin.voting.close',$event) }}">@csrf<button class="btn btn-danger btn-sm"><i data-lucide="lock" class="lucide-icon"></i> Close Voting</button></form>
     @endif
-    <a href="{{ route('admin.events.show',$event) }}" class="btn btn-secondary btn-sm">← Event</a>
+    <a href="{{ route('admin.events.show',$event) }}" class="btn btn-secondary btn-sm"><i data-lucide="arrow-left" class="lucide-icon"></i> Event</a>
 @endsection
 
 @section('content')
@@ -31,7 +31,7 @@
     </div>
     <div class="stat-card">
         <div class="stat-label">Status</div>
-        <div class="stat-value" style="font-size:16px;padding-top:8px">{{ $event->voting_closed ? '<i data-lucide="lock" class="lucide-icon"></i> Closed' : '🔓 Open' }}</div>
+        <div class="stat-value" style="font-size:16px;padding-top:8px">@if($event->voting_closed)<i data-lucide="lock" class="lucide-icon"></i> Closed @else<i data-lucide="lock-open" class="lucide-icon"></i> Open @endif</div>
     </div>
 </div>
 
@@ -49,8 +49,8 @@
         <div style="margin-bottom:18px">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
                 <div style="display:flex;align-items:center;gap:10px">
-                    <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--red),var(--gold));display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:15px;flex-shrink:0">
-                        {{ $i===0?'🥇':($i===1?'🥈':'🥉') }}
+                    <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--red),var(--gold));display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0">
+                        <i data-lucide="medal" class="lucide-icon" style="width:18px;height:18px"></i>
                     </div>
                     <div>
                         <div style="font-weight:700;font-size:15px">{{ $t['candidate_name'] }}</div>
@@ -88,10 +88,10 @@
             @endphp
             @foreach($podium as $pos => $t)
             @if($t)
-            @php $heights = [0=>120, 1=>80, 2=>60]; $medals=['🥇','🥈','🥉']; $colors=['#FFD700','#C0C0C0','#CD7F32']; @endphp
+            @php $heights = [0=>120, 1=>80, 2=>60]; $colors=['#FFD700','#C0C0C0','#CD7F32']; @endphp
             <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:100px">
                 <div class="text-xs font-bold" style="color:{{ $colors[$pos] }};text-align:center">{{ Str::words($t['candidate_name'],1,'') }}</div>
-                <div style="font-size:20px">{{ $medals[$pos] }}</div>
+                <div><i data-lucide="medal" class="lucide-icon" style="width:22px;height:22px;color:{{ $colors[$pos] }}"></i></div>
                 <div style="width:100%;height:{{ $heights[$pos] }}px;background:{{ $colors[$pos] }};border-radius:6px 6px 0 0;display:flex;align-items:center;justify-content:center;color:#000;font-family:'Syne',sans-serif;font-weight:800;font-size:18px">
                     {{ $t['total'] }}
                 </div>
@@ -105,7 +105,7 @@
 
 
 <div class="card" style="border-color:rgba(239,68,68,.25)">
-    <div class="card-header"><h3 style="color:var(--red)">⚠ Danger Zone</h3></div>
+    <div class="card-header"><h3 style="color:var(--red)"><i data-lucide="alert-triangle" class="lucide-icon"></i> Danger Zone</h3></div>
     <div class="card-body" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
         <div>
             <div class="font-bold">Reset All Votes</div>
@@ -120,7 +120,7 @@
 
 @else
 <div class="empty-state">
-    <div class="empty-icon">🗳</div>
+    <div class="empty-icon"><i data-lucide="vote" class="lucide-icon" style="width:44px;height:44px"></i></div>
     <h3>No votes yet</h3>
     <p>Make sure voting is enabled and candidates are configured in the event settings.</p>
 </div>

@@ -125,7 +125,7 @@
 
         .search-bar{position:relative}
         .search-bar input{padding-left:36px}
-        .search-bar::before{content:"⌕";position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none;color:var(--muted)}
+        .search-bar::before{content:"";position:absolute;left:11px;top:50%;transform:translateY(-50%);width:14px;height:14px;background:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="%237878A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>') center/contain no-repeat;pointer-events:none}
 
         .flex{display:flex}.items-center{align-items:center}.justify-between{justify-content:space-between}
         .gap-1{gap:4px}.gap-2{gap:8px}.gap-3{gap:12px}.gap-4{gap:16px}
@@ -140,6 +140,8 @@
         .divider{border:none;border-top:1px solid var(--border);margin:20px 0}
         .empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
         .empty-state h3{font-size:18px;margin-bottom:6px;color:var(--text)}
+        .empty-state .empty-icon{font-size:44px;margin-bottom:14px}
+        .empty-state .empty-icon .lucide-icon{width:44px;height:44px}
 
         .activity-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.03)}
         .activity-dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex-shrink:0;margin-top:6px}
@@ -197,12 +199,12 @@
 
         <div class="sb-label">Manage</div>
         <a href="{{ route('moderator.fotos.index', $event) }}" class="nav-item {{ request()->routeIs('moderator.fotos*') ? 'active' : '' }}">
-            <i class="ni-icon">◼</i> Foto Queue
+            <i class="ni-icon"><i data-lucide="camera" class="lucide-icon"></i></i> Foto Queue
             @if(isset($pendingCount) && $pendingCount > 0)<span class="nav-badge">{{ $pendingCount }}</span>@endif
         </a>
         @if($event->module_lottery)
         <a href="{{ route('moderator.lottery.index', $event) }}" class="nav-item {{ request()->routeIs('moderator.lottery*') ? 'active' : '' }}">
-            <i class="ni-icon">◎</i> Lottery
+            <i class="ni-icon"><i data-lucide="ticket" class="lucide-icon"></i></i> Lottery
         </a>
         @endif
         @if($event->module_voting)
@@ -212,13 +214,13 @@
         @endif
         @if($event->module_membership)
         <a href="{{ route('moderator.membership.index', $event) }}" class="nav-item {{ request()->routeIs('moderator.membership*') ? 'active' : '' }}">
-            <i class="ni-icon">◇</i> Members
+            <i class="ni-icon"><i data-lucide="star" class="lucide-icon"></i></i> Members
         </a>
         @endif
 
         <div class="sb-label">Screens</div>
         <a href="{{ route('vidiwall.show', $event->slug) }}" target="_blank" class="nav-item">
-            <i class="ni-icon">◻</i> Vidiwall <i data-lucide="arrow-up-right" class="lucide-icon"></i>
+            <i class="ni-icon"><i data-lucide="monitor-play" class="lucide-icon"></i></i> Vidiwall <i data-lucide="arrow-up-right" class="lucide-icon"></i>
         </a>
         <a href="{{ route('event.landing', $event->slug) }}" target="_blank" class="nav-item">
             <i class="ni-icon"><i data-lucide="users" class="lucide-icon"></i></i> Guest Page <i data-lucide="arrow-up-right" class="lucide-icon"></i>
@@ -247,7 +249,7 @@
 
 <div class="main-wrap">
     <header class="topbar">
-        <button class="tb-hamburger" onclick="openSidebar()">☰</button>
+        <button class="tb-hamburger" onclick="openSidebar()"><i data-lucide="menu" class="lucide-icon" style="width:22px;height:22px"></i></button>
         <div class="tb-title">@yield('page-title','Dashboard')</div>
         <div class="tb-actions">
             @yield('topbar-actions')
