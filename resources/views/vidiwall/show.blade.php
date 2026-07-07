@@ -342,6 +342,271 @@
             border-radius: 40px;
             letter-spacing: 2px
         }
+
+        /* ── Fan Clash rope ────────────────────────────────────────── */
+        .clash {
+            position: absolute;
+            inset: 0;
+            z-index: 6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: clamp(14px, 2.8vh, 40px);
+            padding: clamp(26px, 5vw, 90px);
+            background: var(--bg)
+        }
+
+        .clash-head {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between
+        }
+
+        .clash-brand {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: clamp(14px, 2vw, 32px);
+            letter-spacing: .2em;
+            text-transform: uppercase;
+            color: var(--on-bg);
+            opacity: .9;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis
+        }
+
+        .clash-live {
+            flex: 0 0 auto;
+            margin-left: 16px;
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: clamp(11px, 1.3vw, 20px);
+            letter-spacing: .2em;
+            color: #fff;
+            background: #ef4444;
+            padding: 5px 18px;
+            border-radius: 40px;
+            animation: pulse 2s infinite
+        }
+
+        .clash-names {
+            width: 100%;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 24px
+        }
+
+        .clash-name {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: clamp(26px, 5.4vw, 88px);
+            letter-spacing: .01em;
+            text-transform: uppercase;
+            line-height: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 46%
+        }
+
+        .clash-name-a {
+            color: var(--ca, #ef4444);
+            text-align: left
+        }
+
+        .clash-name-b {
+            color: var(--cb, #3B82F6);
+            text-align: right
+        }
+
+        .clash-bar {
+            width: 100%;
+            height: clamp(42px, 7.5vh, 96px);
+            position: relative;
+            border-radius: 14px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, .06);
+            border: 1px solid rgba(255, 255, 255, .16)
+        }
+
+        .clash-fill-a {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 50%;
+            background: var(--ca, #ef4444);
+            transition: width .6s cubic-bezier(.4, 0, .2, 1)
+        }
+
+        .clash-fill-b {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 50%;
+            background: var(--cb, #3B82F6);
+            transition: width .6s cubic-bezier(.4, 0, .2, 1)
+        }
+
+        .clash-mid {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 2px;
+            background: rgba(255, 255, 255, .35);
+            transform: translateX(-50%);
+            z-index: 2
+        }
+
+        .clash-knot {
+            position: absolute;
+            top: -7px;
+            bottom: -7px;
+            left: 50%;
+            width: 6px;
+            background: #fff;
+            border-radius: 4px;
+            transform: translateX(-50%);
+            box-shadow: 0 0 22px rgba(255, 255, 255, .85);
+            transition: left .6s cubic-bezier(.4, 0, .2, 1);
+            z-index: 3
+        }
+
+        .clash-tps {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between
+        }
+
+        .clash-tps>div {
+            display: flex;
+            flex-direction: column
+        }
+
+        .clash-tps b {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: clamp(20px, 2.8vw, 46px);
+            font-variant-numeric: tabular-nums;
+            line-height: 1
+        }
+
+        .clash-tps span {
+            font-size: clamp(10px, 1vw, 15px);
+            letter-spacing: .16em;
+            text-transform: uppercase;
+            color: var(--on-bg);
+            opacity: .5;
+            margin-top: 5px
+        }
+
+        .clash-tps-a {
+            align-items: flex-start
+        }
+
+        .clash-tps-a b {
+            color: var(--ca, #ef4444)
+        }
+
+        .clash-tps-b {
+            align-items: flex-end
+        }
+
+        .clash-tps-b b {
+            color: var(--cb, #3B82F6)
+        }
+
+        .clash-count {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: clamp(30px, 4.4vw, 72px);
+            font-variant-numeric: tabular-nums;
+            color: var(--on-bg);
+            line-height: 1
+        }
+
+        .clash-hint {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: clamp(12px, 1.5vw, 24px);
+            letter-spacing: .2em;
+            text-transform: uppercase;
+            color: var(--on-bg);
+            opacity: .45
+        }
+
+        .clash-winner {
+            position: absolute;
+            inset: 0;
+            z-index: 8;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: clamp(10px, 2.6vh, 28px);
+            padding: clamp(24px, 5vw, 80px);
+            background: var(--bg);
+            text-align: center;
+            animation: clashWinIn .5s cubic-bezier(.22, 1, .36, 1)
+        }
+
+        @keyframes clashWinIn {
+            from {
+                opacity: 0;
+                transform: scale(.96)
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1)
+            }
+        }
+
+        .clash-winner-eyebrow {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: clamp(12px, 1.6vw, 26px);
+            letter-spacing: .3em;
+            text-transform: uppercase;
+            color: var(--on-bg);
+            opacity: .55
+        }
+
+        .clash-winner-name {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: clamp(46px, 11vw, 170px);
+            line-height: .95;
+            text-transform: uppercase;
+            color: var(--cwin, #fff);
+            letter-spacing: -.01em
+        }
+
+        .clash-winner-tag {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: clamp(16px, 2.4vw, 42px);
+            letter-spacing: .28em;
+            text-transform: uppercase;
+            color: var(--on-bg);
+            opacity: .7
+        }
+
+        .clash-winner-spon {
+            max-height: clamp(60px, 12vh, 150px);
+            width: auto;
+            max-width: 60%;
+            background: #fff;
+            border-radius: 14px;
+            padding: 12px 22px;
+            margin-top: 10px
+        }
     </style>
 </head>
 
@@ -396,6 +661,38 @@
             <div class="video-badge" id="videoBadge" style="display:none">&#9654; VIDEO</div>
             <div class="slide-counter" id="slideCounter" style="display:none"></div>
             <div class="slide-progress" id="slideProgress" style="width:0;display:none"></div>
+
+            @if ($event->module_fanclash)
+                <div class="clash" id="clashOverlay" style="display:none">
+                    <div class="clash-head">
+                        <span class="clash-brand" id="clashBrand">FAN CLASH</span>
+                        <span class="clash-live" id="clashLive">&#9679; LIVE</span>
+                    </div>
+                    <div class="clash-names">
+                        <div class="clash-name clash-name-a" id="clashNameA">Side A</div>
+                        <div class="clash-name clash-name-b" id="clashNameB">Side B</div>
+                    </div>
+                    <div class="clash-bar" id="clashBar">
+                        <div class="clash-fill-a" id="clashFillA"></div>
+                        <div class="clash-fill-b" id="clashFillB"></div>
+                        <div class="clash-mid"></div>
+                        <div class="clash-knot" id="clashKnot"></div>
+                    </div>
+                    <div class="clash-tps">
+                        <div class="clash-tps-a"><b id="clashTapsA">0</b><span>taps</span></div>
+                        <div class="clash-count" id="clashCount">20</div>
+                        <div class="clash-tps-b"><b id="clashTapsB">0</b><span>taps</span></div>
+                    </div>
+                    <div class="clash-hint">Scan &middot; pick a side &middot; tap to win</div>
+
+                    <div class="clash-winner" id="clashWinner" style="display:none">
+                        <div class="clash-winner-eyebrow">Winner</div>
+                        <div class="clash-winner-name" id="clashWinnerName">&mdash;</div>
+                        <div class="clash-winner-tag" id="clashWinnerTag">wins</div>
+                        <img class="clash-winner-spon" id="clashWinnerSpon" alt="Sponsor" style="display:none">
+                    </div>
+                </div>
+            @endif
         </div>
 
         <div class="fr-rail fr-right">
@@ -421,7 +718,9 @@
     <script>
         const SLUG = '{{ $event->slug }}';
         const SHOW_NAME = {{ $event->vidiwall_show_uploader ? 'true' : 'false' }};
+        const HAS_FANCLASH = {{ $event->module_fanclash ? 'true' : 'false' }};
 
+        let clashActive = false;
         let lastFotoId = null;
         let slideIndex = 0;
         let slideTimer = null;
@@ -572,6 +871,7 @@
         }
 
         async function poll() {
+            if (clashActive) return;
             try {
                 const res = await fetch(`/screen/${SLUG}/feed`);
                 const data = await res.json();
@@ -607,6 +907,133 @@
 
         poll();
         setInterval(poll, 3000);
+
+        /* ── Fan Clash rope: fast poll while a round is live ──────── */
+        (function () {
+            if (!HAS_FANCLASH) return;
+
+            const overlay = document.getElementById('clashOverlay');
+            if (!overlay) return;
+
+            const el = id => document.getElementById(id);
+            const brand = el('clashBrand'), live = el('clashLive'), countEl = el('clashCount'),
+                nameA = el('clashNameA'), nameB = el('clashNameB'),
+                fillA = el('clashFillA'), fillB = el('clashFillB'), knot = el('clashKnot'),
+                tapsA = el('clashTapsA'), tapsB = el('clashTapsB'),
+                winner = el('clashWinner'), winnerName = el('clashWinnerName'),
+                winnerTag = el('clashWinnerTag'), winnerSpon = el('clashWinnerSpon');
+
+            let timer = null;
+
+            function ratio(a, b) {
+                const t = a + b;
+                return t <= 0 ? 0.5 : a / t;
+            }
+
+            function hideStage() {
+                ['idleState', 'photoFrame', 'videoFrame', 'uploaderTag', 'liveBadge',
+                    'videoBadge', 'slideCounter', 'slideProgress'].forEach(id => {
+                    const n = document.getElementById(id);
+                    if (n) n.style.display = 'none';
+                });
+                const v = document.getElementById('liveVideo');
+                if (v) { v.pause(); }
+            }
+
+            function paintColors(d) {
+                overlay.style.setProperty('--ca', d.side_a_color || '#ef4444');
+                overlay.style.setProperty('--cb', d.side_b_color || '#3B82F6');
+            }
+
+            function render(d) {
+                paintColors(d);
+                brand.textContent = 'FAN CLASH' + (d.category ? ' · ' + d.category : '');
+                nameA.textContent = d.side_a_name || 'Side A';
+                nameB.textContent = d.side_b_name || 'Side B';
+                tapsA.textContent = (d.side_a_taps ?? 0).toLocaleString();
+                tapsB.textContent = (d.side_b_taps ?? 0).toLocaleString();
+
+                let r;
+                if (d.status === 'finished') {
+                    r = d.winner_side === 'a' ? 1 : d.winner_side === 'b' ? 0 : 0.5;
+                } else {
+                    r = Math.max(0.04, Math.min(0.96, ratio(d.side_a_taps ?? 0, d.side_b_taps ?? 0)));
+                }
+                const pct = (r * 100).toFixed(2) + '%';
+                fillA.style.width = pct;
+                fillB.style.width = (100 - r * 100).toFixed(2) + '%';
+                knot.style.left = pct;
+
+                if (d.status === 'finished') {
+                    countEl.textContent = '0';
+                    live.textContent = '● FINAL';
+                    live.style.background = 'rgba(255,255,255,.18)';
+                    showWinner(d);
+                } else {
+                    countEl.textContent = Math.ceil((d.remaining_ms ?? 0) / 1000);
+                    live.textContent = '● LIVE';
+                    live.style.background = '#ef4444';
+                    winner.style.display = 'none';
+                }
+            }
+
+            function showWinner(d) {
+                if (d.winner_side === 'tie') {
+                    winnerName.textContent = "It's a tie";
+                    winnerTag.style.display = 'none';
+                    overlay.style.setProperty('--cwin', '#ffffff');
+                } else {
+                    winnerName.textContent = (d.winner_side === 'a' ? d.side_a_name : d.side_b_name) || '—';
+                    winnerTag.style.display = '';
+                    overlay.style.setProperty('--cwin', (d.winner_side === 'a' ? d.side_a_color : d.side_b_color) || '#ffffff');
+                }
+                if (d.sponsor_logo_url) {
+                    winnerSpon.src = d.sponsor_logo_url;
+                    winnerSpon.style.display = '';
+                } else {
+                    winnerSpon.style.display = 'none';
+                }
+                winner.style.display = 'flex';
+            }
+
+            function handle(d) {
+                if (d.status === 'active' || d.status === 'finished') {
+                    if (!clashActive) {
+                        clashActive = true;
+                        hideStage();
+                        overlay.style.display = 'flex';
+                    }
+                    render(d);
+                } else { // idle
+                    if (clashActive) {
+                        clashActive = false;
+                        overlay.style.display = 'none';
+                        winner.style.display = 'none';
+                        lastFotoId = null;
+                        slideFotos = [];
+                        poll();
+                    }
+                }
+            }
+
+            function schedule(ms) {
+                clearTimeout(timer);
+                timer = setTimeout(tick, ms);
+            }
+
+            async function tick() {
+                try {
+                    const res = await fetch(`/screen/${SLUG}/clash/feed`);
+                    const d = await res.json();
+                    handle(d);
+                    schedule(d.status === 'idle' ? 3000 : 700);
+                } catch (e) {
+                    schedule(3000);
+                }
+            }
+
+            tick();
+        })();
     </script>
 
     <script>

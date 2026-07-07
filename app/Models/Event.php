@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
 
@@ -29,16 +30,19 @@ class Event extends Model
         'module_voting',
         'module_membership',
         'module_quiz',
+        'module_fanclash',
         'fotobomb_title',
         'lottery_title',
         'voting_title',
         'membership_title',
         'quiz_title',
+        'fanclash_title',
         'fotobomb_desc',
         'lottery_desc',
         'voting_desc',
         'membership_desc',
         'quiz_desc',
+        'fanclash_desc',
         'quiz_winner_text',
         'quiz_end_sponsor_logo_path',
         'voting_options',
@@ -66,6 +70,7 @@ class Event extends Model
         'tile_lottery_config',
         'tile_membership_config',
         'tile_quiz_config',
+        'tile_fanclash_config',
         'lottery_extra_fields',
         'membership_extra_fields',
         'starts_at',
@@ -80,6 +85,7 @@ class Event extends Model
         'module_voting' => 'boolean',
         'module_membership' => 'boolean',
         'module_quiz' => 'boolean',
+        'module_fanclash' => 'boolean',
         'voting_closed' => 'boolean',
         'lottery_drawn' => 'boolean',
         'vidiwall_show_uploader' => 'boolean',
@@ -92,6 +98,7 @@ class Event extends Model
         'tile_lottery_config' => 'array',
         'tile_membership_config' => 'array',
         'tile_quiz_config' => 'array',
+        'tile_fanclash_config' => 'array',
         'lottery_extra_fields' => 'array',
         'membership_extra_fields' => 'array',
     ];
@@ -154,6 +161,21 @@ class Event extends Model
     public function activeQuizRound(): ?QuizRound
     {
         return $this->quizRounds()->where('status', 'active')->latest()->first();
+    }
+
+    public function fanClashMatchups(): HasMany
+    {
+        return $this->hasMany(FanClashMatchup::class);
+    }
+
+    public function fanClashRounds(): HasMany
+    {
+        return $this->hasMany(FanClashRound::class);
+    }
+
+    public function activeFanClashRound(): ?FanClashRound
+    {
+        return $this->fanClashRounds()->where('status', 'active')->latest()->first();
     }
 
     public function getGuestUrl(): string

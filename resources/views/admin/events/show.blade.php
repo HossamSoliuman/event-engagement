@@ -82,7 +82,7 @@
                 <h3>Module Controls</h3>
             </div>
             <div class="card-body" style="padding:0">
-                @foreach ([['fotobomb', '<i data-lucide="camera" class="lucide-icon"></i>', 'Foto Bomb', 'Let guests upload photos for vidiwall'], ['lottery', '<i data-lucide="ticket" class="lucide-icon"></i>', 'Lottery', 'Guests enter the prize draw'], ['voting', '<i data-lucide="trophy" class="lucide-icon"></i>', 'Athlete Vote', 'Vote for athlete of the day'], ['membership', '<i data-lucide="star" class="lucide-icon"></i>', 'Membership', 'Guest community sign-ups'], ['quiz', '<i data-lucide="help-circle" class="lucide-icon"></i>', 'Quiz to Win', 'Fastest correct answer wins']] as [$key, $ico, $label, $desc])
+                @foreach ([['fotobomb', '<i data-lucide="camera" class="lucide-icon"></i>', 'Foto Bomb', 'Let guests upload photos for vidiwall'], ['lottery', '<i data-lucide="ticket" class="lucide-icon"></i>', 'Lottery', 'Guests enter the prize draw'], ['voting', '<i data-lucide="trophy" class="lucide-icon"></i>', 'Athlete Vote', 'Vote for athlete of the day'], ['membership', '<i data-lucide="star" class="lucide-icon"></i>', 'Membership', 'Guest community sign-ups'], ['quiz', '<i data-lucide="help-circle" class="lucide-icon"></i>', 'Quiz to Win', 'Fastest correct answer wins'], ['fanclash', '<i data-lucide="swords" class="lucide-icon"></i>', 'Fan Clash', 'Live tug-of-war tap battle']] as [$key, $ico, $label, $desc])
                     <div
                         style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)">
                         <div>
@@ -203,6 +203,7 @@
         <a href="{{ route('admin.voting.index', $event) }}" class="btn btn-secondary">Voting</a>
         <a href="{{ route('admin.membership.index', $event) }}" class="btn btn-secondary">Members</a>
         <a href="{{ route('admin.quiz.index', $event) }}" class="btn btn-secondary">Quiz to Win</a>
+        <a href="{{ route('admin.fanclash.index', $event) }}" class="btn btn-secondary">Fan Clash</a>
         <a href="{{ route('admin.events.moderators', $event) }}" class="btn btn-outline">Moderators</a>
     </div>
 

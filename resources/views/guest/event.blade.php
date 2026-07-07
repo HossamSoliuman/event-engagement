@@ -48,6 +48,7 @@ $fontH = $event->font_heading ?: 'Syne';
         #screen-lottery .mod-header-title .lucide-icon, #screen-lottery .section-title .lucide-icon, #screen-lottery .s-icon .lucide-icon { color: #6366f1; }
         #screen-membership .mod-header-title .lucide-icon, #screen-membership .section-title .lucide-icon, #screen-membership .s-icon .lucide-icon { color: #22c55e; }
         #screen-quiz .mod-header-title .lucide-icon, #screen-quiz .section-title .lucide-icon, #screen-quiz .s-icon .lucide-icon { color: #f59e0b; }
+        #screen-fanclash .mod-header-title .lucide-icon { color: #ef4444; }
 
         html {
             -webkit-tap-highlight-color: transparent;
@@ -1238,7 +1239,7 @@ $fontH = $event->font_heading ?: 'Syne';
             </div>
 
             <div class="cl-grid">
-                @foreach ([['fotobomb', 'camera'], ['voting', 'trophy'], ['lottery', 'ticket'], ['membership', 'crown'], ['quiz', 'brain']] as [$mod, $iconName])
+                @foreach ([['fotobomb', 'camera'], ['voting', 'trophy'], ['lottery', 'ticket'], ['membership', 'crown'], ['quiz', 'brain'], ['fanclash', 'swords']] as [$mod, $iconName])
                     @continue(!$event->{'module_' . $mod})
                     @php
                         $tc = $event->tileConfig($mod);
@@ -1327,7 +1328,7 @@ $fontH = $event->font_heading ?: 'Syne';
         </div>
 
         <div class="tile-grid">
-            @foreach ([['fotobomb', '<i data-lucide="camera" class="lucide-icon"></i>', $event->fotobomb_title, '#FF3D00'], ['voting', '<i data-lucide="trophy" class="lucide-icon"></i>', $event->voting_title, '#FFD700'], ['lottery', '<i data-lucide="ticket" class="lucide-icon"></i>', $event->lottery_title, '#6366f1'], ['membership', '<i data-lucide="crown" class="lucide-icon"></i>', $event->membership_title, '#22c55e'], ['quiz', '<i data-lucide="brain" class="lucide-icon"></i>', $event->quiz_title, '#f59e0b']] as [$mod, $defaultIcon, $defaultName, $defaultAccent])
+            @foreach ([['fotobomb', '<i data-lucide="camera" class="lucide-icon"></i>', $event->fotobomb_title, '#FF3D00'], ['voting', '<i data-lucide="trophy" class="lucide-icon"></i>', $event->voting_title, '#FFD700'], ['lottery', '<i data-lucide="ticket" class="lucide-icon"></i>', $event->lottery_title, '#6366f1'], ['membership', '<i data-lucide="crown" class="lucide-icon"></i>', $event->membership_title, '#22c55e'], ['quiz', '<i data-lucide="brain" class="lucide-icon"></i>', $event->quiz_title, '#f59e0b'], ['fanclash', '<i data-lucide="swords" class="lucide-icon"></i>', $event->fanclash_title, '#ef4444']] as [$mod, $defaultIcon, $defaultName, $defaultAccent])
                 @if (!$event->{'module_' . $mod})
                     @continue
                 @endif
@@ -1352,6 +1353,7 @@ $fontH = $event->font_heading ?: 'Syne';
                             'lottery' => 'background:linear-gradient(160deg,#1a1040,#080520)',
                             'membership' => 'background:linear-gradient(160deg,#071a07,#020d02)',
                             'quiz' => 'background:linear-gradient(160deg,#1c1200,#0a0800)',
+                            'fanclash' => 'background:linear-gradient(160deg,#2a0808,#0d0303)',
                         };
 
                     $accentStyle = match ($mod) {
@@ -1360,6 +1362,7 @@ $fontH = $event->font_heading ?: 'Syne';
                         'lottery' => 'background:#6366f1',
                         'membership' => 'background:#22c55e',
                         'quiz' => 'background:#f59e0b',
+                        'fanclash' => 'background:#ef4444',
                     };
                 @endphp
 
@@ -1432,6 +1435,9 @@ $fontH = $event->font_heading ?: 'Syne';
                                     'quiz' => $event->quiz_desc
                                         ? \Illuminate\Support\Str::limit($event->quiz_desc, 30)
                                         : 'Fastest answer wins',
+                                    'fanclash' => $event->fanclash_desc
+                                        ? \Illuminate\Support\Str::limit($event->fanclash_desc, 30)
+                                        : 'Tap for your side',
                                 } }}
                             @endif
                         </div>
@@ -1791,6 +1797,107 @@ $fontH = $event->font_heading ?: 'Syne';
         </div>
     @endif
 
+    @if ($event->module_fanclash)
+        <div class="module-screen" id="screen-fanclash">
+            <div class="mod-header">
+                <button class="mod-back" onclick="closeModule('fanclash')"><i data-lucide="arrow-left" class="lucide-icon"></i></button>
+                <div class="mod-header-title"><i data-lucide="swords" class="lucide-icon"></i> {{ $event->fanclash_title }}</div>
+            </div>
+            <div class="mod-body">
+                <style>
+                    #screen-fanclash .mod-body{display:flex;flex-direction:column}
+                    .fc-screen{flex:1;display:flex;flex-direction:column}
+                    .fc-eyebrow{font-size:11px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,.5);text-align:center;margin-bottom:20px;display:flex;align-items:center;justify-content:center;gap:9px}
+                    .fc-eyebrow .fc-dot{width:7px;height:7px;border-radius:50%;background:#ef4444;box-shadow:0 0 10px #ef4444;animation:fcpip 1.6s infinite}
+                    @keyframes fcpip{0%,100%{opacity:1}50%{opacity:.3}}
+
+                    .fc-pick-title{font-family:'Syne',sans-serif;font-weight:800;font-size:32px;text-align:center;letter-spacing:-.02em;line-height:1.05}
+                    .fc-pick-sub{color:rgba(255,255,255,.55);text-align:center;font-size:14px;line-height:1.5;margin:10px 0 30px}
+                    .fc-pick-btns{display:flex;flex-direction:column;gap:14px;margin-top:auto}
+                    .fc-vs{text-align:center;font-family:'Syne',sans-serif;font-weight:800;font-size:12px;letter-spacing:.3em;color:rgba(255,255,255,.35);margin:2px 0}
+                    .fc-pick-btn{border:none;border-radius:16px;padding:28px 18px;min-height:104px;cursor:pointer;font-family:'Syne',sans-serif;font-weight:800;font-size:23px;letter-spacing:.03em;text-transform:uppercase;position:relative;transition:transform .12s;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.1;-webkit-tap-highlight-color:transparent}
+                    .fc-pick-btn:active{transform:scale(.98)}
+
+                    .fc-tap-top{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px}
+                    .fc-side-label{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;letter-spacing:.12em;text-transform:uppercase;color:var(--fc-me,#ef4444)}
+                    .fc-your-taps{font-size:13px;color:rgba(255,255,255,.5);font-variant-numeric:tabular-nums}
+                    .fc-your-taps b{font-family:'Syne',sans-serif;font-weight:800;color:#fff;font-size:17px}
+                    .fc-tap-btn{flex:1;min-height:46vh;border:none;border-radius:26px;background:var(--fc-me,#ef4444);color:var(--fc-me-ink,#fff);cursor:pointer;user-select:none;-webkit-user-select:none;position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;touch-action:manipulation;transition:transform .05s}
+                    .fc-tap-btn:active{transform:scale(.985)}
+                    .fc-tap-btn.fc-dis{opacity:.45;pointer-events:none}
+                    .fc-tap-word{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(56px,20vw,80px);letter-spacing:.02em;line-height:1;pointer-events:none}
+                    .fc-tap-rate{font-size:15px;font-weight:600;opacity:.82;font-variant-numeric:tabular-nums;pointer-events:none}
+                    .fc-float{position:absolute;font-family:'Syne',sans-serif;font-weight:800;font-size:28px;pointer-events:none;animation:fcfloat .7s ease-out forwards}
+                    @keyframes fcfloat{from{opacity:.9;transform:translateY(0) scale(1)}to{opacity:0;transform:translateY(-56px) scale(1.5)}}
+                    .fc-count{font-family:'Syne',sans-serif;font-weight:800;font-size:52px;text-align:center;font-variant-numeric:tabular-nums;margin-top:20px;letter-spacing:.02em}
+                    .fc-count.fc-low{color:#ef4444}
+
+                    .fc-waiting{text-align:center;margin:auto 0}
+                    .fc-pulse{width:64px;height:64px;border-radius:50%;background:#ef4444;margin:0 auto 20px;animation:fcpulse 1.6s ease-in-out infinite}
+                    @keyframes fcpulse{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.14);opacity:1}}
+                    .fc-muted{color:rgba(255,255,255,.5);font-size:14px;line-height:1.55}
+
+                    .fc-result{text-align:center;margin:auto 0;width:100%}
+                    .fc-result-spon{margin-bottom:24px}
+                    .fc-result-spon img{max-height:56px;width:auto;max-width:70%;background:#fff;border-radius:10px;padding:8px 12px}
+                    .fc-result-eyebrow{font-size:11px;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:12px}
+                    .fc-winner-name{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(34px,11vw,46px);line-height:1.05;letter-spacing:-.01em;color:var(--fc-win,#fff)}
+                    .fc-winner-tag{font-size:13px;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-top:10px}
+                    .fc-score{font-family:'Syne',sans-serif;font-weight:800;font-size:28px;font-variant-numeric:tabular-nums;margin:26px 0 6px;letter-spacing:.04em}
+                    .fc-score .a{color:var(--fc-a,#ef4444)}
+                    .fc-score .b{color:var(--fc-b,#3B82F6)}
+                    .fc-score .sep{color:rgba(255,255,255,.3);margin:0 10px}
+                    #screen-fanclash .fc-again{margin-top:30px}
+                </style>
+
+                <div id="fcPick" class="fc-screen">
+                    <div class="fc-eyebrow" id="fcPickCat"><span class="fc-dot"></span> Live now</div>
+                    <h2 class="fc-pick-title">Who's faster?</h2>
+                    <p class="fc-pick-sub">Pick your side, then tap as fast as you can until the buzzer.</p>
+                    <div class="fc-pick-btns">
+                        <button class="fc-pick-btn" id="fcPickA" onclick="fcChoose('a')">Side A</button>
+                        <div class="fc-vs">VS</div>
+                        <button class="fc-pick-btn" id="fcPickB" onclick="fcChoose('b')">Side B</button>
+                    </div>
+                </div>
+
+                <div id="fcWaiting" class="fc-screen" style="display:none">
+                    <div class="fc-waiting">
+                        <div class="fc-pulse"></div>
+                        <p class="section-title" style="margin-bottom:8px">Waiting for the clash</p>
+                        <p class="fc-muted">The next round will start soon. Stay on this screen.</p>
+                    </div>
+                </div>
+
+                <div id="fcTap" class="fc-screen" style="display:none">
+                    <div class="fc-tap-top">
+                        <div class="fc-side-label" id="fcSideLabel">Your side</div>
+                        <div class="fc-your-taps"><b id="fcYourTaps">0</b> taps</div>
+                    </div>
+                    <button class="fc-tap-btn" id="fcTapBtn">
+                        <div class="fc-tap-word">TAP</div>
+                        <div class="fc-tap-rate"><span id="fcRate">0</span>/s</div>
+                    </button>
+                    <div class="fc-count" id="fcCount">20</div>
+                </div>
+
+                <div id="fcResult" class="fc-screen" style="display:none">
+                    <div class="fc-result">
+                        <div class="fc-result-spon" id="fcResultSponWrap" style="display:none">
+                            <img id="fcResultSpon" alt="Sponsor">
+                        </div>
+                        <div class="fc-result-eyebrow" id="fcResultEyebrow">Winner</div>
+                        <div class="fc-winner-name" id="fcWinnerName">—</div>
+                        <div class="fc-winner-tag" id="fcWinnerTag">wins</div>
+                        <div class="fc-score" id="fcScore"></div>
+                        <p class="fc-muted" id="fcResultNote" style="margin-top:14px">Stay for the next round.</p>
+                        <button class="btn-main fc-again" onclick="fcBackToStart()">Back to start</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <div id="toast"></div>
 
     <script>
@@ -1831,12 +1938,14 @@ $fontH = $event->font_heading ?: 'Syne';
             document.getElementById('landing').style.display = 'none';
             document.getElementById('screen-' + n)?.classList.add('open');
             window.scrollTo(0, 0);
+            if (n === 'fanclash' && window.fcOpen) { window.fcOpen(); }
         }
 
         function closeModule(n) {
             document.getElementById('screen-' + n)?.classList.remove('open');
             document.getElementById('landing').style.display = 'flex';
             window.scrollTo(0, 0);
+            if (n === 'fanclash' && window.fcClose) { window.fcClose(); }
         }
 
         function toast(msg, err = false) {
@@ -2329,6 +2438,226 @@ $fontH = $event->font_heading ?: 'Syne';
                 quizState = 'results';
             } catch {}
         }
+
+        /* ============ FAN CLASH — tug-of-war tap battle ============ */
+        (() => {
+            const root = document.getElementById('screen-fanclash');
+            if (!root) return;
+
+            const MAX_TPS = 25;
+            let state = 'idle';           // idle | pick | waiting | tap | ending | result
+            let side = null;              // 'a' | 'b'
+            let roundId = null;
+            let resultRoundId = null;
+            let colA = '#ef4444', colB = '#3B82F6', nameA = 'Side A', nameB = 'Side B';
+            let localTaps = 0, pendingTaps = 0, stamps = [];
+            let syncPerf = 0, syncRemaining = 20000;
+            let rafId = null, flushId = null, pollId = null, celebrated = false;
+
+            const token = localStorage.getItem('eb_clash_token') || (() => {
+                const t = Math.random().toString(36).slice(2) + Date.now().toString(36);
+                localStorage.setItem('eb_clash_token', t);
+                return t;
+            })();
+
+            const $ = id => document.getElementById(id);
+            const tapBtn = $('fcTapBtn'), countEl = $('fcCount'), rateEl = $('fcRate'),
+                yourTapsEl = $('fcYourTaps'), sideLabel = $('fcSideLabel');
+
+            function ink(hex) {
+                let h = (hex || '').replace('#', '');
+                if (h.length === 3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+                if (h.length !== 6) return '#fff';
+                const r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16);
+                return (r*299 + g*587 + b*114) / 1000 > 150 ? '#111827' : '#ffffff';
+            }
+            function setVar(k, v) { root.style.setProperty(k, v); }
+            function show(id) {
+                ['fcPick','fcWaiting','fcTap','fcResult'].forEach(s => {
+                    const el = $(s); if (el) el.style.display = s === id ? 'flex' : 'none';
+                });
+            }
+            function remainingNow() {
+                return Math.max(0, syncRemaining - (performance.now() - syncPerf));
+            }
+
+            function renderPick(d) {
+                colA = d.side_a_color || colA; colB = d.side_b_color || colB;
+                nameA = d.side_a_name || nameA; nameB = d.side_b_name || nameB;
+                setVar('--fc-a', colA); setVar('--fc-b', colB);
+                const a = $('fcPickA'), b = $('fcPickB');
+                a.style.background = colA; a.style.color = ink(colA); a.textContent = nameA;
+                b.style.background = colB; b.style.color = ink(colB); b.textContent = nameB;
+                $('fcPickCat').innerHTML = '<span class="fc-dot"></span> ' + (d.category ? d.category : 'Live now');
+                syncPerf = performance.now(); syncRemaining = d.remaining_ms ?? (d.duration_seconds || 20) * 1000;
+            }
+
+            window.fcChoose = function (s) {
+                side = s;
+                const col = s === 'a' ? colA : colB;
+                setVar('--fc-me', col); setVar('--fc-me-ink', ink(col));
+                sideLabel.textContent = s === 'a' ? nameA : nameB;
+                sideLabel.style.color = col;
+                localTaps = 0; pendingTaps = 0; stamps = [];
+                yourTapsEl.textContent = '0'; rateEl.textContent = '0';
+                countEl.textContent = Math.ceil(remainingNow() / 1000);
+                countEl.classList.remove('fc-low');
+                tapBtn.classList.remove('fc-dis');
+                state = 'tap';
+                show('fcTap');
+                clearInterval(flushId); flushId = setInterval(flush, 800);
+                cancelAnimationFrame(rafId); rafId = requestAnimationFrame(frame);
+            };
+
+            function registerTap(e) {
+                if (state !== 'tap') return;
+                localTaps++; pendingTaps++;
+                stamps.push(performance.now());
+                yourTapsEl.textContent = localTaps;
+                const f = document.createElement('div');
+                f.className = 'fc-float'; f.textContent = '+1';
+                f.style.color = getComputedStyle(root).getPropertyValue('--fc-me-ink') || '#fff';
+                const r = tapBtn.getBoundingClientRect();
+                f.style.left = ((e && e.clientX ? e.clientX - r.left : r.width / 2) - 8) + 'px';
+                f.style.top = ((e && e.clientY ? e.clientY - r.top : r.height / 2) - 14) + 'px';
+                tapBtn.appendChild(f);
+                setTimeout(() => f.remove(), 700);
+            }
+
+            function frame() {
+                if (state !== 'tap') return;
+                const rem = remainingNow();
+                countEl.textContent = Math.ceil(rem / 1000);
+                countEl.classList.toggle('fc-low', rem <= 5000);
+                const now = performance.now();
+                stamps = stamps.filter(t => now - t < 1000);
+                rateEl.textContent = stamps.length;
+                if (rem <= 0) { endLocal(); return; }
+                rafId = requestAnimationFrame(frame);
+            }
+
+            async function flush() {
+                if (pendingTaps <= 0) return;
+                const batch = pendingTaps; pendingTaps = 0;
+                try {
+                    const d = await post(`/e/${SLUG}/clash/tap`, { session_token: token, side, taps: batch });
+                    if (d && d.remaining_ms !== undefined) { syncPerf = performance.now(); syncRemaining = d.remaining_ms; }
+                    if (d && d.status === 'finished') { endLocal(); }
+                } catch { pendingTaps += batch; }
+            }
+
+            function endLocal() {
+                if (state !== 'tap') return;
+                state = 'ending';
+                cancelAnimationFrame(rafId);
+                clearInterval(flushId);
+                tapBtn.classList.add('fc-dis');
+                countEl.textContent = '0';
+                flush();
+                clearInterval(pollId); pollId = setInterval(poll, 700); poll();
+            }
+
+            function showResult(d) {
+                resultRoundId = d.round_id;
+                state = 'result';
+                setVar('--fc-a', d.side_a_color || colA); setVar('--fc-b', d.side_b_color || colB);
+                const w = d.winner_side;
+                const winName = w === 'a' ? d.side_a_name : w === 'b' ? d.side_b_name : null;
+                const winCol = w === 'a' ? (d.side_a_color || colA) : w === 'b' ? (d.side_b_color || colB) : '#fff';
+                setVar('--fc-win', winCol);
+                if (w === 'tie') {
+                    $('fcWinnerName').textContent = "It's a tie!";
+                    $('fcWinnerTag').style.display = 'none';
+                } else {
+                    $('fcWinnerName').textContent = winName || '—';
+                    $('fcWinnerTag').style.display = '';
+                }
+                $('fcScore').innerHTML = `<span class="a">${d.side_a_taps ?? 0}</span><span class="sep">–</span><span class="b">${d.side_b_taps ?? 0}</span>`;
+                const spon = $('fcResultSponWrap');
+                if (d.sponsor_logo_url) { $('fcResultSpon').src = d.sponsor_logo_url; spon.style.display = ''; }
+                else { spon.style.display = 'none'; }
+                const won = side && w === side;
+                $('fcResultNote').textContent = won ? 'Your side won it. Stay for the next round.' : 'Stay for the next round.';
+                show('fcResult');
+                if (won && !celebrated) { celebrated = true; confettiBurst(winCol); }
+                clearInterval(pollId); pollId = setInterval(poll, 1500);
+            }
+
+            function applyStatus(d) {
+                if (d.status === 'active') {
+                    if (roundId !== d.round_id) {
+                        roundId = d.round_id; side = null; celebrated = false;
+                        renderPick(d); show('fcPick'); state = 'pick';
+                    } else if (state === 'pick') {
+                        renderPick(d);
+                    } else if (state === 'tap') {
+                        syncPerf = performance.now(); syncRemaining = d.remaining_ms;
+                    }
+                } else if (d.status === 'finished') {
+                    if (state === 'tap' || state === 'ending' || state === 'idle' ||
+                        (state === 'result' && resultRoundId !== d.round_id) ||
+                        (state === 'pick') || (state === 'waiting')) {
+                        showResult(d);
+                    }
+                } else { // waiting
+                    if (state !== 'tap' && state !== 'ending') {
+                        roundId = null;
+                        show('fcWaiting'); state = 'waiting';
+                    }
+                }
+            }
+
+            async function poll() {
+                try {
+                    const r = await fetch(`/e/${SLUG}/clash/status`);
+                    applyStatus(await r.json());
+                } catch {}
+            }
+
+            window.fcOpen = function () {
+                celebrated = false;
+                if (state === 'idle') { show('fcWaiting'); state = 'waiting'; }
+                clearInterval(pollId); pollId = setInterval(poll, 1500); poll();
+            };
+            window.fcClose = function () {
+                clearInterval(pollId); clearInterval(flushId); cancelAnimationFrame(rafId);
+            };
+
+            tapBtn.addEventListener('pointerdown', registerTap);
+            tapBtn.addEventListener('contextmenu', e => e.preventDefault());
+
+            /* compact confetti — fires only when your side wins */
+            let cc = null, cx = null, parts = [], craf = null;
+            function confettiBurst(color) {
+                if (!cc) {
+                    cc = document.createElement('canvas');
+                    cc.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:9999';
+                    document.body.appendChild(cc); cx = cc.getContext('2d');
+                    const rs = () => { cc.width = innerWidth; cc.height = innerHeight; };
+                    addEventListener('resize', rs); rs();
+                }
+                const cols = [color, '{{ $event->accent_color ?: '#FFD700' }}', '#ffffff'];
+                const ox = innerWidth / 2, oy = innerHeight * 0.42;
+                for (let i = 0; i < 120; i++) {
+                    const a = Math.random() * 6.283, sp = 4 + Math.random() * 9;
+                    parts.push({ x: ox, y: oy, vx: Math.cos(a)*sp, vy: Math.sin(a)*sp - 5,
+                        s: 6 + Math.random()*8, c: cols[i % cols.length], rot: Math.random()*6,
+                        vr: (Math.random()-.5)*.5, life: 60 + Math.random()*45, max: 105 });
+                }
+                if (!craf) craf = requestAnimationFrame(ccLoop);
+            }
+            function ccLoop() {
+                cx.clearRect(0, 0, cc.width, cc.height);
+                for (const p of parts) {
+                    p.vy += .16; p.x += p.vx; p.y += p.vy; p.rot += p.vr; p.life--;
+                    cx.save(); cx.translate(p.x, p.y); cx.rotate(p.rot);
+                    cx.globalAlpha = Math.max(0, p.life / p.max); cx.fillStyle = p.c;
+                    cx.fillRect(-p.s/2, -p.s/2, p.s, p.s*.62); cx.restore();
+                }
+                parts = parts.filter(p => p.life > 0 && p.y < cc.height + 50);
+                craf = parts.length ? requestAnimationFrame(ccLoop) : null;
+            }
+        })();
 
         function resetFoto() {
             selFile = null;

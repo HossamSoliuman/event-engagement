@@ -65,6 +65,12 @@
         @if($event->module_membership)
         <a href="{{ route('moderator.membership.index', $event) }}" class="btn btn-secondary">Members</a>
         @endif
+        @if($event->module_quiz)
+        <a href="{{ route('moderator.quiz.index', $event) }}" class="btn btn-secondary">Quiz</a>
+        @endif
+        @if($event->module_fanclash)
+        <a href="{{ route('moderator.fanclash.index', $event) }}" class="btn btn-secondary">Fan Clash</a>
+        @endif
     </div>
 </div>
 

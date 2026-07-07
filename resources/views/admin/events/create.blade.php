@@ -154,7 +154,7 @@
                         event name and a large QR code. Fill in the frame text and branding below — leave a field blank
                         to hide that piece.</p>
 
-                    @php $fc = isset($event) ? $event->frameConfig() : []; @endphp
+                    @php $fc = isset($event) ? $event->frameConfig() : (new \App\Models\Event)->frameConfig(); @endphp
                     <div class="form-row" style="margin-bottom:12px">
                         <div class="form-group mb-0">
                             <label class="form-label">Frame Colour</label>
@@ -228,7 +228,7 @@
                     <h3>Module Content</h3>
                 </div>
                 <div class="card-body">
-                    @foreach ([['fotobomb', '<i data-lucide="camera" class="lucide-icon"></i>', 'Foto Bomb'], ['lottery', '<i data-lucide="ticket" class="lucide-icon"></i>', 'Lottery'], ['voting', '<i data-lucide="trophy" class="lucide-icon"></i>', 'Voting'], ['membership', '<i data-lucide="star" class="lucide-icon"></i>', 'Membership'], ['quiz', '<i data-lucide="help-circle" class="lucide-icon"></i>', 'Quiz to Win']] as [$key, $ico, $def])
+                    @foreach ([['fotobomb', '<i data-lucide="camera" class="lucide-icon"></i>', 'Foto Bomb'], ['lottery', '<i data-lucide="ticket" class="lucide-icon"></i>', 'Lottery'], ['voting', '<i data-lucide="trophy" class="lucide-icon"></i>', 'Voting'], ['membership', '<i data-lucide="star" class="lucide-icon"></i>', 'Membership'], ['quiz', '<i data-lucide="help-circle" class="lucide-icon"></i>', 'Quiz to Win'], ['fanclash', '<i data-lucide="swords" class="lucide-icon"></i>', 'Fan Clash']] as [$key, $ico, $def])
                         <div
                             style="background:var(--dark);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:12px">
                             <div style="font-weight:700;font-size:13px;margin-bottom:10px">{!! $ico !!}
@@ -290,7 +290,7 @@
                 </div>
                 <div class="card-body" style="padding:0">
 
-                    @foreach ([['fotobomb', '<i data-lucide="camera" class="lucide-icon"></i>', 'Foto Bomb / Selfie Wall'], ['voting', '<i data-lucide="trophy" class="lucide-icon"></i>', 'Athlete of the Day / Voting'], ['lottery', '<i data-lucide="ticket" class="lucide-icon"></i>', 'Lottery / Tickets'], ['membership', '<i data-lucide="star" class="lucide-icon"></i>', 'Membership / Community'], ['quiz', '<i data-lucide="help-circle" class="lucide-icon"></i>', 'Quiz to Win']] as [$mod, $ico, $modLabel])
+                    @foreach ([['fotobomb', '<i data-lucide="camera" class="lucide-icon"></i>', 'Foto Bomb / Selfie Wall'], ['voting', '<i data-lucide="trophy" class="lucide-icon"></i>', 'Athlete of the Day / Voting'], ['lottery', '<i data-lucide="ticket" class="lucide-icon"></i>', 'Lottery / Tickets'], ['membership', '<i data-lucide="star" class="lucide-icon"></i>', 'Membership / Community'], ['quiz', '<i data-lucide="help-circle" class="lucide-icon"></i>', 'Quiz to Win'], ['fanclash', '<i data-lucide="swords" class="lucide-icon"></i>', 'Fan Clash']] as [$mod, $ico, $modLabel])
                         @php $tc = isset($event) ? $event->tileConfig($mod) : []; @endphp
                         <div style="border-bottom:1px solid var(--border);padding:18px 20px">
                             <div style="font-weight:700;font-size:14px;margin-bottom:14px">{!! $ico !!}

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\EventController;
 use App\Http\Controllers\Admin\EventModeratorController;
+use App\Http\Controllers\Admin\FanClashController as FanClashAdminController;
 use App\Http\Controllers\Admin\FotoModerationController;
 use App\Http\Controllers\Admin\LotteryAdminController;
 use App\Http\Controllers\Admin\MembershipAdminController;
@@ -15,12 +16,14 @@ use App\Http\Controllers\Api\MobileApiController;
 use App\Http\Controllers\ArtisanController;
 use App\Http\Controllers\Auth\AdminAuthController;
 use App\Http\Controllers\Guest\EventPageController;
+use App\Http\Controllers\Guest\FanClashController as GuestFanClashController;
 use App\Http\Controllers\Guest\FotoBombController;
 use App\Http\Controllers\Guest\LotteryController;
 use App\Http\Controllers\Guest\MembershipController;
 use App\Http\Controllers\Guest\QuizController as GuestQuizController;
 use App\Http\Controllers\Guest\VoteController;
 use App\Http\Controllers\Moderator\DashboardController as ModeratorDashboardController;
+use App\Http\Controllers\Moderator\FanClashController as ModeratorFanClashController;
 use App\Http\Controllers\Moderator\FotoModerationController as ModeratorFotoController;
 use App\Http\Controllers\Moderator\LotteryController as ModeratorLotteryController;
 use App\Http\Controllers\Moderator\MembershipController as ModeratorMembershipController;
@@ -38,9 +41,12 @@ Route::post('/e/{slug}/membership', [MembershipController::class, 'signup'])->na
 Route::get('/e/{slug}/quiz/status', [GuestQuizController::class, 'status'])->name('quiz.guest.status');
 Route::get('/e/{slug}/quiz/results', [GuestQuizController::class, 'results'])->name('quiz.guest.results');
 Route::post('/e/{slug}/quiz/answer', [GuestQuizController::class, 'answer'])->name('quiz.guest.answer');
+Route::get('/e/{slug}/clash/status', [GuestFanClashController::class, 'status'])->name('fanclash.guest.status');
+Route::post('/e/{slug}/clash/tap', [GuestFanClashController::class, 'tap'])->name('fanclash.guest.tap');
 
 Route::get('/screen/{slug}', [VidiwallController::class, 'show'])->name('vidiwall.show');
 Route::get('/screen/{slug}/feed', [VidiwallController::class, 'feed'])->name('vidiwall.feed');
+Route::get('/screen/{slug}/clash/feed', [VidiwallController::class, 'clashFeed'])->name('vidiwall.clash.feed');
 
 Route::get('login', [AdminAuthController::class, 'showLogin'])->name('login');
 
@@ -99,6 +105,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('events/{event}/quiz/{round}/leaderboard', [QuizAdminController::class, 'leaderboard'])->name('quiz.leaderboard');
         Route::post('quiz/rounds/{round}/reset', [QuizAdminController::class, 'resetRound'])->name('quiz.rounds.reset');
         Route::get('events/{event}/quiz/export', [QuizAdminController::class, 'export'])->name('quiz.export');
+
+        Route::get('events/{event}/fanclash', [FanClashAdminController::class, 'index'])->name('fanclash.index');
+        Route::post('events/{event}/fanclash/matchups', [FanClashAdminController::class, 'storeMatchup'])->name('fanclash.matchups.store');
+        Route::put('fanclash/matchups/{matchup}', [FanClashAdminController::class, 'updateMatchup'])->name('fanclash.matchups.update');
+        Route::delete('fanclash/matchups/{matchup}', [FanClashAdminController::class, 'destroyMatchup'])->name('fanclash.matchups.destroy');
+        Route::post('events/{event}/fanclash/start', [FanClashAdminController::class, 'startRound'])->name('fanclash.start');
+        Route::post('events/{event}/fanclash/end', [FanClashAdminController::class, 'endRound'])->name('fanclash.end');
+        Route::post('fanclash/rounds/{round}/reset', [FanClashAdminController::class, 'resetRound'])->name('fanclash.rounds.reset');
+        Route::get('events/{event}/fanclash/export', [FanClashAdminController::class, 'export'])->name('fanclash.export');
 
         Route::get('events/{event}/moderators', [EventModeratorController::class, 'index'])->name('events.moderators');
         Route::post('events/{event}/moderators', [EventModeratorController::class, 'store'])->name('events.moderators.store');
@@ -161,4 +176,13 @@ Route::prefix('moderator')->name('moderator.')->middleware(['auth', 'event.moder
     Route::get('{event}/quiz/{round}/leaderboard', [ModeratorQuizController::class, 'leaderboard'])->name('quiz.leaderboard');
     Route::post('{event}/quiz/rounds/{round}/reset', [ModeratorQuizController::class, 'resetRound'])->name('quiz.rounds.reset');
     Route::get('{event}/quiz/export', [ModeratorQuizController::class, 'export'])->name('quiz.export');
+
+    Route::get('{event}/fanclash', [ModeratorFanClashController::class, 'index'])->name('fanclash.index');
+    Route::post('{event}/fanclash/matchups', [ModeratorFanClashController::class, 'storeMatchup'])->name('fanclash.matchups.store');
+    Route::put('{event}/fanclash/matchups/{matchup}', [ModeratorFanClashController::class, 'updateMatchup'])->name('fanclash.matchups.update');
+    Route::delete('{event}/fanclash/matchups/{matchup}', [ModeratorFanClashController::class, 'destroyMatchup'])->name('fanclash.matchups.destroy');
+    Route::post('{event}/fanclash/start', [ModeratorFanClashController::class, 'startRound'])->name('fanclash.start');
+    Route::post('{event}/fanclash/end', [ModeratorFanClashController::class, 'endRound'])->name('fanclash.end');
+    Route::post('{event}/fanclash/rounds/{round}/reset', [ModeratorFanClashController::class, 'resetRound'])->name('fanclash.rounds.reset');
+    Route::get('{event}/fanclash/export', [ModeratorFanClashController::class, 'export'])->name('fanclash.export');
 });
