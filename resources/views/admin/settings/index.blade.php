@@ -1,6 +1,8 @@
 @extends('layouts.admin')
 @section('title', 'Settings')
-@section('page-title', '<i data-lucide="settings" class="lucide-icon"></i> Settings')
+@section('page-title')
+    <i data-lucide="settings" class="lucide-icon"></i> Settings
+@endsection
 
 @section('content')
     <div style="max-width:560px">

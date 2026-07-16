@@ -1,6 +1,8 @@
 @extends('layouts.moderator')
 @section('title', 'Quiz to Win — ' . $event->name)
-@section('page-title', '<i data-lucide="help-circle" class="lucide-icon"></i> Quiz to Win')
+@section('page-title')
+    <i data-lucide="help-circle" class="lucide-icon"></i> Quiz to Win
+@endsection
 
 @section('topbar-actions')
     <a href="{{ route('moderator.quiz.export', $event) }}" class="btn btn-ghost btn-sm"><i data-lucide="download" class="lucide-icon"></i> CSV</a>

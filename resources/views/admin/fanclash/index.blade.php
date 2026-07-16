@@ -1,6 +1,8 @@
 @extends('layouts.admin')
 @section('title', 'Fan Clash — ' . $event->name)
-@section('page-title', '<i data-lucide="swords" class="lucide-icon"></i> Fan Clash')
+@section('page-title')
+    <i data-lucide="swords" class="lucide-icon"></i> Fan Clash
+@endsection
 
 @section('topbar-actions')
     <a href="{{ route('admin.fanclash.export', $event) }}" class="btn btn-ghost btn-sm"><i data-lucide="download" class="lucide-icon"></i> CSV</a>

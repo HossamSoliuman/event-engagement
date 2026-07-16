@@ -1,6 +1,8 @@
 @extends('layouts.admin')
 @section('title','Voting — '.$event->name)
-@section('page-title','<i data-lucide="trophy" class="lucide-icon"></i> Voting Results')
+@section('page-title')
+    <i data-lucide="trophy" class="lucide-icon"></i> Voting Results
+@endsection
 
 @section('topbar-actions')
     <a href="{{ route('admin.voting.export',$event) }}" class="btn btn-ghost btn-sm"><i data-lucide="download" class="lucide-icon"></i> CSV</a>

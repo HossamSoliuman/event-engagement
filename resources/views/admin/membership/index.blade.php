@@ -1,6 +1,8 @@
 @extends('layouts.admin')
 @section('title', 'Members — ' . $event->name)
-@section('page-title', '<i data-lucide="star" class="lucide-icon"></i> Members')
+@section('page-title')
+    <i data-lucide="star" class="lucide-icon"></i> Members
+@endsection
 
 @section('topbar-actions')
     <a href="{{ route('admin.membership.export', $event) }}" class="btn btn-ghost btn-sm"><i data-lucide="download" class="lucide-icon"></i> CSV</a>

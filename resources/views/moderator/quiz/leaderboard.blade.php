@@ -1,6 +1,8 @@
 @extends('layouts.moderator')
 @section('title', 'Quiz Leaderboard — Round #' . $round->id)
-@section('page-title', '<i data-lucide="trophy" class="lucide-icon"></i> Quiz Leaderboard — Round #' . $round->id)
+@section('page-title')
+    <i data-lucide="trophy" class="lucide-icon"></i> Quiz Leaderboard — Round #{{ $round->id }}
+@endsection
 
 @section('topbar-actions')
     <a href="{{ route('moderator.quiz.index', $event) }}" class="btn btn-secondary btn-sm"><i data-lucide="arrow-left" class="lucide-icon"></i> Quiz</a>

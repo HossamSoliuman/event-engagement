@@ -1,6 +1,8 @@
 @extends('layouts.admin')
 @section('title', 'Lottery — ' . $event->name)
-@section('page-title', '<i data-lucide="ticket" class="lucide-icon"></i> Lottery')
+@section('page-title')
+    <i data-lucide="ticket" class="lucide-icon"></i> Lottery
+@endsection
 
 @section('topbar-actions')
     <a href="{{ route('admin.lottery.export', $event) }}" class="btn btn-ghost btn-sm"><i data-lucide="download" class="lucide-icon"></i> CSV</a>
