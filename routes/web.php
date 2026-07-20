@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\EventModeratorController;
 use App\Http\Controllers\Admin\FanClashController as FanClashAdminController;
 use App\Http\Controllers\Admin\FotoModerationController;
 use App\Http\Controllers\Admin\LotteryAdminController;
+use App\Http\Controllers\Admin\MediaDownloadController;
 use App\Http\Controllers\Admin\MembershipAdminController;
 use App\Http\Controllers\Admin\QuizAdminController;
 use App\Http\Controllers\Admin\SettingsController;
@@ -67,6 +68,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::middleware(['auth', 'admin'])->group(function () {
         Route::get('/artisan', ArtisanController::class);
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('media-downloads', [MediaDownloadController::class, 'index'])->name('media-downloads.index');
+        Route::post('media-downloads', [MediaDownloadController::class, 'download'])->name('media-downloads.download');
 
         Route::resource('events', EventController::class);
         Route::post('events/{event}/generate-qr', [EventController::class, 'generateQr'])->name('events.generate-qr');
