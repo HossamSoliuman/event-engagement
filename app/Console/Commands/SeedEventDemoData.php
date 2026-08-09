@@ -297,7 +297,7 @@ class SeedEventDemoData extends Command
             'name' => fake()->name(),
             'phone' => '+43 6'.fake()->numerify('## ### ####'),
             'email' => fake()->safeEmail(),
-            'entry_token' => Str::random(40),
+            'entry_token' => Str::random(32),
             'created_at' => $at,
             'updated_at' => $at,
         ]);
