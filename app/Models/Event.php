@@ -128,6 +128,11 @@ class Event extends Model
         return $this->hasMany(EventSession::class);
     }
 
+    public function pageViews(): HasMany
+    {
+        return $this->hasMany(EventPageView::class);
+    }
+
     public function moderators()
     {
         return $this->belongsToMany(User::class, 'event_moderators')->withTimestamps();
@@ -171,6 +176,11 @@ class Event extends Model
     public function fanClashRounds(): HasMany
     {
         return $this->hasMany(FanClashRound::class);
+    }
+
+    public function fanClashParticipants(): HasMany
+    {
+        return $this->hasMany(FanClashParticipant::class);
     }
 
     public function activeFanClashRound(): ?FanClashRound

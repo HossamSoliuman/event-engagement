@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Guest;
 
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\TrackPageView;
 use App\Models\ActivityLog;
 use App\Models\Event;
 use App\Models\Vote;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class VoteController extends Controller
 {
@@ -18,7 +20,7 @@ class VoteController extends Controller
         }
         $request->validate(['candidate' => 'required|string|max:255']);
         $options = collect($event->voting_options ?? [])->pluck('name')->toArray();
-        if (!in_array($request->candidate, $options)) {
+        if (! in_array($request->candidate, $options)) {
             return response()->json(['success' => false, 'message' => 'Invalid candidate.'], 422);
         }
         $sessionKey = "voted_{$event->id}";
@@ -26,15 +28,16 @@ class VoteController extends Controller
             return response()->json(['success' => false, 'message' => 'You have already voted!'], 422);
         }
         Vote::create([
-            'event_id'       => $event->id,
+            'event_id' => $event->id,
+            'visitor_id' => $request->cookie(TrackPageView::COOKIE),
             'candidate_name' => $request->candidate,
-            'candidate_slug' => \Illuminate\Support\Str::slug($request->candidate),
-            'voter_session'  => session()->getId(),
-            'voter_ip'       => $request->ip(),
+            'candidate_slug' => Str::slug($request->candidate),
+            'voter_session' => session()->getId(),
+            'voter_ip' => $request->ip(),
         ]);
 
         session()->put($sessionKey, true);
-        
+
         ActivityLog::record('vote.cast', ['candidate' => $request->candidate], $event->id);
         $tallies = Vote::where('event_id', $event->id)
             ->selectRaw('candidate_name, COUNT(*) as total')

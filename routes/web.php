@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\MediaDownloadController;
 use App\Http\Controllers\Admin\MembershipAdminController;
 use App\Http\Controllers\Admin\QuizAdminController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\StatisticsController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\VidiwallController;
 use App\Http\Controllers\Admin\VotingAdminController;
@@ -29,11 +30,12 @@ use App\Http\Controllers\Moderator\FotoModerationController as ModeratorFotoCont
 use App\Http\Controllers\Moderator\LotteryController as ModeratorLotteryController;
 use App\Http\Controllers\Moderator\MembershipController as ModeratorMembershipController;
 use App\Http\Controllers\Moderator\QuizController as ModeratorQuizController;
+use App\Http\Controllers\Moderator\StatisticsController as ModeratorStatisticsController;
 use App\Http\Controllers\Moderator\VotingController as ModeratorVotingController;
 use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/e/{slug}', [EventPageController::class, 'index'])->name('event.landing');
+Route::get('/e/{slug}', [EventPageController::class, 'index'])->middleware('track.view:landing')->name('event.landing');
 Route::post('/e/{slug}/session', [EventPageController::class, 'startSession'])->name('event.session.start');
 Route::post('/e/{slug}/foto/upload', [FotoBombController::class, 'upload'])->name('fotobomb.upload');
 Route::post('/e/{slug}/vote', [VoteController::class, 'store'])->name('vote.store');
@@ -45,7 +47,7 @@ Route::post('/e/{slug}/quiz/answer', [GuestQuizController::class, 'answer'])->na
 Route::get('/e/{slug}/clash/status', [GuestFanClashController::class, 'status'])->name('fanclash.guest.status');
 Route::post('/e/{slug}/clash/tap', [GuestFanClashController::class, 'tap'])->name('fanclash.guest.tap');
 
-Route::get('/screen/{slug}', [VidiwallController::class, 'show'])->name('vidiwall.show');
+Route::get('/screen/{slug}', [VidiwallController::class, 'show'])->middleware('track.view:vidiwall')->name('vidiwall.show');
 Route::get('/screen/{slug}/feed', [VidiwallController::class, 'feed'])->name('vidiwall.feed');
 Route::get('/screen/{slug}/clash/feed', [VidiwallController::class, 'clashFeed'])->name('vidiwall.clash.feed');
 
@@ -118,6 +120,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('fanclash/rounds/{round}/reset', [FanClashAdminController::class, 'resetRound'])->name('fanclash.rounds.reset');
         Route::get('events/{event}/fanclash/export', [FanClashAdminController::class, 'export'])->name('fanclash.export');
 
+        Route::get('events/{event}/statistics', [StatisticsController::class, 'index'])->name('statistics.index');
+        Route::get('events/{event}/statistics/report', [StatisticsController::class, 'report'])->name('statistics.report');
+
         Route::get('events/{event}/moderators', [EventModeratorController::class, 'index'])->name('events.moderators');
         Route::post('events/{event}/moderators', [EventModeratorController::class, 'store'])->name('events.moderators.store');
         Route::delete('events/{event}/moderators/{user}', [EventModeratorController::class, 'destroy'])->name('events.moderators.destroy');
@@ -143,6 +148,9 @@ Route::get('/', fn () => redirect()->route('admin.dashboard'));
 
 Route::prefix('moderator')->name('moderator.')->middleware(['auth', 'event.moderator'])->group(function () {
     Route::get('{event}', [ModeratorDashboardController::class, 'index'])->name('dashboard');
+
+    Route::get('{event}/statistics', [ModeratorStatisticsController::class, 'index'])->name('statistics.index');
+    Route::get('{event}/statistics/report', [ModeratorStatisticsController::class, 'report'])->name('statistics.report');
 
     Route::get('{event}/fotos', [ModeratorFotoController::class, 'index'])->name('fotos.index');
     Route::post('{event}/fotos/{foto}/approve', [ModeratorFotoController::class, 'approve'])->name('fotos.approve');

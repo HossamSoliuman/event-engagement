@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Guest;
 
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\TrackPageView;
 use App\Models\Event;
 use App\Models\FanClashParticipant;
 use App\Models\FanClashRound;
@@ -93,6 +94,7 @@ class FanClashController extends Controller
 
         if (! $participant->exists) {
             $participant->event_id = $event->id;
+            $participant->visitor_id = $request->cookie(TrackPageView::COOKIE);
             $participant->side = $data['side'];
             $participant->taps = 0;
         }

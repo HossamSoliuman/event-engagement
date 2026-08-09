@@ -1207,6 +1207,10 @@
                     class="nav-item {{ request()->routeIs('admin.membership*') ? 'active' : '' }}">
                     <i class="ni-icon"><i data-lucide="star" class="lucide-icon"></i></i> Members
                 </a>
+                <a href="{{ route('admin.statistics.index', $activeEvent) }}"
+                    class="nav-item {{ request()->routeIs('admin.statistics*') ? 'active' : '' }}">
+                    <i class="ni-icon"><i data-lucide="bar-chart-3" class="lucide-icon"></i></i> Statistics
+                </a>
 
                 <div class="sb-label">Screens</div>
                 <a href="{{ route('vidiwall.show', $activeEvent->slug) }}" target="_blank" class="nav-item">

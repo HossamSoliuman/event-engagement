@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Guest;
 
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\TrackPageView;
 use App\Models\Event;
 use App\Models\QuizAnswer;
 use Illuminate\Http\JsonResponse;
@@ -87,6 +88,7 @@ class QuizController extends Controller
             'quiz_round_id' => $round->id,
             'quiz_question_id' => $data['quiz_question_id'],
             'event_id' => $event->id,
+            'visitor_id' => $request->cookie(TrackPageView::COOKIE),
             'session_token' => $data['session_token'],
             'guest_name' => $data['guest_name'],
             'selected_option' => $data['selected_option'],

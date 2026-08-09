@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Guest;
 
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\TrackPageView;
 use App\Models\ActivityLog;
 use App\Models\Event;
 use App\Models\FotoUpload;
@@ -17,10 +18,10 @@ class FotoBombController extends Controller
         $event = Event::where('slug', $slug)->where('is_active', true)->where('module_fotobomb', true)->firstOrFail();
 
         $request->validate([
-            'photo'          => 'required_without:video|image|mimes:jpeg,png,jpg,webp|max:10240',
-            'video'          => 'required_without:photo|mimetypes:video/mp4,video/webm,video/quicktime|max:25600',
+            'photo' => 'required_without:video|image|mimes:jpeg,png,jpg,webp|max:10240',
+            'video' => 'required_without:photo|mimetypes:video/mp4,video/webm,video/quicktime|max:25600',
             'video_duration' => 'required_with:video|numeric|min:0.1|max:10',
-            'uploader_name'  => 'nullable|string|max:100',
+            'uploader_name' => 'nullable|string|max:100',
             'uploader_phone' => 'nullable|string|max:30',
         ]);
 
@@ -31,18 +32,19 @@ class FotoBombController extends Controller
             $videoPath = $videoFile->store($directory, 'public');
 
             $foto = FotoUpload::create([
-                'event_id'         => $event->id,
-                'file_path'        => $videoPath,
-                'video_path'       => $videoPath,
-                'media_type'       => 'video',
-                'video_duration'   => $request->input('video_duration'),
-                'original_filename'=> $videoFile->getClientOriginalName(),
-                'file_size'        => $videoFile->getSize(),
-                'mime_type'        => $videoFile->getMimeType(),
-                'uploader_name'    => $request->input('uploader_name'),
-                'uploader_phone'   => $request->input('uploader_phone'),
+                'event_id' => $event->id,
+                'visitor_id' => $request->cookie(TrackPageView::COOKIE),
+                'file_path' => $videoPath,
+                'video_path' => $videoPath,
+                'media_type' => 'video',
+                'video_duration' => $request->input('video_duration'),
+                'original_filename' => $videoFile->getClientOriginalName(),
+                'file_size' => $videoFile->getSize(),
+                'mime_type' => $videoFile->getMimeType(),
+                'uploader_name' => $request->input('uploader_name'),
+                'uploader_phone' => $request->input('uploader_phone'),
                 'uploader_session' => $request->cookie("eb_session_{$event->id}"),
-                'status'           => 'pending',
+                'status' => 'pending',
             ]);
 
             ActivityLog::record('foto.uploaded', ['uploader' => $foto->uploader_name, 'type' => 'video'], $event->id);
@@ -50,29 +52,30 @@ class FotoBombController extends Controller
             return response()->json(['success' => true, 'message' => 'Video submitted! Watch the big screen.', 'foto_id' => $foto->id]);
         }
 
-        $file      = $request->file('photo');
-        $path      = $file->store($directory, 'public');
+        $file = $request->file('photo');
+        $path = $file->store($directory, 'public');
         $thumbPath = null;
 
         try {
             $thumb = Image::make(Storage::disk('public')->path($path))
                 ->fit(500, 500)->encode('jpg', 80);
-            $thumbPath = $directory . '/thumb_' . basename($path);
+            $thumbPath = $directory.'/thumb_'.basename($path);
             Storage::disk('public')->put($thumbPath, $thumb);
-        } catch (\Exception $e) {}
+        } catch (\Exception $e) {
+        }
 
         $foto = FotoUpload::create([
-            'event_id'         => $event->id,
-            'file_path'        => $path,
-            'thumbnail_path'   => $thumbPath,
-            'media_type'       => 'photo',
-            'original_filename'=> $file->getClientOriginalName(),
-            'file_size'        => $file->getSize(),
-            'mime_type'        => $file->getMimeType(),
-            'uploader_name'    => $request->input('uploader_name'),
-            'uploader_phone'   => $request->input('uploader_phone'),
+            'event_id' => $event->id,
+            'file_path' => $path,
+            'thumbnail_path' => $thumbPath,
+            'media_type' => 'photo',
+            'original_filename' => $file->getClientOriginalName(),
+            'file_size' => $file->getSize(),
+            'mime_type' => $file->getMimeType(),
+            'uploader_name' => $request->input('uploader_name'),
+            'uploader_phone' => $request->input('uploader_phone'),
             'uploader_session' => $request->cookie("eb_session_{$event->id}"),
-            'status'           => 'pending',
+            'status' => 'pending',
         ]);
 
         ActivityLog::record('foto.uploaded', ['uploader' => $foto->uploader_name, 'type' => 'photo'], $event->id);

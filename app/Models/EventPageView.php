@@ -2,28 +2,28 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class FanClashParticipant extends Model
+class EventPageView extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
-        'fan_clash_round_id',
         'event_id',
         'visitor_id',
-        'session_token',
-        'side',
-        'taps',
+        'page_type',
+        'device_type',
+        'os',
+        'browser',
+        'referrer',
+        'is_first_visit',
     ];
 
     protected $casts = [
-        'taps' => 'integer',
+        'is_first_visit' => 'boolean',
     ];
-
-    public function round(): BelongsTo
-    {
-        return $this->belongsTo(FanClashRound::class, 'fan_clash_round_id');
-    }
 
     public function event(): BelongsTo
     {

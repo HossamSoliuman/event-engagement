@@ -218,6 +218,10 @@
         </a>
         @endif
 
+        <a href="{{ route('moderator.statistics.index', $event) }}" class="nav-item {{ request()->routeIs('moderator.statistics*') ? 'active' : '' }}">
+            <i class="ni-icon"><i data-lucide="bar-chart-3" class="lucide-icon"></i></i> Statistics
+        </a>
+
         <div class="sb-label">Screens</div>
         <a href="{{ route('vidiwall.show', $event->slug) }}" target="_blank" class="nav-item">
             <i class="ni-icon"><i data-lucide="monitor-play" class="lucide-icon"></i></i> Vidiwall <i data-lucide="arrow-up-right" class="lucide-icon"></i>

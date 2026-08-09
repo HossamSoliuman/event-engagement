@@ -11,6 +11,7 @@ class QuizAnswer extends Model
         'quiz_round_id',
         'quiz_question_id',
         'event_id',
+        'visitor_id',
         'session_token',
         'guest_name',
         'selected_option',
@@ -20,10 +21,10 @@ class QuizAnswer extends Model
     ];
 
     protected $casts = [
-        'is_correct'      => 'boolean',
-        'answered_at'     => 'datetime',
+        'is_correct' => 'boolean',
+        'answered_at' => 'datetime',
         'selected_option' => 'integer',
-        'time_taken_ms'   => 'integer',
+        'time_taken_ms' => 'integer',
     ];
 
     public function round(): BelongsTo
