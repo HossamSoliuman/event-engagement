@@ -267,11 +267,12 @@
                             'label' => 'Logo size',
                             'value' => $tc['logo_size'],
                             'min' => 20,
-                            'max' => 100,
+                            'max' => 200,
                             'suffix' => '%',
                             'var' => '--cl-logo-scale',
                             'unit' => '%',
                             'scope' => $mod,
+                            'hint' => '100% ≈ half the button height. Push higher and the logo takes room from the text.',
                         ])
 
                         <div class="ld-ctl">

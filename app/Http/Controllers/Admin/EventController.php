@@ -255,7 +255,7 @@ class EventController extends Controller
                 'link_url' => $request->input("tile_{$mod}_link_url", $existing['link_url'] ?? ''),
                 'link_external' => $request->boolean("tile_{$mod}_link_external"),
                 'image_path' => $existing['image_path'] ?? null,
-                'logo_size' => $this->clamp($request->input("tile_{$mod}_logo_size", $existing['logo_size'] ?? 100), 20, 100),
+                'logo_size' => $this->clamp($request->input("tile_{$mod}_logo_size", $existing['logo_size'] ?? 100), 20, 200),
                 'logo_fit' => in_array($request->input("tile_{$mod}_logo_fit"), ['contain', 'cover'], true)
                     ? $request->input("tile_{$mod}_logo_fit")
                     : ($existing['logo_fit'] ?? 'contain'),

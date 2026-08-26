@@ -1022,8 +1022,10 @@ $fontH = $event->font_heading ?: 'Syne';
             transform: scale(.965)
         }
 
+        /* The logo size slider reserves a share of the card height (100% ≈ half the card),
+           so the artwork is never squeezed into whatever the label leaves over. */
         .cl-card-media {
-            flex: 1;
+            flex: 0 0 calc(var(--cl-logo-scale, 100%) * .48);
             min-height: 0;
             width: 100%;
             display: flex;
@@ -1037,8 +1039,6 @@ $fontH = $event->font_heading ?: 'Syne';
         .cl-card-media img {
             width: 100%;
             height: 100%;
-            max-width: var(--cl-logo-scale, 100%);
-            max-height: var(--cl-logo-scale, 100%);
             object-fit: var(--cl-fit, contain);
             border-radius: calc(var(--cl-radius, 18px) * .35);
             display: block;
@@ -1046,8 +1046,8 @@ $fontH = $event->font_heading ?: 'Syne';
         }
 
         .cl-card-media .lucide-icon {
-            width: calc(var(--cl-logo-scale, 100%) * .38);
-            height: calc(var(--cl-logo-scale, 100%) * .38);
+            width: 62%;
+            height: 100%;
             min-width: 22px;
             min-height: 22px;
             color: var(--cl-icon, var(--p));
@@ -1059,14 +1059,20 @@ $fontH = $event->font_heading ?: 'Syne';
             aspect-ratio: calc(var(--cl-card-ratio, var(--cl-ratio, 1.42)) * 2.1)
         }
 
+        /* The foot takes whatever the logo leaves. "safe center" keeps the text centred
+           when there is room but falls back to the top when it overflows, so a big logo
+           trims whole lines off the bottom instead of shaving both ends. */
         .cl-card-foot {
-            flex-shrink: 0;
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            justify-content: safe center;
             width: 100%;
-            padding: 9px var(--cl-media-pad, 14px) calc(var(--cl-media-pad, 14px) * .85)
+            padding: 7px var(--cl-media-pad, 14px) calc(var(--cl-media-pad, 14px) * .6)
         }
 
         .cl-card-rule {
