@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Event;
+use App\Models\SiteSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -61,6 +62,20 @@ class EventController extends Controller
     public function edit(Event $event)
     {
         return view('admin.events.edit', compact('event'));
+    }
+
+    /**
+     * Renders the real guest landing page for the admin "Landing Design" tab.
+     * Bypasses the is_active gate and page-view tracking so drafts can be styled.
+     */
+    public function preview(Event $event)
+    {
+        return view('guest.event', [
+            'event' => $event,
+            'guestSession' => null,
+            'privacyUrl' => SiteSetting::privacyPolicyUrl(),
+            'previewMode' => true,
+        ]);
     }
 
     public function update(Request $request, Event $event)
@@ -171,6 +186,7 @@ class EventController extends Controller
             'landing_wordmark' => 'nullable|string|max:60',
             'landing_hero_title' => 'nullable|string|max:255',
             'landing_hero_sub' => 'nullable|string|max:255',
+            'design' => 'nullable|array:'.implode(',', array_keys(Event::landingDesignDefaults())),
             'frame_top_text' => 'nullable|string|max:100',
             'frame_bottom_text' => 'nullable|string|max:100',
             'frame_side_text' => 'nullable|string|max:100',
@@ -224,8 +240,12 @@ class EventController extends Controller
         unset($data['frame_top_text'], $data['frame_bottom_text'], $data['frame_side_text'], $data['frame_color'], $data['frame_text_color'], $data['frame_logo']);
         $data['vidiwall_frame_config'] = $frame;
 
+        // Landing page design (sizes, spacing) — see the "Landing Design" admin tab
+        unset($data['design']);
+        $data['landing_design'] = $this->buildLandingDesign($request, $event);
+
         // Build per-tile configs
-        foreach (['fotobomb', 'voting', 'lottery', 'membership', 'quiz', 'fanclash'] as $mod) {
+        foreach (array_keys(Event::landingModules()) as $mod) {
             $field = "tile_{$mod}_config";
             $existing = (isset($event) ? ($event->$field ?? []) : []);
             $config = [
@@ -235,6 +255,15 @@ class EventController extends Controller
                 'link_url' => $request->input("tile_{$mod}_link_url", $existing['link_url'] ?? ''),
                 'link_external' => $request->boolean("tile_{$mod}_link_external"),
                 'image_path' => $existing['image_path'] ?? null,
+                'logo_size' => $this->clamp($request->input("tile_{$mod}_logo_size", $existing['logo_size'] ?? 100), 20, 100),
+                'logo_fit' => in_array($request->input("tile_{$mod}_logo_fit"), ['contain', 'cover'], true)
+                    ? $request->input("tile_{$mod}_logo_fit")
+                    : ($existing['logo_fit'] ?? 'contain'),
+                'media_padding' => $this->clamp($request->input("tile_{$mod}_media_padding", $existing['media_padding'] ?? 14), 0, 40),
+                'label_size' => $this->clamp($request->input("tile_{$mod}_label_size", $existing['label_size'] ?? 11), 7, 22),
+                'sublabel_size' => $this->clamp($request->input("tile_{$mod}_sublabel_size", $existing['sublabel_size'] ?? 9), 6, 18),
+                'text_color' => $this->hexOrEmpty($request->input("tile_{$mod}_text_color", $existing['text_color'] ?? '')),
+                'show_rule' => $request->boolean("tile_{$mod}_show_rule"),
             ];
             if ($request->hasFile("tile_{$mod}_image")) {
                 $config['image_path'] = $request->file("tile_{$mod}_image")->store("tiles/{$mod}", 'public');
@@ -275,6 +304,72 @@ class EventController extends Controller
         $data['membership_extra_fields'] = $memberFields ?: null;
 
         return $data;
+    }
+
+    /**
+     * Clamp a user supplied numeric design value so it can never break the layout.
+     */
+    private function clamp(mixed $value, float $min, float $max): float
+    {
+        $number = is_numeric($value) ? (float) $value : $min;
+
+        return round(max($min, min($max, $number)), 2);
+    }
+
+    /**
+     * Only let through valid hex colours — these values are echoed into inline CSS.
+     */
+    private function hexOrEmpty(mixed $value): string
+    {
+        $value = trim((string) $value);
+
+        return preg_match('/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $value) ? $value : '';
+    }
+
+    /**
+     * @return array<string, int|float|string|bool>
+     */
+    private function buildLandingDesign(Request $request, ?Event $event = null): array
+    {
+        $existing = isset($event) ? $event->landingDesign() : Event::landingDesignDefaults();
+        $input = $request->input('design', []);
+        if (! is_array($input)) {
+            $input = [];
+        }
+
+        // Checkboxes are absent from the payload when unticked, so only trust them
+        // when the design form was actually submitted.
+        $submitted = $request->has('design');
+        $flag = function (string $key) use ($input, $existing, $submitted): bool {
+            return $submitted ? ! empty($input[$key]) : (bool) ($existing[$key] ?? true);
+        };
+        $number = function (string $key, float $min, float $max) use ($input, $existing) {
+            return $this->clamp($input[$key] ?? ($existing[$key] ?? null), $min, $max);
+        };
+
+        return [
+            'logo_size' => $number('logo_size', 16, 160),
+            'logo_position' => in_array($input['logo_position'] ?? null, ['inline', 'stacked'], true)
+                ? $input['logo_position']
+                : ($existing['logo_position'] ?? 'inline'),
+            'wordmark_show' => $flag('wordmark_show'),
+            'wordmark_size' => $number('wordmark_size', 9, 40),
+            'wordmark_spacing' => $number('wordmark_spacing', 0, 60),
+            'hero_show' => $flag('hero_show'),
+            'hero_title_size' => $number('hero_title_size', 11, 40),
+            'hero_sub_size' => $number('hero_sub_size', 9, 28),
+            'card_gap' => $number('card_gap', 0, 40),
+            'card_radius' => $number('card_radius', 0, 40),
+            'card_ratio' => $number('card_ratio', 0.7, 2.4),
+            'card_columns' => $number('card_columns', 1, 3),
+            'page_padding' => $number('page_padding', 0, 48),
+            'section_spacing' => $number('section_spacing', 4, 60),
+            'hashtag_show' => $flag('hashtag_show'),
+            'hashtag_size' => $number('hashtag_size', 10, 48),
+            'footer_size' => $number('footer_size', 8, 18),
+            'watermark_opacity' => $number('watermark_opacity', 0, 40),
+            'card_shadow' => $number('card_shadow', 0, 60),
+        ];
     }
 
     private function parseVotingOptions(Request $request): string

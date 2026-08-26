@@ -5,6 +5,8 @@
 @push('styles')
     <style>
         .ev-form-wrap { max-width: 980px; }
+        /* The Landing Page designer needs room for the phone preview next to the controls */
+        .ev-form-wrap.is-wide { max-width: 1360px; }
 
         /* Tab bar */
         .ev-tabs { display:flex; gap:4px; flex-wrap:wrap; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:6px; margin-bottom:20px; position:sticky; top:12px; z-index:50 }
@@ -52,7 +54,7 @@
                     <i data-lucide="palette" class="lucide-icon"></i> Branding
                 </button>
                 <button type="button" class="ev-tab" data-tab="landing">
-                    <i data-lucide="sparkles" class="lucide-icon"></i> Landing &amp; Tiles
+                    <i data-lucide="smartphone" class="lucide-icon"></i> Landing Page
                 </button>
                 <button type="button" class="ev-tab" data-tab="vidiwall">
                     <i data-lucide="monitor-play" class="lucide-icon"></i> Vidiwall
@@ -205,130 +207,7 @@
                 </div>
             </div>
 
-            {{-- ── Panel: Landing & Tiles ────────────────────────────────────── --}}
-            <div class="ev-panel" data-panel="landing">
-                <div class="card mb-3">
-                    <div class="card-header">
-                        <h3><i data-lucide="sparkles" class="lucide-icon"></i> Landing Page</h3>
-                        <div class="text-muted text-xs">The text fans see when they scan the QR code. Leave any field blank
-                            to fall back to a sensible default.</div>
-                    </div>
-                    <div class="card-body">
-                        <div class="form-group">
-                            <label class="form-label">Experience Label</label>
-                            <input name="landing_wordmark" class="form-control"
-                                value="{{ old('landing_wordmark', $event->landing_wordmark ?? '') }}"
-                                placeholder="FAN EXPERIENCE">
-                            <div class="form-hint" style="margin-top:6px">Short wordmark shown next to the logo in the header.
-                                Leave blank for “FAN EXPERIENCE”.</div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group mb-0">
-                                <label class="form-label">Hero Headline</label>
-                                <input name="landing_hero_title" class="form-control"
-                                    value="{{ old('landing_hero_title', $event->landing_hero_title ?? '') }}"
-                                    placeholder="Deine **Fan Experience** startet hier.">
-                            </div>
-                            <div class="form-group mb-0">
-                                <label class="form-label">Hero Subline</label>
-                                <input name="landing_hero_sub" class="form-control"
-                                    value="{{ old('landing_hero_sub', $event->landing_hero_sub ?? '') }}"
-                                    placeholder="Sei Teil des Stadionentertainments!">
-                            </div>
-                        </div>
-                        <div class="form-hint" style="margin-top:8px">Leave blank to use the default text (with EN/DE
-                            translation). Wrap a phrase in <code>**asterisks**</code> to make it bold, e.g.
-                            <code>Deine **Fan Experience** startet hier.</code></div>
-                        <div class="form-group mb-0" style="margin-top:16px">
-                            <label class="form-label">Hashtag</label>
-                            <input name="vidiwall_overlay_text" class="form-control"
-                                value="{{ old('vidiwall_overlay_text', $event->vidiwall_overlay_text ?? '') }}"
-                                placeholder="#skiverrueckt">
-                            <div class="form-hint" style="margin-top:6px">Large hashtag shown at the bottom of the landing
-                                page. Leave blank to use the event name.</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card mb-3">
-                    <div class="card-header">
-                        <h3><i data-lucide="image" class="lucide-icon"></i> Tile Designer</h3>
-                        <div class="text-muted text-xs">Customise each of the landing page tiles. Upload a graphic, set a
-                            background colour, or turn a tile into an external link.</div>
-                    </div>
-                    <div class="card-body">
-                        <div class="ev-grid-2">
-                            @foreach ([['fotobomb', '<i data-lucide="camera" class="lucide-icon"></i>', 'Foto Bomb / Selfie Wall'], ['voting', '<i data-lucide="trophy" class="lucide-icon"></i>', 'Athlete of the Day / Voting'], ['lottery', '<i data-lucide="ticket" class="lucide-icon"></i>', 'Lottery / Tickets'], ['membership', '<i data-lucide="star" class="lucide-icon"></i>', 'Membership / Community'], ['quiz', '<i data-lucide="help-circle" class="lucide-icon"></i>', 'Quiz to Win'], ['fanclash', '<i data-lucide="swords" class="lucide-icon"></i>', 'Fan Clash']] as [$mod, $ico, $modLabel])
-                                @php $tc = isset($event) ? $event->tileConfig($mod) : []; @endphp
-                                <div class="ev-subcard">
-                                    <div class="ev-subcard-title">{!! $ico !!} {{ $modLabel }}</div>
-                                    <div class="form-group">
-                                        <label class="form-label">Tile Label (top small text)</label>
-                                        <input type="text" name="tile_{{ $mod }}_label" class="form-control"
-                                            placeholder="e.g. SELFIE WALL"
-                                            value="{{ old('tile_' . $mod . '_label', $tc['label'] ?? '') }}">
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">Tile Sublabel</label>
-                                        <input type="text" name="tile_{{ $mod }}_sublabel" class="form-control"
-                                            placeholder="e.g. Presented by UNIQA"
-                                            value="{{ old('tile_' . $mod . '_sublabel', $tc['sublabel'] ?? '') }}">
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">Background Colour (overrides default)</label>
-                                        <div style="display:flex;gap:8px;align-items:center">
-                                            <input type="color" value="{{ $tc['bg_color'] ?? '#1a1a3a' }}"
-                                                style="width:36px;height:36px;padding:2px;border-radius:6px;border:1px solid var(--border);background:var(--dark);cursor:pointer;flex-shrink:0"
-                                                oninput="document.getElementById('tile_{{ $mod }}_bg_color').value=this.value">
-                                            <input type="text" name="tile_{{ $mod }}_bg_color"
-                                                id="tile_{{ $mod }}_bg_color" class="form-control"
-                                                style="font-family:monospace;font-size:12px"
-                                                value="{{ old('tile_' . $mod . '_bg_color', $tc['bg_color'] ?? '') }}"
-                                                placeholder="e.g. #003b8e or blank for default">
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">External Link URL <span
-                                                style="color:var(--muted);font-weight:400">(optional — replaces
-                                                module)</span></label>
-                                        <input type="url" name="tile_{{ $mod }}_link_url" class="form-control"
-                                            placeholder="https://tickets.example.com"
-                                            value="{{ old('tile_' . $mod . '_link_url', $tc['link_url'] ?? '') }}">
-                                        <label class="form-check" style="margin-top:6px">
-                                            <input type="checkbox" name="tile_{{ $mod }}_link_external"
-                                                value="1" {{ $tc['link_external'] ?? false ? 'checked' : '' }}>
-                                            Open in new tab
-                                        </label>
-                                    </div>
-                                    <div class="form-group mb-0">
-                                        <label class="form-label">Tile Background Image / Graphic</label>
-                                        <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
-                                            @if (!empty($tc['image_path']))
-                                                <div style="position:relative;flex-shrink:0">
-                                                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($tc['image_path']) }}"
-                                                        style="width:72px;height:72px;object-fit:cover;border-radius:10px;border:1px solid var(--border)">
-                                                    <label
-                                                        style="position:absolute;top:-6px;right:-6px;background:var(--red);border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer">
-                                                        <input type="checkbox" name="tile_{{ $mod }}_clear_image"
-                                                            value="1" style="display:none"
-                                                            onchange="this.closest('label').style.opacity=this.checked?.4:1"> <i data-lucide="x" class="lucide-icon"></i>
-                                                    </label>
-                                                </div>
-                                            @endif
-                                            <div style="flex:1;min-width:140px">
-                                                <input type="file" name="tile_{{ $mod }}_image" class="form-control"
-                                                    accept="image/*">
-                                                <div class="form-hint">Recommended: 400×400px. PNG with transparency works
-                                                    great.</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
-            </div>
+            @include('admin.events._landing-design')
 
             {{-- ── Panel: Vidiwall ───────────────────────────────────────────── --}}
             <div class="ev-panel" data-panel="vidiwall">
@@ -586,6 +465,7 @@
             function activate(name) {
                 tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === name));
                 panels.forEach(p => p.classList.toggle('active', p.dataset.panel === name));
+                document.querySelector('.ev-form-wrap')?.classList.toggle('is-wide', name === 'landing');
             }
 
             tabs.forEach(tab => tab.addEventListener('click', () => {

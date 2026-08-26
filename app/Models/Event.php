@@ -58,6 +58,7 @@ class Event extends Model
         'landing_wordmark',
         'landing_hero_title',
         'landing_hero_sub',
+        'landing_design',
         'privacy_policy_text',
         'starts_at',
         'ends_at',
@@ -93,6 +94,7 @@ class Event extends Model
         'starts_at' => 'datetime',
         'ends_at' => 'datetime',
         'vidiwall_frame_config' => 'array',
+        'landing_design' => 'array',
         'tile_fotobomb_config' => 'array',
         'tile_voting_config' => 'array',
         'tile_lottery_config' => 'array',
@@ -291,23 +293,98 @@ class Event extends Model
         return $this->fotoUploads()->where('status', 'approved')->where('on_screen', true)->orderByDesc('displayed_at')->get();
     }
 
-    public function tileConfig(string $module): array
+    /**
+     * The landing page modules in the order they are rendered, with their fallback icon.
+     *
+     * @return array<string, string>
+     */
+    public static function landingModules(): array
     {
-        $field = "tile_{$module}_config";
-        $defaults = [
+        return [
+            'fotobomb' => 'camera',
+            'voting' => 'trophy',
+            'lottery' => 'ticket',
+            'membership' => 'crown',
+            'quiz' => 'brain',
+            'fanclash' => 'swords',
+        ];
+    }
+
+    /**
+     * Page-level styling knobs for the landing page, editable from the admin "Landing Design" tab.
+     *
+     * @return array<string, int|float|string|bool>
+     */
+    public static function landingDesignDefaults(): array
+    {
+        return [
+            'logo_size' => 46,
+            'logo_position' => 'inline',
+            'wordmark_show' => true,
+            'wordmark_size' => 17,
+            'wordmark_spacing' => 22,
+            'hero_title_size' => 18,
+            'hero_sub_size' => 13,
+            'hero_show' => true,
+            'card_gap' => 14,
+            'card_radius' => 18,
+            'card_ratio' => 1.42,
+            'card_columns' => 2,
+            'page_padding' => 18,
+            'section_spacing' => 22,
+            'hashtag_show' => true,
+            'hashtag_size' => 22,
+            'footer_size' => 11,
+            'watermark_opacity' => 5,
+            'card_shadow' => 30,
+        ];
+    }
+
+    /**
+     * @return array<string, int|float|string|bool>
+     */
+    public function landingDesign(): array
+    {
+        $config = $this->landing_design ?? [];
+        if (! is_array($config)) {
+            $config = [];
+        }
+
+        return array_merge(self::landingDesignDefaults(), $config);
+    }
+
+    /**
+     * @return array<string, int|float|string|bool|null>
+     */
+    public static function tileConfigDefaults(): array
+    {
+        return [
             'label' => '',
             'sublabel' => '',
             'bg_color' => '',
             'image_path' => null,
             'link_url' => '',
             'link_external' => false,
+            // Per-tile styling
+            'logo_size' => 100,
+            'logo_fit' => 'contain',
+            'media_padding' => 14,
+            'label_size' => 11,
+            'sublabel_size' => 9,
+            'text_color' => '',
+            'show_rule' => true,
         ];
+    }
+
+    public function tileConfig(string $module): array
+    {
+        $field = "tile_{$module}_config";
         $config = $this->$field ?? [];
         if (! is_array($config)) {
             $config = [];
         }
 
-        return array_merge($defaults, $config);
+        return array_merge(self::tileConfigDefaults(), $config);
     }
 
     public function getTileImageUrl(string $module): ?string

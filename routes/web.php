@@ -77,6 +77,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('events/{event}/generate-qr', [EventController::class, 'generateQr'])->name('events.generate-qr');
         Route::post('events/{event}/toggle-module', [EventController::class, 'toggleModule'])->name('events.toggle-module');
         Route::post('events/{event}/duplicate', [EventController::class, 'duplicate'])->name('events.duplicate');
+        Route::get('events/{event}/preview', [EventController::class, 'preview'])->name('events.preview');
         Route::get('events/{event}/fotos', [FotoModerationController::class, 'index'])->name('fotos.index');
         Route::post('fotos/{foto}/approve', [FotoModerationController::class, 'approve'])->name('fotos.approve');
         Route::post('fotos/{foto}/reject', [FotoModerationController::class, 'reject'])->name('fotos.reject');

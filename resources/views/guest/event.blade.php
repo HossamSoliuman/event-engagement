@@ -14,9 +14,29 @@ $fontH = $event->font_heading ?: 'Syne';
         href="https://fonts.googleapis.com/css2?family={{ urlencode($fontH) }}:wght@700;800&family={{ urlencode($fontB) }}:wght@300;400;500;600&display=swap"
         rel="stylesheet">
 
-    @php $lightBg = $event->hasLightBackground(); @endphp
+    @php
+        $lightBg = $event->hasLightBackground();
+        $ld = $event->landingDesign();
+    @endphp
     <style>
         :root {
+            /* ── Landing Design tokens (admin → Landing Design tab) ── */
+            --cl-logo-h: {{ $ld['logo_size'] }}px;
+            --cl-wordmark-size: {{ $ld['wordmark_size'] }}px;
+            --cl-wordmark-spacing: {{ $ld['wordmark_spacing'] / 100 }}em;
+            --cl-hero-size: {{ $ld['hero_title_size'] }}px;
+            --cl-hero-sub-size: {{ $ld['hero_sub_size'] }}px;
+            --cl-gap: {{ $ld['card_gap'] }}px;
+            --cl-radius: {{ $ld['card_radius'] }}px;
+            --cl-ratio: {{ $ld['card_ratio'] }};
+            --cl-cols: {{ (int) $ld['card_columns'] }};
+            --cl-pad: {{ $ld['page_padding'] }}px;
+            --cl-sp: {{ $ld['section_spacing'] }}px;
+            --cl-hashtag-size: {{ $ld['hashtag_size'] }}px;
+            --cl-footer-size: {{ $ld['footer_size'] }}px;
+            --cl-wm-opacity: {{ $ld['watermark_opacity'] / 100 }};
+            --cl-shadow: {{ $ld['card_shadow'] }}px;
+
             --p: {{ $event->primary_color }};
             --bg: {{ $event->secondary_color }};
             --acc: {{ $event->accent_color }};
@@ -38,6 +58,7 @@ $fontH = $event->font_heading ?: 'Syne';
             margin: 0;
             padding: 0
         }
+        [hidden] { display: none !important; }
         .lucide-icon { width: 1em; height: 1em; vertical-align: text-bottom; stroke-width: 2px; }
         .s-icon .lucide-icon, .uz-icon .lucide-icon, .cl-card-media .lucide-icon, .tile-icon .lucide-icon { stroke-width: 1.5px; }
         @keyframes ebspin { to { transform: rotate(360deg); } }
@@ -851,9 +872,11 @@ $fontH = $event->font_heading ?: 'Syne';
         /* ── Clean / Sponsor landing style ─────────────────────────── */
         #landing.landing-clean {
             position: relative;
-            --sp: clamp(18px, 4.6vw, 30px);
+            --sp: var(--cl-sp, 22px);
             background: var(--bg);
-            background-image: radial-gradient(ellipse at 50% -12%, color-mix(in srgb, var(--p) 16%, transparent) 0%, transparent 58%)
+            background-image:
+                radial-gradient(ellipse 120% 60% at 50% -10%, color-mix(in srgb, var(--p) 18%, transparent) 0%, transparent 62%),
+                radial-gradient(ellipse 90% 50% at 50% 110%, color-mix(in srgb, var(--acc) 9%, transparent) 0%, transparent 60%)
         }
 
         .cl-watermark {
@@ -869,7 +892,7 @@ $fontH = $event->font_heading ?: 'Syne';
             top: 5%;
             width: 92vw;
             max-width: 540px;
-            opacity: .045;
+            opacity: var(--cl-wm-opacity, .045);
             filter: brightness(0) invert(1);
             transform: rotate(-8deg)
         }
@@ -879,31 +902,43 @@ $fontH = $event->font_heading ?: 'Syne';
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 14px;
-            padding: max(env(safe-area-inset-top, 0px), 46px) 22px 0;
+            gap: calc(var(--cl-pad, 18px) * .8);
+            padding: max(env(safe-area-inset-top, 0px), 44px) var(--cl-pad, 18px) 0;
             flex-shrink: 0
         }
 
+        .cl-header.is-stacked {
+            flex-direction: column;
+            gap: 12px
+        }
+
+        .cl-header.is-stacked .cl-divider {
+            width: 42px;
+            height: 1px
+        }
+
         .cl-logo {
-            height: 42px;
+            height: var(--cl-logo-h, 46px);
             width: auto;
-            max-width: 38vw;
+            max-width: 70%;
             object-fit: contain;
             display: block
         }
 
         .cl-divider {
             width: 1px;
-            height: 30px;
-            background: rgba(255, 255, 255, .3);
+            height: calc(var(--cl-logo-h, 46px) * .62);
+            background: currentColor;
+            opacity: .28;
+            color: #fff;
             flex-shrink: 0
         }
 
         .cl-wordmark {
             font-family: var(--font-h);
-            font-size: clamp(14px, 4.4vw, 19px);
+            font-size: var(--cl-wordmark-size, 17px);
             font-weight: 800;
-            letter-spacing: .22em;
+            letter-spacing: var(--cl-wordmark-spacing, .22em);
             text-transform: uppercase;
             color: #fff;
             line-height: 1.3
@@ -916,15 +951,17 @@ $fontH = $event->font_heading ?: 'Syne';
             flex-direction: column;
             justify-content: center;
             text-align: center;
-            padding: var(--sp) 18px
+            padding: var(--sp) var(--cl-pad, 18px)
         }
 
         .cl-hero-title {
             font-family: var(--font-h);
-            font-weight: 600;
-            font-size: clamp(14px, 4vw, 18px);
-            line-height: 1.35;
-            color: #fff
+            font-weight: 500;
+            font-size: var(--cl-hero-size, 18px);
+            line-height: 1.4;
+            letter-spacing: -.01em;
+            color: #fff;
+            text-wrap: balance
         }
 
         .cl-hero-title strong {
@@ -932,10 +969,11 @@ $fontH = $event->font_heading ?: 'Syne';
         }
 
         .cl-hero-sub {
-            margin-top: 6px;
-            font-size: clamp(12px, 3.4vw, 14px);
-            line-height: 1.5;
-            color: var(--muted)
+            margin-top: 7px;
+            font-size: var(--cl-hero-sub-size, 13px);
+            line-height: 1.55;
+            color: var(--muted);
+            text-wrap: balance
         }
 
         .cl-hero-sub strong {
@@ -947,9 +985,9 @@ $fontH = $event->font_heading ?: 'Syne';
             position: relative;
             flex: 1;
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-            padding: var(--sp) 18px;
+            grid-template-columns: repeat(var(--cl-cols, 2), minmax(0, 1fr));
+            gap: var(--cl-gap, 14px);
+            padding: var(--sp) var(--cl-pad, 18px);
             align-content: center
         }
 
@@ -957,17 +995,27 @@ $fontH = $event->font_heading ?: 'Syne';
             position: relative;
             display: flex;
             flex-direction: column;
-            aspect-ratio: 1.42;
-            border-radius: 16px;
+            aspect-ratio: var(--cl-card-ratio, var(--cl-ratio, 1.42));
+            border-radius: var(--cl-radius, 18px);
             background: var(--cl-card-bg, #fff);
             color: var(--cl-card-ink, #101828);
-            box-shadow: 0 14px 34px rgba(0, 0, 0, .32);
+            box-shadow: 0 calc(var(--cl-shadow, 30px) * .45) var(--cl-shadow, 30px) calc(var(--cl-shadow, 30px) * -.4) rgba(0, 0, 0, .55);
             cursor: pointer;
             overflow: hidden;
             text-align: center;
             -webkit-tap-highlight-color: transparent;
             user-select: none;
-            transition: transform .18s ease
+            transition: transform .18s cubic-bezier(.22, 1, .36, 1), box-shadow .18s ease
+        }
+
+        .cl-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            border: 1px solid currentColor;
+            opacity: .09;
+            pointer-events: none
         }
 
         .cl-card:active {
@@ -981,25 +1029,34 @@ $fontH = $event->font_heading ?: 'Syne';
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden
+            overflow: hidden;
+            padding: var(--cl-media-pad, 14px);
+            padding-bottom: 0
         }
 
         .cl-card-media img {
             width: 100%;
             height: 100%;
-            object-fit: contain;
-            display: block
+            max-width: var(--cl-logo-scale, 100%);
+            max-height: var(--cl-logo-scale, 100%);
+            object-fit: var(--cl-fit, contain);
+            border-radius: calc(var(--cl-radius, 18px) * .35);
+            display: block;
+            margin: auto
         }
 
         .cl-card-media .lucide-icon {
-            width: 36px;
-            height: 36px;
-            color: var(--cl-icon, var(--p))
+            width: calc(var(--cl-logo-scale, 100%) * .38);
+            height: calc(var(--cl-logo-scale, 100%) * .38);
+            min-width: 22px;
+            min-height: 22px;
+            color: var(--cl-icon, var(--p));
+            opacity: .9
         }
 
         .cl-grid .cl-card:nth-child(odd):last-child {
             grid-column: 1 / -1;
-            aspect-ratio: 3
+            aspect-ratio: calc(var(--cl-card-ratio, var(--cl-ratio, 1.42)) * 2.1)
         }
 
         .cl-card-foot {
@@ -1007,34 +1064,38 @@ $fontH = $event->font_heading ?: 'Syne';
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             width: 100%;
-            padding: 10px 12px 12px
+            padding: 9px var(--cl-media-pad, 14px) calc(var(--cl-media-pad, 14px) * .85)
         }
 
         .cl-card-rule {
             width: 100%;
             height: 1px;
             background: currentColor;
-            opacity: .18;
+            opacity: .16;
             margin: 0 0 8px;
             flex-shrink: 0
         }
 
         .cl-card-label {
-            font-size: 10.5px;
+            font-size: var(--cl-label-size, 11px);
             font-weight: 700;
-            letter-spacing: .15em;
+            letter-spacing: .13em;
             text-transform: uppercase;
-            line-height: 1.35;
-            opacity: .85
+            line-height: 1.32;
+            opacity: .92;
+            text-wrap: balance
         }
 
         .cl-card-sub {
-            font-size: 9px;
-            letter-spacing: .08em;
+            font-size: var(--cl-sub-size, 9px);
+            font-weight: 500;
+            letter-spacing: .07em;
             text-transform: uppercase;
-            opacity: .5;
-            margin-top: 3px
+            opacity: .52;
+            margin-top: 4px;
+            line-height: 1.3
         }
 
         .cl-hashtag {
@@ -1046,16 +1107,17 @@ $fontH = $event->font_heading ?: 'Syne';
             text-align: center;
             font-family: var(--font-h);
             font-weight: 800;
-            font-size: clamp(19px, 5.6vw, 25px);
+            font-size: var(--cl-hashtag-size, 22px);
+            letter-spacing: -.01em;
             color: #fff;
-            padding: var(--sp) 20px
+            padding: var(--sp) var(--cl-pad, 18px)
         }
 
         .cl-footer {
             position: relative;
             text-align: center;
-            padding: var(--sp) 20px max(env(safe-area-inset-bottom, 14px), 18px);
-            font-size: 11px;
+            padding: var(--sp) var(--cl-pad, 18px) max(env(safe-area-inset-bottom, 14px), 18px);
+            font-size: var(--cl-footer-size, 11px);
             color: var(--muted);
             flex-shrink: 0
         }
@@ -1221,15 +1283,17 @@ $fontH = $event->font_heading ?: 'Syne';
                 <div class="cl-watermark" aria-hidden="true"><img src="{{ $event->logo_url }}" alt=""></div>
             @endif
 
-            <header class="cl-header">
+            <header class="cl-header {{ ($ld['logo_position'] ?? 'inline') === 'stacked' ? 'is-stacked' : '' }}">
                 @if ($event->logo_path)
                     <img src="{{ $event->logo_url }}" class="cl-logo" alt="{{ $event->name }}">
-                    <div class="cl-divider"></div>
+                    @if ($ld['wordmark_show'])
+                        <div class="cl-divider"></div>
+                    @endif
                 @endif
-                <div class="cl-wordmark">{{ $wordmark }}</div>
+                <div class="cl-wordmark" {{ $ld['wordmark_show'] ? '' : 'hidden' }}>{{ $wordmark }}</div>
             </header>
 
-            <div class="cl-hero">
+            <div class="cl-hero" {{ $ld['hero_show'] ? '' : 'hidden' }}>
                 <div class="cl-hero-title"
                     @unless ($heroTitle) data-html data-en="Your <strong>Fan Experience</strong> starts here." data-de="Deine <strong>Fan Experience</strong> startet hier." @endunless>
                     {!! $heroTitle ? $emphasize($heroTitle) : 'Your <strong>Fan Experience</strong> starts here.' !!}</div>
@@ -1239,7 +1303,7 @@ $fontH = $event->font_heading ?: 'Syne';
             </div>
 
             <div class="cl-grid">
-                @foreach ([['fotobomb', 'camera'], ['voting', 'trophy'], ['lottery', 'ticket'], ['membership', 'crown'], ['quiz', 'brain'], ['fanclash', 'swords']] as [$mod, $iconName])
+                @foreach (\App\Models\Event::landingModules() as $mod => $iconName)
                     @continue(!$event->{'module_' . $mod})
                     @php
                         $tc = $event->tileConfig($mod);
@@ -1252,35 +1316,43 @@ $fontH = $event->font_heading ?: 'Syne';
                             };
                         }
                         [$cardBg, $cardInkColor] = $cardInk($tc['bg_color'] ?? '');
+                        $ink = $tc['text_color'] ?: $cardInkColor;
                         $linkUrl = $tc['link_url'] ?? '';
                         $isLink = !empty($linkUrl);
                         $external = $tc['link_external'] ?? false;
                         $capsLabel = $tc['label'] ?: $event->{$mod . '_title'};
+                        $cardVars = implode(';', [
+                            '--cl-card-bg:' . $cardBg,
+                            '--cl-card-ink:' . $ink,
+                            '--cl-icon:' . (!empty($tc['bg_color']) || $tc['text_color'] ? $ink : 'var(--p)'),
+                            '--cl-logo-scale:' . $tc['logo_size'] . '%',
+                            '--cl-fit:' . $tc['logo_fit'],
+                            '--cl-media-pad:' . $tc['media_padding'] . 'px',
+                            '--cl-label-size:' . $tc['label_size'] . 'px',
+                            '--cl-sub-size:' . $tc['sublabel_size'] . 'px',
+                        ]);
                     @endphp
-                    <div class="cl-card"
-                        style="--cl-card-bg:{{ $cardBg }};--cl-card-ink:{{ $cardInkColor }}{{ !empty($tc['bg_color']) ? ';--cl-icon:' . $cardInkColor : '' }}"
+                    <div class="cl-card" data-mod="{{ $mod }}" style="{{ $cardVars }}"
                         onclick="{{ $isLink
                             ? "window.open('" . addslashes($linkUrl) . "','" . ($external ? '_blank' : '_self') . "')"
                             : "openModule('{$mod}')" }}">
                         <div class="cl-card-media">
-                            @if ($imgUrl)
-                                <img src="{{ $imgUrl }}" alt="">
-                            @else
-                                <i data-lucide="{{ $iconName }}" class="lucide-icon"></i>
-                            @endif
+                            <img src="{{ $imgUrl ?: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7' }}"
+                                alt="" {{ $imgUrl ? '' : 'hidden' }}>
+                            <i data-lucide="{{ $iconName }}" class="lucide-icon" {{ $imgUrl ? 'hidden' : '' }}></i>
                         </div>
                         <div class="cl-card-foot">
-                            <div class="cl-card-rule"></div>
+                            <div class="cl-card-rule" {{ $tc['show_rule'] ? '' : 'hidden' }}></div>
                             <div class="cl-card-label">{{ $capsLabel }}</div>
-                            @if (!empty($tc['sublabel']))
-                                <div class="cl-card-sub">{{ $tc['sublabel'] }}</div>
-                            @endif
+                            <div class="cl-card-sub" {{ empty($tc['sublabel']) ? 'hidden' : '' }}>{{ $tc['sublabel'] }}
+                            </div>
                         </div>
                     </div>
                 @endforeach
             </div>
 
-            <div class="cl-hashtag">{{ $event->vidiwall_overlay_text ?: $event->name }}</div>
+            <div class="cl-hashtag" {{ $ld['hashtag_show'] ? '' : 'hidden' }}>
+                {{ $event->vidiwall_overlay_text ?: $event->name }}</div>
             <div class="cl-footer">© {{ now()->year }} EventBomb
                 @if ($privacyUrl !== '#')
                     · <a href="{{ $privacyUrl }}" target="_blank" data-en="Privacy Policy"
@@ -2690,5 +2762,82 @@ $fontH = $event->font_heading ?: 'Syne';
 <script>
     lucide.createIcons();
 </script>
+
+{{-- ── Live design preview bridge (admin “Landing Design” tab) ─────────────── --}}
+@if ($previewMode ?? false)
+    <script>
+        (function () {
+            document.documentElement.dataset.preview = '1';
+
+            // Taps are disabled so the designer never navigates away from the landing page.
+            document.addEventListener('click', function (e) {
+                if (e.target.closest('.cl-card, .tile, .lang-toggle')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            }, true);
+
+            function applyVars(el, vars) {
+                if (!el || !vars) return;
+                for (const key in vars) {
+                    el.style.setProperty(key, vars[key]);
+                }
+            }
+
+            window.addEventListener('message', function (e) {
+                if (e.origin !== location.origin) return;
+                const d = e.data;
+                if (!d || d.__eb !== 'design') return;
+
+                applyVars(document.documentElement, d.root);
+
+                for (const mod in (d.tiles || {})) {
+                    applyVars(document.querySelector('.cl-card[data-mod="' + mod + '"]'), d.tiles[mod]);
+                }
+
+                for (const sel in (d.text || {})) {
+                    const el = document.querySelector(sel);
+                    if (el) el.textContent = d.text[sel];
+                }
+
+                for (const sel in (d.html || {})) {
+                    const el = document.querySelector(sel);
+                    if (el) el.innerHTML = d.html[sel];
+                }
+
+                for (const sel in (d.show || {})) {
+                    document.querySelectorAll(sel).forEach(el => el.hidden = !d.show[sel]);
+                }
+
+                for (const sel in (d.cls || {})) {
+                    const el = document.querySelector(sel);
+                    if (!el) continue;
+                    for (const name in d.cls[sel]) {
+                        el.classList.toggle(name, !!d.cls[sel][name]);
+                    }
+                }
+
+                for (const mod in (d.img || {})) {
+                    const card = document.querySelector('.cl-card[data-mod="' + mod + '"]');
+                    if (!card) continue;
+                    const img = card.querySelector('.cl-card-media img');
+                    const icon = card.querySelector('.cl-card-media .lucide-icon, .cl-card-media svg');
+                    if (!img) continue;
+                    if (d.img[mod]) {
+                        img.src = d.img[mod];
+                        img.hidden = false;
+                        if (icon) icon.hidden = true;
+                    } else if (icon) {
+                        img.hidden = true;
+                        icon.hidden = false;
+                    }
+                }
+            });
+
+            // Tell the admin page the preview is ready for its first snapshot.
+            (window.parent !== window) && window.parent.postMessage({ __eb: 'preview-ready' }, location.origin);
+        })();
+    </script>
+@endif
 </body>
 </html>
