@@ -36,6 +36,10 @@ $fontH = $event->font_heading ?: 'Syne';
             --cl-footer-size: {{ $ld['footer_size'] }}px;
             --cl-wm-opacity: {{ $ld['watermark_opacity'] / 100 }};
             --cl-shadow: {{ $ld['card_shadow'] }}px;
+            --cl-bg-size: {{ $ld['bg_fit'] }};
+            --cl-bg-pos: {{ $ld['bg_position'] }};
+            --cl-bg-overlay: {{ $ld['bg_overlay'] / 100 }};
+            --cl-bg-blur: {{ $ld['bg_blur'] }}px;
 
             --p: {{ $event->primary_color }};
             --bg: {{ $event->secondary_color }};
@@ -872,11 +876,44 @@ $fontH = $event->font_heading ?: 'Syne';
         /* ── Clean / Sponsor landing style ─────────────────────────── */
         #landing.landing-clean {
             position: relative;
+            isolation: isolate;
             --sp: var(--cl-sp, 22px);
             background: var(--bg);
             background-image:
                 radial-gradient(ellipse 120% 60% at 50% -10%, color-mix(in srgb, var(--p) 18%, transparent) 0%, transparent 62%),
                 radial-gradient(ellipse 90% 50% at 50% 110%, color-mix(in srgb, var(--acc) 9%, transparent) 0%, transparent 60%)
+        }
+
+        /* Photo backdrop: sits above the gradient shell, below every bit of content. */
+        .cl-bg {
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none
+        }
+
+        .cl-bg::before {
+            content: '';
+            position: absolute;
+            /* Grow past the edges so the blur never feathers into the page colour. */
+            inset: calc(var(--cl-bg-blur, 0px) * -2.5);
+            background-image: var(--cl-bg-img, none);
+            background-size: var(--cl-bg-size, cover);
+            background-position: var(--cl-bg-pos, center);
+            background-repeat: no-repeat;
+            filter: blur(var(--cl-bg-blur, 0px))
+        }
+
+        .cl-bg.is-tiled::before {
+            background-repeat: repeat
+        }
+
+        .cl-bg::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, var(--cl-bg-overlay, .45))
         }
 
         .cl-watermark {
@@ -1285,6 +1322,10 @@ $fontH = $event->font_heading ?: 'Syne';
     @endphp
     <div id="landing" @if ($isClean) class="landing-clean" @endif>
         @if ($isClean)
+            <div class="cl-bg{{ $ld['bg_fit'] === 'auto' ? ' is-tiled' : '' }}" aria-hidden="true"
+                @if ($event->background_image_path) style="--cl-bg-img:url('{{ $event->background_image_url }}')" @endif
+                @unless ($ld['bg_image_show']) hidden @endunless></div>
+
             @if ($event->logo_path)
                 <div class="cl-watermark" aria-hidden="true"><img src="{{ $event->logo_url }}" alt=""></div>
             @endif
@@ -2821,6 +2862,11 @@ $fontH = $event->font_heading ?: 'Syne';
                     for (const name in d.cls[sel]) {
                         el.classList.toggle(name, !!d.cls[sel][name]);
                     }
+                }
+
+                if (typeof d.bg === 'string') {
+                    const bg = document.querySelector('.cl-bg');
+                    if (bg) bg.style.setProperty('--cl-bg-img', d.bg ? 'url("' + d.bg + '")' : 'none');
                 }
 
                 for (const mod in (d.img || {})) {

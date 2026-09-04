@@ -215,6 +215,11 @@ class Event extends Model
         return $this->quiz_end_sponsor_logo_path ? Storage::disk('public')->url($this->quiz_end_sponsor_logo_path) : null;
     }
 
+    public function getBackgroundImageUrlAttribute(): ?string
+    {
+        return $this->background_image_path ? Storage::disk('public')->url($this->background_image_path) : null;
+    }
+
     public function generateQrCode(): string
     {
         $filename = "qrcodes/event-{$this->id}.svg";
@@ -337,6 +342,11 @@ class Event extends Model
             'footer_size' => 11,
             'watermark_opacity' => 5,
             'card_shadow' => 30,
+            'bg_image_show' => true,
+            'bg_fit' => 'cover',
+            'bg_position' => 'center',
+            'bg_overlay' => 45,
+            'bg_blur' => 0,
         ];
     }
 

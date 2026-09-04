@@ -12,6 +12,9 @@ use Illuminate\Support\Str;
 
 class EventController extends Controller
 {
+    /** Allowed `background-position` keywords for the landing background image. */
+    private const BACKGROUND_POSITIONS = ['center', 'top', 'bottom', 'left', 'right'];
+
     public function index()
     {
         $events = Event::withCount(['fotoUploads', 'lotteryEntries', 'votes', 'memberships'])->latest()->paginate(15);
@@ -103,6 +106,10 @@ class EventController extends Controller
 
         if ($event->sponsor_logo_path) {
             Storage::disk('public')->delete($event->sponsor_logo_path);
+        }
+
+        if ($event->background_image_path) {
+            Storage::disk('public')->delete($event->background_image_path);
         }
 
         $event->fotoUploads()->delete();
@@ -201,6 +208,7 @@ class EventController extends Controller
             'ends_at' => 'nullable|date',
             'logo' => 'nullable|image|max:2048',
             'sponsor_logo' => 'nullable|image|max:2048',
+            'background_image' => 'nullable|image|max:6144',
             // tile images
             'tile_fotobomb_image' => 'nullable|image|max:3072',
             'tile_voting_image' => 'nullable|image|max:3072',
@@ -218,6 +226,11 @@ class EventController extends Controller
         }
         if ($request->hasFile('sponsor_logo')) {
             $data['sponsor_logo_path'] = $request->file('sponsor_logo')->store('logos', 'public');
+        }
+        if ($request->hasFile('background_image')) {
+            $data['background_image_path'] = $request->file('background_image')->store('backgrounds', 'public');
+        } elseif ($request->input('clear_background_image')) {
+            $data['background_image_path'] = null;
         }
 
         // Vidiwall sponsor frame config
@@ -369,6 +382,15 @@ class EventController extends Controller
             'footer_size' => $number('footer_size', 8, 18),
             'watermark_opacity' => $number('watermark_opacity', 0, 40),
             'card_shadow' => $number('card_shadow', 0, 60),
+            'bg_image_show' => $flag('bg_image_show'),
+            'bg_fit' => in_array($input['bg_fit'] ?? null, ['cover', 'contain', 'auto'], true)
+                ? $input['bg_fit']
+                : ($existing['bg_fit'] ?? 'cover'),
+            'bg_position' => in_array($input['bg_position'] ?? null, self::BACKGROUND_POSITIONS, true)
+                ? $input['bg_position']
+                : ($existing['bg_position'] ?? 'center'),
+            'bg_overlay' => $number('bg_overlay', 0, 90),
+            'bg_blur' => $number('bg_blur', 0, 24),
         ];
     }
 

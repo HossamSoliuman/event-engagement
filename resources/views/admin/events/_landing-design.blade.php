@@ -91,9 +91,97 @@
                 </div>
             </details>
 
-            {{-- ── 2. Headline ──────────────────────────────────────────────── --}}
+            {{-- ── 2. Background ─────────────────────────────── --}}
             <details class="ld-sec">
-                <summary><span class="ld-num">2</span> Headline <i data-lucide="chevron-down"
+                <summary><span class="ld-num">2</span> Background <i data-lucide="chevron-down"
+                        class="lucide-icon ld-chev"></i></summary>
+                <div class="ld-sec-body">
+                    <div class="ld-ctl">
+                        <label class="ld-ctl-label"><span>Background image</span></label>
+                        <div class="ld-img-row">
+                            @if (!empty($event?->background_image_path))
+                                <div class="ld-thumb ld-thumb-wide">
+                                    <img src="{{ $event->background_image_url }}" alt="">
+                                    <label class="ld-thumb-x" title="Remove background image">
+                                        <input type="checkbox" name="clear_background_image" value="1" data-dbgclear>
+                                        <i data-lucide="x" class="lucide-icon"></i>
+                                    </label>
+                                </div>
+                            @endif
+                            <input type="file" name="background_image" class="form-control" accept="image/*" data-dbg>
+                        </div>
+                        <div class="ld-hint">A tall photo works best &mdash; around 1170&times;2532px (max 6&nbsp;MB).
+                            Leave it empty to keep the plain colour background.</div>
+                    </div>
+
+                    <label class="ld-switch">
+                        <input type="checkbox" name="design[bg_image_show]" value="1" @checked($ld['bg_image_show'])
+                            data-dshow=".cl-bg">
+                        <span>Show the background image</span>
+                    </label>
+
+                    <div class="ld-ctl">
+                        <label class="ld-ctl-label" for="design_bg_fit"><span>Image behaviour</span></label>
+                        <select class="form-control" id="design_bg_fit" name="design[bg_fit]" data-dvar="--cl-bg-size"
+                            data-dcls=".cl-bg|is-tiled|auto">
+                            <option value="cover" @selected(($ld['bg_fit'] ?? 'cover') === 'cover')>Fill the screen (crop)</option>
+                            <option value="contain" @selected(($ld['bg_fit'] ?? 'cover') === 'contain')>Show the whole image</option>
+                            <option value="auto" @selected(($ld['bg_fit'] ?? 'cover') === 'auto')>Repeat as a tile</option>
+                        </select>
+                    </div>
+
+                    <div class="ld-ctl">
+                        <label class="ld-ctl-label" for="design_bg_position"><span>Image anchor</span></label>
+                        <select class="form-control" id="design_bg_position" name="design[bg_position]"
+                            data-dvar="--cl-bg-pos">
+                            @foreach (['center' => 'Centre', 'top' => 'Top', 'bottom' => 'Bottom', 'left' => 'Left', 'right' => 'Right'] as $bgPos => $bgPosLabel)
+                                <option value="{{ $bgPos }}" @selected(($ld['bg_position'] ?? 'center') === $bgPos)>{{ $bgPosLabel }}</option>
+                            @endforeach
+                        </select>
+                        <div class="ld-hint">Which part of the photo stays visible when it gets cropped.</div>
+                    </div>
+
+                    @include('admin.events._design-range', [
+                        'name' => 'design[bg_overlay]',
+                        'label' => 'Darken the image',
+                        'value' => $ld['bg_overlay'],
+                        'min' => 0,
+                        'max' => 90,
+                        'suffix' => '%',
+                        'var' => '--cl-bg-overlay',
+                        'scale' => 0.01,
+                        'hint' => 'A dark veil over the photo. Push it up until the headline and buttons read clearly.',
+                    ])
+
+                    @include('admin.events._design-range', [
+                        'name' => 'design[bg_blur]',
+                        'label' => 'Blur the image',
+                        'value' => $ld['bg_blur'],
+                        'min' => 0,
+                        'max' => 24,
+                        'suffix' => 'px',
+                        'var' => '--cl-bg-blur',
+                        'unit' => 'px',
+                        'hint' => 'Blurring a busy photo keeps the buttons the hero of the page.',
+                    ])
+
+                    @include('admin.events._design-range', [
+                        'name' => 'design[watermark_opacity]',
+                        'label' => 'Logo watermark',
+                        'value' => $ld['watermark_opacity'],
+                        'min' => 0,
+                        'max' => 40,
+                        'suffix' => '%',
+                        'var' => '--cl-wm-opacity',
+                        'scale' => 0.01,
+                        'hint' => 'A faint, oversized copy of your logo behind the page. 0 = off.',
+                    ])
+                </div>
+            </details>
+
+            {{-- ── 3. Headline ──────────────────────────────────────────────── --}}
+            <details class="ld-sec">
+                <summary><span class="ld-num">3</span> Headline <i data-lucide="chevron-down"
                         class="lucide-icon ld-chev"></i></summary>
                 <div class="ld-sec-body">
                     <label class="ld-switch">
@@ -144,9 +232,9 @@
                 </div>
             </details>
 
-            {{-- ── 3. Button grid ───────────────────────────────────────────── --}}
+            {{-- ── 4. Button grid ───────────────────────────────────────────── --}}
             <details class="ld-sec">
-                <summary><span class="ld-num">3</span> Button Grid <span class="ld-tag">applies to all 6</span> <i
+                <summary><span class="ld-num">4</span> Button Grid <span class="ld-tag">applies to all 6</span> <i
                         data-lucide="chevron-down" class="lucide-icon ld-chev"></i></summary>
                 <div class="ld-sec-body">
                     @include('admin.events._design-range', [
@@ -220,7 +308,7 @@
                 </div>
             </details>
 
-            {{-- ── 4-9. The six buttons ─────────────────────────────────────── --}}
+            {{-- ── 5-10. The six buttons ─────────────────────────────────────── --}}
             @foreach ($ldModules as $mod => [$modLabel, $modIcon])
                 @php
                     $tc = isset($event) ? $event->tileConfig($mod) : \App\Models\Event::tileConfigDefaults();
@@ -229,7 +317,7 @@
                 @endphp
                 <details class="ld-sec">
                     <summary>
-                        <span class="ld-num">{{ $loop->iteration + 3 }}</span>
+                        <span class="ld-num">{{ $loop->iteration + 4 }}</span>
                         <i data-lucide="{{ $modIcon }}" class="lucide-icon"></i> {{ $modLabel }}
                         @unless ($isOn)
                             <span class="ld-tag ld-tag-off">hidden</span>
@@ -393,9 +481,9 @@
                 </details>
             @endforeach
 
-            {{-- ── 10. Hashtag & footer ─────────────────────────────────────── --}}
+            {{-- ── 11. Hashtag & footer ─────────────────────────────────────── --}}
             <details class="ld-sec">
-                <summary><span class="ld-num">10</span> Hashtag &amp; Footer <i data-lucide="chevron-down"
+                <summary><span class="ld-num">11</span> Hashtag &amp; Footer <i data-lucide="chevron-down"
                         class="lucide-icon ld-chev"></i></summary>
                 <div class="ld-sec-body">
                     <label class="ld-switch">
@@ -432,17 +520,6 @@
                         'suffix' => 'px',
                         'var' => '--cl-footer-size',
                         'unit' => 'px',
-                    ])
-                    @include('admin.events._design-range', [
-                        'name' => 'design[watermark_opacity]',
-                        'label' => 'Background watermark',
-                        'value' => $ld['watermark_opacity'],
-                        'min' => 0,
-                        'max' => 40,
-                        'suffix' => '%',
-                        'var' => '--cl-wm-opacity',
-                        'scale' => 0.01,
-                        'hint' => 'A faint, oversized copy of your logo behind the page. 0 = off.',
                     ])
                 </div>
             </details>
@@ -557,6 +634,8 @@
         .ld-thumb { position:relative; width:60px; height:60px; flex-shrink:0; border-radius:9px;
             border:1px solid var(--border); background:#fff; overflow:hidden }
         .ld-thumb img { width:100%; height:100%; object-fit:contain }
+        .ld-thumb-wide { width:96px; height:60px; background:#0b0b0d }
+        .ld-thumb-wide img { object-fit:cover }
         .ld-thumb-x { position:absolute; top:-6px; right:-6px; width:20px; height:20px; border-radius:50%;
             background:var(--red); color:#fff; display:grid; place-items:center; cursor:pointer }
         .ld-thumb-x input { display:none }
@@ -612,6 +691,11 @@
             const frame = document.getElementById('ldPreview');
             const stage = document.getElementById('ldStage');
             const tileImages = {};
+
+            // Landing background photo: null = untouched, '' = removed, otherwise a data URL.
+            const savedBg = panel.querySelector('[data-dbgclear]')
+                ?.closest('.ld-img-row')?.querySelector('.ld-thumb img')?.src || '';
+            let bgImage = null;
 
             // Remember the saved artwork so un-ticking "remove image" can put it back.
             const savedImages = {};
@@ -703,6 +787,8 @@
 
                 for (const mod in tileImages) s.img[mod] = tileImages[mod];
 
+                if (bgImage !== null) s.bg = bgImage;
+
                 return s;
             }
 
@@ -721,6 +807,19 @@
                 push();
             });
             panel.addEventListener('change', e => {
+                if (e.target.hasAttribute('data-dbg')) {
+                    const file = e.target.files?.[0];
+                    if (!file) { bgImage = savedBg; push(); return; }
+                    const reader = new FileReader();
+                    reader.onload = () => { bgImage = reader.result; push(); };
+                    reader.readAsDataURL(file);
+                    return;
+                }
+                if (e.target.hasAttribute('data-dbgclear')) {
+                    bgImage = e.target.checked ? '' : savedBg;
+                    push();
+                    return;
+                }
                 if (e.target.dataset.dfile) {
                     const file = e.target.files?.[0];
                     const mod = e.target.dataset.dfile;

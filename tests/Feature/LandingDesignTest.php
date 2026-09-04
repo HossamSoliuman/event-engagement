@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\Event;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class LandingDesignTest extends TestCase
@@ -212,5 +214,119 @@ class LandingDesignTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('class="cl-hero" hidden', false);
         $response->assertSee('class="cl-hashtag" hidden', false);
+    }
+
+    public function test_background_image_is_uploaded_and_rendered(): void
+    {
+        Storage::fake('public');
+        $event = Event::factory()->create();
+
+        $this->actingAs($this->admin())
+            ->put(route('admin.events.update', $event), $this->payload($event, [
+                'background_image' => UploadedFile::fake()->image('crowd.jpg', 1170, 2532),
+            ]))
+            ->assertRedirect();
+
+        $path = $event->fresh()->background_image_path;
+
+        $this->assertNotNull($path);
+        Storage::disk('public')->assertExists($path);
+
+        $response = $this->get("/e/{$event->slug}");
+        $response->assertStatus(200);
+        $response->assertSee('--cl-bg-img:url(', false);
+    }
+
+    public function test_background_image_can_be_removed(): void
+    {
+        Storage::fake('public');
+        $event = Event::factory()->create(['background_image_path' => 'backgrounds/old.jpg']);
+
+        $this->actingAs($this->admin())
+            ->put(route('admin.events.update', $event), $this->payload($event, [
+                'clear_background_image' => 1,
+            ]))
+            ->assertRedirect();
+
+        $this->assertNull($event->fresh()->background_image_path);
+
+        $response = $this->get("/e/{$event->slug}");
+        $response->assertStatus(200);
+        $response->assertDontSee('--cl-bg-img:url(', false);
+    }
+
+    public function test_background_design_values_are_saved_and_rendered(): void
+    {
+        $event = Event::factory()->create();
+
+        $this->actingAs($this->admin())
+            ->put(route('admin.events.update', $event), $this->payload($event, [
+                'design' => array_merge(Event::landingDesignDefaults(), [
+                    'bg_fit' => 'auto',
+                    'bg_position' => 'top',
+                    'bg_overlay' => 70,
+                    'bg_blur' => 12,
+                ]),
+            ]))
+            ->assertRedirect();
+
+        $design = $event->fresh()->landingDesign();
+
+        $this->assertSame('auto', $design['bg_fit']);
+        $this->assertSame('top', $design['bg_position']);
+        $this->assertEqualsWithDelta(70, $design['bg_overlay'], 0.001);
+        $this->assertEqualsWithDelta(12, $design['bg_blur'], 0.001);
+
+        $response = $this->get("/e/{$event->slug}");
+        $response->assertStatus(200);
+        $response->assertSee('--cl-bg-size: auto', false);
+        $response->assertSee('--cl-bg-pos: top', false);
+        $response->assertSee('--cl-bg-overlay: 0.7', false);
+        $response->assertSee('--cl-bg-blur: 12px', false);
+        $response->assertSee('cl-bg is-tiled', false);
+    }
+
+    public function test_invalid_background_options_fall_back_to_safe_values(): void
+    {
+        $event = Event::factory()->create();
+
+        $this->actingAs($this->admin())
+            ->put(route('admin.events.update', $event), $this->payload($event, [
+                'design' => array_merge(Event::landingDesignDefaults(), [
+                    'bg_fit' => 'url(javascript:alert(1))',
+                    'bg_position' => 'center;background:red',
+                    'bg_overlay' => 9999,
+                    'bg_blur' => -40,
+                ]),
+            ]))
+            ->assertRedirect();
+
+        $design = $event->fresh()->landingDesign();
+
+        $this->assertSame('cover', $design['bg_fit']);
+        $this->assertSame('center', $design['bg_position']);
+        $this->assertEqualsWithDelta(90, $design['bg_overlay'], 0.001);
+        $this->assertEqualsWithDelta(0, $design['bg_blur'], 0.001);
+    }
+
+    public function test_background_image_can_be_hidden_without_deleting_it(): void
+    {
+        $design = Event::landingDesignDefaults();
+        unset($design['bg_image_show']);
+
+        $event = Event::factory()->create(['background_image_path' => 'backgrounds/crowd.jpg']);
+
+        $this->actingAs($this->admin())
+            ->put(route('admin.events.update', $event), $this->payload($event, ['design' => $design]))
+            ->assertRedirect();
+
+        $fresh = $event->fresh();
+
+        $this->assertFalse($fresh->landingDesign()['bg_image_show']);
+        $this->assertSame('backgrounds/crowd.jpg', $fresh->background_image_path);
+
+        $response = $this->get("/e/{$event->slug}");
+        $response->assertStatus(200);
+        $response->assertSee('hidden></div>', false);
     }
 }
