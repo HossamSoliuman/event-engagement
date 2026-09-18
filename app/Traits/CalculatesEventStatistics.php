@@ -205,7 +205,7 @@ trait CalculatesEventStatistics
             'approved' => $base()->where('status', 'approved')->count(),
             'pending' => $base()->where('status', 'pending')->count(),
             'rejected' => $base()->where('status', 'rejected')->count(),
-            'shown_on_screen' => $base()->where('on_screen', true)->count(),
+            'shown_on_screen' => $base()->whereNotNull('displayed_at')->count(),
             'uploaders' => $base()->whereNotNull('visitor_id')->distinct()->count('visitor_id'),
             'by_hour' => $this->uploadsByHour($event, $from, $to),
         ];

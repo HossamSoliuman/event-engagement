@@ -725,6 +725,8 @@
         let slideIndex = 0;
         let slideTimer = null;
         let slideFotos = [];
+        let queueTimer = null;
+        let pollSeq = 0;
 
         function setBackground(url) {
             document.getElementById('stageBg').style.backgroundImage = url ? `url('${url}')` : '';
@@ -812,6 +814,7 @@
             lastFotoId = null;
             slideFotos = [];
             clearTimeout(slideTimer);
+            clearTimeout(queueTimer);
             document.getElementById('liveVideo').pause();
             document.getElementById('liveVideo').src = '';
         }
@@ -870,11 +873,51 @@
             nextSlide();
         }
 
-        async function poll() {
+        /* ── Queue: each approved item plays once, then the screen tells the
+              server it is done so the next one (or the QR idle) comes up. ── */
+        function runQueueProgress(ms) {
+            const progress = document.getElementById('slideProgress');
+            progress.style.display = 'block';
+            progress.style.transition = 'none';
+            progress.style.width = '0%';
+            progress.offsetHeight;
+            progress.style.transition = `width ${ms}ms linear`;
+            progress.style.width = '100%';
+        }
+
+        function showQueueItem(foto) {
+            clearTimeout(queueTimer);
+            lastFotoId = foto.id;
+
+            let acked = false;
+            const finish = () => {
+                if (acked) return;
+                acked = true;
+                clearTimeout(queueTimer);
+                poll(foto.id);
+            };
+
+            const slot = foto.slot_ms || 4000;
+
+            if (foto.media_type === 'video' && foto.video_url) {
+                document.getElementById('slideProgress').style.display = 'none';
+                showVideo(foto.video_url, foto.uploader, undefined, undefined, finish);
+                queueTimer = setTimeout(finish, slot + 3000);
+            } else {
+                showPhoto(foto.url, foto.uploader);
+                runQueueProgress(slot);
+                queueTimer = setTimeout(finish, slot);
+            }
+        }
+
+        async function poll(doneId) {
             if (clashActive) return;
+            const seq = ++pollSeq;
             try {
-                const res = await fetch(`/screen/${SLUG}/feed`);
+                const url = `/screen/${SLUG}/feed` + (doneId ? `?done=${doneId}` : '');
+                const res = await fetch(url);
                 const data = await res.json();
+                if (seq !== pollSeq) return;
 
                 if (data.mode === 'slideshow') {
                     if (!data.fotos.length) {
@@ -889,15 +932,9 @@
                     }
                 } else {
                     clearTimeout(slideTimer);
-                    document.getElementById('slideProgress').style.display = 'none';
 
                     if (data.foto && data.foto.id !== lastFotoId) {
-                        lastFotoId = data.foto.id;
-                        if (data.foto.media_type === 'video' && data.foto.video_url) {
-                            showVideo(data.foto.video_url, data.foto.uploader);
-                        } else {
-                            showPhoto(data.foto.url, data.foto.uploader);
-                        }
+                        showQueueItem(data.foto);
                     } else if (!data.foto) {
                         showIdle();
                     }
@@ -906,7 +943,7 @@
         }
 
         poll();
-        setInterval(poll, 3000);
+        setInterval(() => poll(), 3000);
 
         /* ── Fan Clash rope: fast poll while a round is live ──────── */
         (function () {
@@ -938,6 +975,7 @@
                 });
                 const v = document.getElementById('liveVideo');
                 if (v) { v.pause(); }
+                clearTimeout(queueTimer);
             }
 
             function paintColors(d) {

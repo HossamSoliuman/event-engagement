@@ -266,8 +266,9 @@ class SeedEventDemoData extends Command
             'media_type' => $file['type'],
             'uploader_name' => fake()->firstName(),
             'status' => $status,
-            'on_screen' => $status === 'approved' && $this->chance(45),
+            'on_screen' => false,
             'approved_at' => $status === 'approved' ? $at->copy()->addMinutes(mt_rand(1, 6)) : null,
+            'displayed_at' => $status === 'approved' && $this->chance(45) ? $at->copy()->addMinutes(mt_rand(7, 12)) : null,
             'created_at' => $at,
             'updated_at' => $at,
         ]);

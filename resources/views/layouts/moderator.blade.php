@@ -150,6 +150,7 @@
         .alert{padding:11px 15px;border-radius:8px;margin-bottom:16px;font-size:13px;display:flex;align-items:center;gap:10px}
         .alert-success{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);color:#4ade80}
         .alert-error{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);color:#f87171}
+        .alert-info{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25);color:#60a5fa;display:block}
 
         .winner-card{background:linear-gradient(135deg,rgba(255,215,0,.15),rgba(99,102,241,.08));border:2px solid var(--gold);border-radius:14px;padding:24px;text-align:center}
         .winner-card h2{font-size:22px;color:var(--gold)}

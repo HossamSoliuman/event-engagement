@@ -295,7 +295,82 @@ class Event extends Model
 
     public function getOnScreenFotos()
     {
-        return $this->fotoUploads()->where('status', 'approved')->where('on_screen', true)->orderByDesc('displayed_at')->get();
+        return $this->fotoUploads()
+            ->where('status', 'approved')
+            ->where('on_screen', true)
+            ->orderByDesc('displayed_at')
+            ->get()
+            ->filter(fn (FotoUpload $foto) => $foto->isLiveOnScreen())
+            ->values();
+    }
+
+    public function getQueuedFotosCount(): int
+    {
+        return $this->fotoUploads()->queuedForScreen()->count();
+    }
+
+    /**
+     * Snapshot of the vidiwall queue for the moderation pages, which poll it to
+     * stay in sync with the screen. `$fotoIds` are the cards currently rendered.
+     *
+     * @param  array<int, int>  $fotoIds
+     * @return array{live: array<string, mixed>|null, queued: int, counts: array<string, int>, items: array<int, array<string, mixed>>}
+     */
+    public function screenQueueStatus(array $fotoIds = []): array
+    {
+        $live = $this->getOnScreenFotos()->first();
+
+        $items = $fotoIds === [] ? collect() : $this->fotoUploads()->whereIn('id', $fotoIds)->get();
+
+        return [
+            'live' => $live ? [
+                'id' => $live->id,
+                'uploader' => $live->uploader_name ?? 'Anonymous',
+                'is_video' => $live->isVideo(),
+                'video_duration' => $live->video_duration ? round((float) $live->video_duration, 1) : null,
+                'thumbnail_url' => $live->thumbnail_url,
+                'displayed_human' => $live->displayed_at?->diffForHumans(),
+                'screen_seconds' => $live->screenSeconds(),
+                'slot_ms' => $live->screenSlotMs(),
+                'elapsed_ms' => max(0, now()->getTimestampMs() - $live->displayed_at->getTimestampMs()),
+            ] : null,
+            'queued' => $this->getQueuedFotosCount(),
+            'counts' => [
+                'pending' => $this->fotoUploads()->where('status', 'pending')->count(),
+                'approved' => $this->fotoUploads()->where('status', 'approved')->count(),
+                'rejected' => $this->fotoUploads()->where('status', 'rejected')->count(),
+            ],
+            'items' => $items->map(fn (FotoUpload $foto) => [
+                'id' => $foto->id,
+                'state' => $foto->screenState(),
+                'shown_human' => $foto->displayed_at?->diffForHumans(),
+            ])->values()->all(),
+        ];
+    }
+
+    /**
+     * What the vidiwall should show right now. Holds the current item while its
+     * slot is running (or until the screen reports it finished), then pops the
+     * next approved item off the queue. Returns null when the queue is empty.
+     */
+    public function resolveOnScreenFoto(?int $finishedFotoId = null): ?FotoUpload
+    {
+        $current = $this->fotoUploads()
+            ->where('status', 'approved')
+            ->where('on_screen', true)
+            ->latest('displayed_at')
+            ->first();
+
+        if ($current && $current->isLiveOnScreen() && $current->id !== $finishedFotoId) {
+            return $current;
+        }
+
+        $current?->removeFromScreen();
+
+        $next = $this->fotoUploads()->queuedForScreen()->first();
+        $next?->pushToScreen();
+
+        return $next;
     }
 
     /**

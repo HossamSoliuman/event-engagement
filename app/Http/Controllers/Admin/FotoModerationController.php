@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Event;
 use App\Models\FotoUpload;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -21,40 +22,53 @@ class FotoModerationController extends Controller
             ->paginate(24);
 
         $counts = [
-            'pending'  => $event->fotoUploads()->where('status', 'pending')->count(),
+            'pending' => $event->fotoUploads()->where('status', 'pending')->count(),
             'approved' => $event->fotoUploads()->where('status', 'approved')->count(),
             'rejected' => $event->fotoUploads()->where('status', 'rejected')->count(),
         ];
 
-        $onScreen = $event->fotoUploads()
-            ->where('on_screen', true)
-            ->where('status', 'approved')
-            ->first();
+        $onScreen = $event->getOnScreenFotos()->first();
+        $queued = $event->getQueuedFotosCount();
 
-        return view('admin.fotos.index', compact('event', 'fotos', 'status', 'counts', 'onScreen'));
+        return view('admin.fotos.index', compact('event', 'fotos', 'status', 'counts', 'onScreen', 'queued'));
+    }
+
+    /**
+     * Live snapshot of the vidiwall queue, polled by the moderation page so the
+     * live card, queue count and card states follow the screen in real time.
+     * `ids` lists the cards on the page whose state should be included.
+     */
+    public function status(Event $event, Request $request): JsonResponse
+    {
+        $ids = array_values(array_filter(array_map('intval', explode(',', (string) $request->query('ids', '')))));
+
+        return response()->json($event->screenQueueStatus($ids));
     }
 
     public function approve(FotoUpload $foto)
     {
         $foto->approve(auth()->id());
         ActivityLog::record('foto.approved', ['foto_id' => $foto->id, 'uploader' => $foto->uploader_name], $foto->event_id);
-        return back()->with('success', 'Photo approved!');
+
+        return back()->with('success', 'Photo approved and queued for the vidiwall.');
     }
 
     public function reject(Request $request, FotoUpload $foto)
     {
         $foto->reject($request->input('note'));
         ActivityLog::record('foto.rejected', ['foto_id' => $foto->id], $foto->event_id);
+
         return back()->with('success', 'Photo rejected.');
     }
 
     public function pushToScreen(FotoUpload $foto)
     {
-        if (!$foto->isApproved()) {
+        if (! $foto->isApproved()) {
             $foto->approve(auth()->id());
         }
         $foto->pushToScreen();
         ActivityLog::record('foto.pushed_to_screen', ['foto_id' => $foto->id, 'uploader' => $foto->uploader_name], $foto->event_id);
+
         return back()->with('success', 'Now LIVE on the vidiwall!');
     }
 
@@ -62,39 +76,44 @@ class FotoModerationController extends Controller
     {
         $foto->removeFromScreen();
         ActivityLog::record('foto.removed_from_screen', ['foto_id' => $foto->id], $foto->event_id);
+
         return back()->with('success', 'Removed from screen.');
     }
 
     public function destroy(FotoUpload $foto)
     {
         Storage::disk('public')->delete($foto->file_path);
-        if ($foto->thumbnail_path) Storage::disk('public')->delete($foto->thumbnail_path);
+        if ($foto->thumbnail_path) {
+            Storage::disk('public')->delete($foto->thumbnail_path);
+        }
         if ($foto->video_path && $foto->video_path !== $foto->file_path) {
             Storage::disk('public')->delete($foto->video_path);
         }
         $foto->delete();
         ActivityLog::record('foto.deleted', ['foto_id' => $foto->id], $foto->event_id);
+
         return back()->with('success', 'Deleted.');
     }
 
     public function export(Event $event)
     {
         $fotos = $event->fotoUploads()->get();
-        $csv   = "ID,Uploader Name,Phone,Media Type,Duration (s),Status,On Screen,Uploaded At\n";
+        $csv = "ID,Uploader Name,Phone,Media Type,Duration (s),Status,On Screen,Uploaded At\n";
         foreach ($fotos as $f) {
             $csv .= implode(',', [
                 $f->id,
-                '"' . ($f->uploader_name ?? '') . '"',
-                '"' . ($f->uploader_phone ?? '') . '"',
+                '"'.($f->uploader_name ?? '').'"',
+                '"'.($f->uploader_phone ?? '').'"',
                 $f->media_type,
                 $f->video_duration ?? '',
                 $f->status,
                 $f->on_screen ? 'Yes' : 'No',
                 $f->created_at->format('Y-m-d H:i'),
-            ]) . "\n";
+            ])."\n";
         }
+
         return response($csv, 200, [
-            'Content-Type'        => 'text/csv',
+            'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"fotos-{$event->slug}.csv\"",
         ]);
     }
@@ -103,13 +122,13 @@ class FotoModerationController extends Controller
     {
         $fotos = $event->fotoUploads()->get();
 
-        $zip = new \ZipArchive();
-        $zipFileName = 'fotos-' . $event->slug . '-' . time() . '.zip';
-        $zipPath = storage_path('app/public/' . $zipFileName);
+        $zip = new \ZipArchive;
+        $zipFileName = 'fotos-'.$event->slug.'-'.time().'.zip';
+        $zipPath = storage_path('app/public/'.$zipFileName);
 
-        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === TRUE) {
+        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
             foreach ($fotos as $foto) {
-                $filePath = storage_path('app/public/' . $foto->file_path);
+                $filePath = storage_path('app/public/'.$foto->file_path);
                 if (file_exists($filePath)) {
                     $zip->addFile($filePath, basename($foto->file_path));
                 }

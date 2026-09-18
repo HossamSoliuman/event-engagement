@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Event;
+use Illuminate\Http\Request;
 
 class VidiwallController extends Controller
 {
@@ -14,7 +15,11 @@ class VidiwallController extends Controller
         return view('vidiwall.show', compact('event'));
     }
 
-    public function feed(string $slug)
+    /**
+     * Vidiwall poll. The screen passes `done=<id>` when the item it was showing has
+     * finished so the queue advances on the screen's clock rather than the poll tick.
+     */
+    public function feed(Request $request, string $slug)
     {
         $event = Event::where('slug', $slug)->firstOrFail();
 
@@ -44,14 +49,10 @@ class VidiwallController extends Controller
             ]);
         }
 
-        $onScreen = $event->fotoUploads()
-            ->where('status', 'approved')
-            ->where('on_screen', true)
-            ->latest('displayed_at')
-            ->first();
+        $onScreen = $event->resolveOnScreenFoto($request->integer('done') ?: null);
 
         return response()->json([
-            'mode' => 'single',
+            'mode' => 'queue',
             'foto' => $onScreen ? [
                 'id' => $onScreen->id,
                 'media_type' => $onScreen->media_type,
@@ -59,7 +60,9 @@ class VidiwallController extends Controller
                 'video_url' => $onScreen->video_url,
                 'uploader' => $onScreen->uploader_name,
                 'displayed_at' => $onScreen->displayed_at,
+                'slot_ms' => $onScreen->screenSlotMs(),
             ] : null,
+            'queued' => $event->getQueuedFotosCount(),
             'show_uploader' => $event->vidiwall_show_uploader,
             'overlay_text' => $event->vidiwall_overlay_text,
             'primary_color' => $event->primary_color,
