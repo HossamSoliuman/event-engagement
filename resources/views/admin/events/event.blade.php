@@ -396,7 +396,7 @@
     <div class="event-header">
         <div class="logo-wrap">
             @if ($event->logo_path)
-                <img src="{{ Storage::disk('public')->url($event->logo_path) }}" alt="{{ $event->name }}">
+                <img src="{{ Storage::disk('media')->url($event->logo_path) }}" alt="{{ $event->name }}">
             @endif
             <h1 class="event-title">{{ $event->name }}</h1>
             <p class="event-subtitle">{{ $event->subtitle }}</p>
@@ -539,7 +539,7 @@
     @if ($event->sponsor_logo_path)
         <div class="sponsor-bar">
             <p>Sponsored by</p>
-            <img src="{{ Storage::disk('public')->url($event->sponsor_logo_path) }}" alt="Sponsor">
+            <img src="{{ Storage::disk('media')->url($event->sponsor_logo_path) }}" alt="Sponsor">
         </div>
     @endif
 

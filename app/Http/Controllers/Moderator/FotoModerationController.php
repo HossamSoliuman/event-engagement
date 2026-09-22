@@ -6,12 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Event;
 use App\Models\FotoUpload;
+use App\Traits\StagesMediaFiles;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class FotoModerationController extends Controller
 {
+    use StagesMediaFiles;
+
     public function index(Event $event, Request $request)
     {
         $status = $request->get('status', 'pending');
@@ -82,12 +85,12 @@ class FotoModerationController extends Controller
 
     public function destroy(Event $event, FotoUpload $foto)
     {
-        Storage::disk('public')->delete($foto->file_path);
+        Storage::disk('media')->delete($foto->file_path);
         if ($foto->thumbnail_path) {
-            Storage::disk('public')->delete($foto->thumbnail_path);
+            Storage::disk('media')->delete($foto->thumbnail_path);
         }
         if ($foto->video_path && $foto->video_path !== $foto->file_path) {
-            Storage::disk('public')->delete($foto->video_path);
+            Storage::disk('media')->delete($foto->video_path);
         }
         $foto->delete();
         ActivityLog::record('foto.deleted', ['foto_id' => $foto->id], $foto->event_id);
@@ -124,17 +127,19 @@ class FotoModerationController extends Controller
 
         $zip = new \ZipArchive;
         $zipFileName = 'fotos-'.$event->slug.'-'.time().'.zip';
-        $zipPath = storage_path('app/public/'.$zipFileName);
+        $zipPath = $this->mediaStagingDirectory().DIRECTORY_SEPARATOR.$zipFileName;
 
         if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
             foreach ($fotos as $foto) {
-                $filePath = storage_path('app/public/'.$foto->file_path);
-                if (file_exists($filePath)) {
+                $filePath = $this->stageMediaFile($foto->file_path);
+                if ($filePath !== null) {
                     $zip->addFile($filePath, basename($foto->file_path));
                 }
             }
             $zip->close();
         }
+
+        $this->discardStagedMediaFiles();
 
         if (file_exists($zipPath)) {
             return response()->download($zipPath)->deleteFileAfterSend(true);

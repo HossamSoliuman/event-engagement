@@ -197,27 +197,27 @@ class Event extends Model
 
     public function getQrCodeUrlAttribute(): string
     {
-        return $this->qr_code_path ? Storage::disk('public')->url($this->qr_code_path) : '';
+        return $this->qr_code_path ? Storage::disk('media')->url($this->qr_code_path) : '';
     }
 
     public function getLogoUrlAttribute(): ?string
     {
-        return $this->logo_path ? Storage::disk('public')->url($this->logo_path) : null;
+        return $this->logo_path ? Storage::disk('media')->url($this->logo_path) : null;
     }
 
     public function getSponsorLogoUrlAttribute(): ?string
     {
-        return $this->sponsor_logo_path ? Storage::disk('public')->url($this->sponsor_logo_path) : null;
+        return $this->sponsor_logo_path ? Storage::disk('media')->url($this->sponsor_logo_path) : null;
     }
 
     public function getQuizEndSponsorLogoUrlAttribute(): ?string
     {
-        return $this->quiz_end_sponsor_logo_path ? Storage::disk('public')->url($this->quiz_end_sponsor_logo_path) : null;
+        return $this->quiz_end_sponsor_logo_path ? Storage::disk('media')->url($this->quiz_end_sponsor_logo_path) : null;
     }
 
     public function getBackgroundImageUrlAttribute(): ?string
     {
-        return $this->background_image_path ? Storage::disk('public')->url($this->background_image_path) : null;
+        return $this->background_image_path ? Storage::disk('media')->url($this->background_image_path) : null;
     }
 
     public function generateQrCode(): string
@@ -241,7 +241,7 @@ class Event extends Model
             throw new \RuntimeException('Failed to fetch QR code from API');
         }
 
-        Storage::disk('public')->put($filename, $svg);
+        Storage::disk('media')->put($filename, $svg);
         $this->update(['qr_code_path' => $filename]);
 
         return $filename;
@@ -477,7 +477,7 @@ class Event extends Model
         $config = $this->tileConfig($module);
 
         return ! empty($config['image_path'])
-            ? Storage::disk('public')->url($config['image_path'])
+            ? Storage::disk('media')->url($config['image_path'])
             : null;
     }
 
@@ -508,7 +508,7 @@ class Event extends Model
         $config = $this->frameConfig();
 
         return ! empty($config['logo_path'])
-            ? Storage::disk('public')->url($config['logo_path'])
+            ? Storage::disk('media')->url($config['logo_path'])
             : null;
     }
 

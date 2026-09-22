@@ -38,16 +38,16 @@ class FanClashMatchup extends Model
 
     public function getSideAImageUrlAttribute(): ?string
     {
-        return $this->side_a_image_path ? Storage::disk('public')->url($this->side_a_image_path) : null;
+        return $this->side_a_image_path ? Storage::disk('media')->url($this->side_a_image_path) : null;
     }
 
     public function getSideBImageUrlAttribute(): ?string
     {
-        return $this->side_b_image_path ? Storage::disk('public')->url($this->side_b_image_path) : null;
+        return $this->side_b_image_path ? Storage::disk('media')->url($this->side_b_image_path) : null;
     }
 
     public function getSponsorLogoUrlAttribute(): ?string
     {
-        return $this->sponsor_logo_path ? Storage::disk('public')->url($this->sponsor_logo_path) : null;
+        return $this->sponsor_logo_path ? Storage::disk('media')->url($this->sponsor_logo_path) : null;
     }
 }

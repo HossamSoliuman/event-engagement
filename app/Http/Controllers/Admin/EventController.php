@@ -97,19 +97,19 @@ class EventController extends Controller
     public function destroy(Event $event)
     {
         if ($event->qr_code_path) {
-            Storage::disk('public')->delete($event->qr_code_path);
+            Storage::disk('media')->delete($event->qr_code_path);
         }
 
         if ($event->logo_path) {
-            Storage::disk('public')->delete($event->logo_path);
+            Storage::disk('media')->delete($event->logo_path);
         }
 
         if ($event->sponsor_logo_path) {
-            Storage::disk('public')->delete($event->sponsor_logo_path);
+            Storage::disk('media')->delete($event->sponsor_logo_path);
         }
 
         if ($event->background_image_path) {
-            Storage::disk('public')->delete($event->background_image_path);
+            Storage::disk('media')->delete($event->background_image_path);
         }
 
         $event->fotoUploads()->delete();
@@ -222,13 +222,13 @@ class EventController extends Controller
     private function handleUploads(Request $request, array $data, ?Event $event = null): array
     {
         if ($request->hasFile('logo')) {
-            $data['logo_path'] = $request->file('logo')->store('logos', 'public');
+            $data['logo_path'] = $request->file('logo')->store('logos', 'media');
         }
         if ($request->hasFile('sponsor_logo')) {
-            $data['sponsor_logo_path'] = $request->file('sponsor_logo')->store('logos', 'public');
+            $data['sponsor_logo_path'] = $request->file('sponsor_logo')->store('logos', 'media');
         }
         if ($request->hasFile('background_image')) {
-            $data['background_image_path'] = $request->file('background_image')->store('backgrounds', 'public');
+            $data['background_image_path'] = $request->file('background_image')->store('backgrounds', 'media');
         } elseif ($request->input('clear_background_image')) {
             $data['background_image_path'] = null;
         }
@@ -245,7 +245,7 @@ class EventController extends Controller
             'logo_path' => $existingFrame['logo_path'] ?? null,
         ];
         if ($request->hasFile('frame_logo')) {
-            $frame['logo_path'] = $request->file('frame_logo')->store('frames', 'public');
+            $frame['logo_path'] = $request->file('frame_logo')->store('frames', 'media');
         }
         if ($request->input('frame_clear_logo')) {
             $frame['logo_path'] = null;
@@ -279,7 +279,7 @@ class EventController extends Controller
                 'show_rule' => $request->boolean("tile_{$mod}_show_rule"),
             ];
             if ($request->hasFile("tile_{$mod}_image")) {
-                $config['image_path'] = $request->file("tile_{$mod}_image")->store("tiles/{$mod}", 'public');
+                $config['image_path'] = $request->file("tile_{$mod}_image")->store("tiles/{$mod}", 'media');
             }
             // Allow clearing the image
             if ($request->input("tile_{$mod}_clear_image")) {

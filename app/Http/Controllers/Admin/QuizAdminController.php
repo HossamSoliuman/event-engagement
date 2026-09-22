@@ -35,7 +35,7 @@ class QuizAdminController extends Controller
         $data['event_id'] = $event->id;
 
         if ($request->hasFile('sponsor_logo')) {
-            $data['sponsor_logo_path'] = $request->file('sponsor_logo')->store('quiz-sponsors', 'public');
+            $data['sponsor_logo_path'] = $request->file('sponsor_logo')->store('quiz-sponsors', 'media');
         }
 
         QuizQuestion::create($data);
@@ -61,12 +61,12 @@ class QuizAdminController extends Controller
 
         if ($request->hasFile('sponsor_logo')) {
             if ($question->sponsor_logo_path) {
-                Storage::disk('public')->delete($question->sponsor_logo_path);
+                Storage::disk('media')->delete($question->sponsor_logo_path);
             }
-            $data['sponsor_logo_path'] = $request->file('sponsor_logo')->store('quiz-sponsors', 'public');
+            $data['sponsor_logo_path'] = $request->file('sponsor_logo')->store('quiz-sponsors', 'media');
         } elseif ($request->boolean('sponsor_logo_clear')) {
             if ($question->sponsor_logo_path) {
-                Storage::disk('public')->delete($question->sponsor_logo_path);
+                Storage::disk('media')->delete($question->sponsor_logo_path);
             }
             $data['sponsor_logo_path'] = null;
         }
@@ -79,7 +79,7 @@ class QuizAdminController extends Controller
     public function destroyQuestion(QuizQuestion $question)
     {
         if ($question->sponsor_logo_path) {
-            Storage::disk('public')->delete($question->sponsor_logo_path);
+            Storage::disk('media')->delete($question->sponsor_logo_path);
         }
 
         $question->delete();
@@ -98,12 +98,12 @@ class QuizAdminController extends Controller
 
         if ($request->hasFile('quiz_end_sponsor_logo')) {
             if ($event->quiz_end_sponsor_logo_path) {
-                Storage::disk('public')->delete($event->quiz_end_sponsor_logo_path);
+                Storage::disk('media')->delete($event->quiz_end_sponsor_logo_path);
             }
-            $update['quiz_end_sponsor_logo_path'] = $request->file('quiz_end_sponsor_logo')->store('quiz-sponsors', 'public');
+            $update['quiz_end_sponsor_logo_path'] = $request->file('quiz_end_sponsor_logo')->store('quiz-sponsors', 'media');
         } elseif ($request->boolean('quiz_end_sponsor_logo_clear')) {
             if ($event->quiz_end_sponsor_logo_path) {
-                Storage::disk('public')->delete($event->quiz_end_sponsor_logo_path);
+                Storage::disk('media')->delete($event->quiz_end_sponsor_logo_path);
             }
             $update['quiz_end_sponsor_logo_path'] = null;
         }

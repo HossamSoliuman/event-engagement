@@ -218,7 +218,7 @@ class LandingDesignTest extends TestCase
 
     public function test_background_image_is_uploaded_and_rendered(): void
     {
-        Storage::fake('public');
+        Storage::fake('media');
         $event = Event::factory()->create();
 
         $this->actingAs($this->admin())
@@ -230,7 +230,7 @@ class LandingDesignTest extends TestCase
         $path = $event->fresh()->background_image_path;
 
         $this->assertNotNull($path);
-        Storage::disk('public')->assertExists($path);
+        Storage::disk('media')->assertExists($path);
 
         $response = $this->get("/e/{$event->slug}");
         $response->assertStatus(200);
@@ -239,7 +239,7 @@ class LandingDesignTest extends TestCase
 
     public function test_background_image_can_be_removed(): void
     {
-        Storage::fake('public');
+        Storage::fake('media');
         $event = Event::factory()->create(['background_image_path' => 'backgrounds/old.jpg']);
 
         $this->actingAs($this->admin())

@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
@@ -363,21 +364,20 @@ class SeedEventDemoData extends Command
      */
     private function fotoFiles(Event $event): Collection
     {
-        $directory = storage_path('app/public/fotos/event-'.$event->id);
+        $directory = "fotos/event-{$event->id}";
+        $files = collect(Storage::disk('media')->files($directory));
+        $thumbnails = $files->filter(fn (string $path) => str_starts_with(basename($path), 'thumb_'))->flip();
 
-        if (! is_dir($directory)) {
-            return collect();
-        }
-
-        return collect(scandir($directory) ?: [])
-            ->reject(fn (string $name) => in_array($name, ['.', '..'], true) || str_starts_with($name, 'thumb_'))
-            ->map(function (string $name) use ($event, $directory) {
+        return $files
+            ->reject(fn (string $path) => str_starts_with(basename($path), 'thumb_'))
+            ->map(function (string $path) use ($directory, $thumbnails) {
+                $name = basename($path);
                 $extension = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-                $thumb = 'thumb_'.$name;
+                $thumb = "{$directory}/thumb_{$name}";
 
                 return [
-                    'path' => "fotos/event-{$event->id}/{$name}",
-                    'thumb' => is_file($directory.'/'.$thumb) ? "fotos/event-{$event->id}/{$thumb}" : null,
+                    'path' => $path,
+                    'thumb' => $thumbnails->has($thumb) ? $thumb : null,
                     'type' => in_array($extension, ['mp4', 'mov', 'webm'], true) ? 'video' : 'photo',
                 ];
             })

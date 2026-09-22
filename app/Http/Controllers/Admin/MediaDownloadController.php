@@ -7,16 +7,18 @@ use App\Http\Requests\DownloadMediaRequest;
 use App\Models\ActivityLog;
 use App\Models\Event;
 use App\Models\FotoUpload;
+use App\Traits\StagesMediaFiles;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class MediaDownloadController extends Controller
 {
+    use StagesMediaFiles;
+
     public function index(): View
     {
         abort_unless(auth()->user()?->isAdmin(), 403);
@@ -62,8 +64,7 @@ class MediaDownloadController extends Controller
                 ->with('error', 'No uploaded media matches those filters.');
         }
 
-        $temporaryDirectory = storage_path('app/media-downloads');
-        File::ensureDirectoryExists($temporaryDirectory);
+        $temporaryDirectory = $this->mediaStagingDirectory();
 
         $archiveName = $this->archiveName($filters);
         $archivePath = $temporaryDirectory.DIRECTORY_SEPARATOR.Str::uuid().'-'.$archiveName;
@@ -102,14 +103,14 @@ class MediaDownloadController extends Controller
         $query->with('event:id,name,slug')
             ->lazyById(200)
             ->each(function (FotoUpload $upload) use ($addFile, $manifest, &$filesAdded): void {
-                $disk = Storage::disk('public');
+                $localPath = $this->stageMediaFile($upload->file_path);
 
-                if (! $disk->exists($upload->file_path)) {
+                if ($localPath === null) {
                     return;
                 }
 
                 $archivePath = $this->uploadArchivePath($upload);
-                $addFile($disk->path($upload->file_path), $archivePath);
+                $addFile($localPath, $archivePath);
                 $filesAdded++;
 
                 if (is_resource($manifest)) {
@@ -135,6 +136,7 @@ class MediaDownloadController extends Controller
 
         $closeArchive();
         unset($addFile, $closeArchive);
+        $this->discardStagedMediaFiles();
         File::delete($manifestPath);
 
         if ($filesAdded === 0 || ! File::exists($archivePath)) {

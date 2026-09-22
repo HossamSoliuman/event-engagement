@@ -335,7 +335,7 @@
                             <div class="ld-img-row">
                                 @if (!empty($tc['image_path']))
                                     <div class="ld-thumb">
-                                        <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($tc['image_path']) }}"
+                                        <img src="{{ \Illuminate\Support\Facades\Storage::disk('media')->url($tc['image_path']) }}"
                                             alt="">
                                         <label class="ld-thumb-x" title="Remove image">
                                             <input type="checkbox" name="tile_{{ $mod }}_clear_image" value="1"

@@ -36,6 +36,6 @@ class QuizQuestion extends Model
 
     public function getSponsorLogoUrlAttribute(): ?string
     {
-        return $this->sponsor_logo_path ? Storage::disk('public')->url($this->sponsor_logo_path) : null;
+        return $this->sponsor_logo_path ? Storage::disk('media')->url($this->sponsor_logo_path) : null;
     }
 }

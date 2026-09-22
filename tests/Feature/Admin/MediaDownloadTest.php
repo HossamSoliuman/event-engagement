@@ -47,7 +47,7 @@ class MediaDownloadTest extends TestCase
 
     public function test_admin_can_download_only_images_from_a_specific_event(): void
     {
-        Storage::fake('public');
+        Storage::fake('media');
 
         $admin = User::factory()->create(['role' => 'admin']);
         $selectedEvent = Event::factory()->create(['name' => 'Selected Event', 'slug' => 'selected-event']);
@@ -57,9 +57,9 @@ class MediaDownloadTest extends TestCase
         $video = $this->createUpload($selectedEvent, 'video', 'approved', 'clip.mp4');
         $otherPhoto = $this->createUpload($otherEvent, 'photo', 'approved', 'other.jpg');
 
-        Storage::disk('public')->put($photo->file_path, 'photo-content');
-        Storage::disk('public')->put($video->file_path, 'video-content');
-        Storage::disk('public')->put($otherPhoto->file_path, 'other-photo-content');
+        Storage::disk('media')->put($photo->file_path, 'photo-content');
+        Storage::disk('media')->put($video->file_path, 'video-content');
+        Storage::disk('media')->put($otherPhoto->file_path, 'other-photo-content');
 
         $response = $this->actingAs($admin)
             ->post(route('admin.media-downloads.download'), [

@@ -41,17 +41,17 @@ class FotoUpload extends Model
 
     public function getFileUrlAttribute(): string
     {
-        return Storage::disk('public')->url($this->file_path);
+        return Storage::disk('media')->url($this->file_path);
     }
 
     public function getThumbnailUrlAttribute(): string
     {
-        return $this->thumbnail_path ? Storage::disk('public')->url($this->thumbnail_path) : $this->file_url;
+        return $this->thumbnail_path ? Storage::disk('media')->url($this->thumbnail_path) : $this->file_url;
     }
 
     public function getVideoUrlAttribute(): ?string
     {
-        return $this->video_path ? Storage::disk('public')->url($this->video_path) : null;
+        return $this->video_path ? Storage::disk('media')->url($this->video_path) : null;
     }
 
     public function isVideo(): bool

@@ -272,7 +272,7 @@
                                 <div style="display:flex;gap:12px;align-items:center">
                                     @if (!empty($fc['logo_path']))
                                         <div style="position:relative;flex-shrink:0">
-                                            <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($fc['logo_path']) }}"
+                                            <img src="{{ \Illuminate\Support\Facades\Storage::disk('media')->url($fc['logo_path']) }}"
                                                 style="height:36px;border-radius:6px;border:1px solid var(--border);background:#fff;padding:2px">
                                             <label
                                                 style="position:absolute;top:-6px;right:-6px;background:var(--red);border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer">

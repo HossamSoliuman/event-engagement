@@ -29,7 +29,7 @@ class FotoBombController extends Controller
 
         if ($request->hasFile('video')) {
             $videoFile = $request->file('video');
-            $videoPath = $videoFile->store($directory, 'public');
+            $videoPath = $videoFile->store($directory, 'media');
 
             $foto = FotoUpload::create([
                 'event_id' => $event->id,
@@ -53,14 +53,14 @@ class FotoBombController extends Controller
         }
 
         $file = $request->file('photo');
-        $path = $file->store($directory, 'public');
+        $path = $file->store($directory, 'media');
         $thumbPath = null;
 
         try {
-            $thumb = Image::make(Storage::disk('public')->path($path))
+            $thumb = Image::make($file->getRealPath())
                 ->fit(500, 500)->encode('jpg', 80);
             $thumbPath = $directory.'/thumb_'.basename($path);
-            Storage::disk('public')->put($thumbPath, $thumb);
+            Storage::disk('media')->put($thumbPath, (string) $thumb);
         } catch (\Exception $e) {
         }
 

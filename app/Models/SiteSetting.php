@@ -9,9 +9,12 @@ use Illuminate\Support\Facades\Storage;
 class SiteSetting extends Model
 {
     protected $primaryKey = 'key';
-    protected $keyType    = 'string';
-    public $incrementing  = false;
-    protected $fillable   = ['key', 'value'];
+
+    protected $keyType = 'string';
+
+    public $incrementing = false;
+
+    protected $fillable = ['key', 'value'];
 
     public static function get(string $key, mixed $default = null): mixed
     {
@@ -29,6 +32,7 @@ class SiteSetting extends Model
     public static function privacyPolicyUrl(): ?string
     {
         $path = static::get('privacy_policy_path');
-        return $path ? Storage::disk('public')->url($path) : null;
+
+        return $path ? Storage::disk('media')->url($path) : null;
     }
 }

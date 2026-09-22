@@ -15,19 +15,19 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        $superAdmin = User::create([
-            'name'     => 'Super Admin',
-            'email'    => env('ADMIN_EMAIL', 'admin@eventbomb.com'),
-            'password' => Hash::make(env('ADMIN_PASSWORD', 'secret123')),
-            'role'     => 'superadmin',
-        ]);
+        // $superAdmin = User::create([
+        //     'name'     => 'Super Admin',
+        //     'email'    => env('ADMIN_EMAIL', 'admin@eventbomb.com'),
+        //     'password' => Hash::make(env('ADMIN_PASSWORD', 'secret123')),
+        //     'role'     => 'superadmin',
+        // ]);
 
-        User::create([
-            'name'     => 'Event Moderator',
-            'email'    => 'mod@eventbomb.com',
-            'password' => Hash::make('secret123'),
-            'role'     => 'moderator',
-        ]);
+        // User::create([
+        //     'name'     => 'Event Moderator',
+        //     'email'    => 'mod@eventbomb.com',
+        //     'password' => Hash::make('secret123'),
+        //     'role'     => 'moderator',
+        // ]);
 
         $event = Event::create([
             'name'              => 'Championship Night 2025',

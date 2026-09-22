@@ -62,7 +62,7 @@ class FanClashController extends Controller
     {
         foreach (['side_a_image_path', 'side_b_image_path', 'sponsor_logo_path'] as $path) {
             if ($matchup->$path) {
-                Storage::disk('public')->delete($matchup->$path);
+                Storage::disk('media')->delete($matchup->$path);
             }
         }
 
@@ -238,7 +238,7 @@ class FanClashController extends Controller
     private function storeImage(Request $request, string $field): ?string
     {
         return $request->hasFile($field)
-            ? $request->file($field)->store('fanclash', 'public')
+            ? $request->file($field)->store('fanclash', 'media')
             : null;
     }
 
@@ -249,12 +249,12 @@ class FanClashController extends Controller
     {
         if ($request->hasFile($field)) {
             if ($matchup->$column) {
-                Storage::disk('public')->delete($matchup->$column);
+                Storage::disk('media')->delete($matchup->$column);
             }
-            $data[$column] = $request->file($field)->store('fanclash', 'public');
+            $data[$column] = $request->file($field)->store('fanclash', 'media');
         } elseif ($request->boolean($field.'_clear')) {
             if ($matchup->$column) {
-                Storage::disk('public')->delete($matchup->$column);
+                Storage::disk('media')->delete($matchup->$column);
             }
             $data[$column] = null;
         }
