@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\ReferencesMediaFiles;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,6 +10,11 @@ use Illuminate\Support\Facades\Storage;
 
 class FanClashMatchup extends Model
 {
+    use ReferencesMediaFiles;
+
+    /** @var list<string> */
+    public const MEDIA_COLUMNS = ['side_a_image_path', 'side_b_image_path', 'sponsor_logo_path'];
+
     protected $fillable = [
         'event_id',
         'category',

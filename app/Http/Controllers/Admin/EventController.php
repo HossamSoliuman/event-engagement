@@ -7,7 +7,6 @@ use App\Models\ActivityLog;
 use App\Models\Event;
 use App\Models\SiteSetting;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class EventController extends Controller
@@ -96,21 +95,7 @@ class EventController extends Controller
 
     public function destroy(Event $event)
     {
-        if ($event->qr_code_path) {
-            Storage::disk('media')->delete($event->qr_code_path);
-        }
-
-        if ($event->logo_path) {
-            Storage::disk('media')->delete($event->logo_path);
-        }
-
-        if ($event->sponsor_logo_path) {
-            Storage::disk('media')->delete($event->sponsor_logo_path);
-        }
-
-        if ($event->background_image_path) {
-            Storage::disk('media')->delete($event->background_image_path);
-        }
+        $event->deleteMedia();
 
         $event->fotoUploads()->delete();
         $event->lotteryEntries()->delete();

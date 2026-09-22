@@ -2,15 +2,20 @@
 
 namespace App\Models;
 
+use App\Traits\ReferencesMediaFiles;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 
 class Event extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, ReferencesMediaFiles, SoftDeletes;
+
+    /** @var list<string> */
+    public const MEDIA_COLUMNS = ['qr_code_path', 'logo_path', 'sponsor_logo_path', 'background_image_path', 'quiz_end_sponsor_logo_path'];
 
     protected $fillable = [
         'name',
@@ -188,6 +193,55 @@ class Event extends Model
     public function activeFanClashRound(): ?FanClashRound
     {
         return $this->fanClashRounds()->where('status', 'active')->latest()->first();
+    }
+
+    /**
+     * Media-disk paths stored on the event row itself, including the ones
+     * tucked inside the tile and vidiwall frame JSON configs.
+     *
+     * @return Collection<int, string>
+     */
+    public function mediaPaths(): Collection
+    {
+        $tileImages = collect(array_keys(self::landingModules()))
+            ->map(fn (string $module) => $this->tileConfig($module)['image_path'] ?? null);
+
+        return collect(self::MEDIA_COLUMNS)
+            ->map(fn (string $column) => $this->getAttribute($column))
+            ->push($this->frameConfig()['logo_path'])
+            ->merge($tileImages)
+            ->filter()
+            ->unique()
+            ->values();
+    }
+
+    /**
+     * Every media-disk path owned by this event: its own files plus those of
+     * its uploads, quiz questions and fan clash matchups/rounds.
+     *
+     * @return Collection<int, string>
+     */
+    public function ownedMediaPaths(): Collection
+    {
+        return $this->mediaPaths()
+            ->merge(FotoUpload::allMediaPaths($this->fotoUploads()->getQuery()))
+            ->merge(QuizQuestion::allMediaPaths($this->quizQuestions()->getQuery()))
+            ->merge(FanClashMatchup::allMediaPaths($this->fanClashMatchups()->getQuery()))
+            ->merge(FanClashRound::allMediaPaths($this->fanClashRounds()->getQuery()))
+            ->unique()
+            ->values();
+    }
+
+    /**
+     * Remove every file this event owns from the media disk, then drop its
+     * upload directory so stray thumbnails don't linger.
+     */
+    public function deleteMedia(): void
+    {
+        $disk = Storage::disk('media');
+
+        $disk->delete($this->ownedMediaPaths()->all());
+        $disk->deleteDirectory("fotos/event-{$this->id}");
     }
 
     public function getGuestUrl(): string

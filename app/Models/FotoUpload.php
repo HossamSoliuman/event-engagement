@@ -2,12 +2,18 @@
 
 namespace App\Models;
 
+use App\Traits\ReferencesMediaFiles;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 
 class FotoUpload extends Model
 {
+    use ReferencesMediaFiles;
+
+    /** @var list<string> */
+    public const MEDIA_COLUMNS = ['file_path', 'thumbnail_path', 'video_path'];
+
     /** Seconds a photo holds the vidiwall before the queue advances. */
     public const SCREEN_SECONDS = 4;
 
