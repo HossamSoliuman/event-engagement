@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\MembershipAdminController;
 use App\Http\Controllers\Admin\QuizAdminController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\StatisticsController;
+use App\Http\Controllers\Admin\SurveyController as SurveyAdminController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\VidiwallController;
 use App\Http\Controllers\Admin\VotingAdminController;
@@ -23,6 +24,7 @@ use App\Http\Controllers\Guest\FotoBombController;
 use App\Http\Controllers\Guest\LotteryController;
 use App\Http\Controllers\Guest\MembershipController;
 use App\Http\Controllers\Guest\QuizController as GuestQuizController;
+use App\Http\Controllers\Guest\SurveyController as GuestSurveyController;
 use App\Http\Controllers\Guest\VoteController;
 use App\Http\Controllers\Moderator\DashboardController as ModeratorDashboardController;
 use App\Http\Controllers\Moderator\FanClashController as ModeratorFanClashController;
@@ -31,6 +33,7 @@ use App\Http\Controllers\Moderator\LotteryController as ModeratorLotteryControll
 use App\Http\Controllers\Moderator\MembershipController as ModeratorMembershipController;
 use App\Http\Controllers\Moderator\QuizController as ModeratorQuizController;
 use App\Http\Controllers\Moderator\StatisticsController as ModeratorStatisticsController;
+use App\Http\Controllers\Moderator\SurveyController as ModeratorSurveyController;
 use App\Http\Controllers\Moderator\VotingController as ModeratorVotingController;
 use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Route;
@@ -46,6 +49,7 @@ Route::get('/e/{slug}/quiz/results', [GuestQuizController::class, 'results'])->n
 Route::post('/e/{slug}/quiz/answer', [GuestQuizController::class, 'answer'])->name('quiz.guest.answer');
 Route::get('/e/{slug}/clash/status', [GuestFanClashController::class, 'status'])->name('fanclash.guest.status');
 Route::post('/e/{slug}/clash/tap', [GuestFanClashController::class, 'tap'])->name('fanclash.guest.tap');
+Route::post('/e/{slug}/survey', [GuestSurveyController::class, 'submit'])->name('survey.guest.submit');
 
 Route::get('/screen/{slug}', [VidiwallController::class, 'show'])->middleware('track.view:vidiwall')->name('vidiwall.show');
 Route::get('/screen/{slug}/feed', [VidiwallController::class, 'feed'])->name('vidiwall.feed');
@@ -121,6 +125,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('events/{event}/fanclash/end', [FanClashAdminController::class, 'endRound'])->name('fanclash.end');
         Route::post('fanclash/rounds/{round}/reset', [FanClashAdminController::class, 'resetRound'])->name('fanclash.rounds.reset');
         Route::get('events/{event}/fanclash/export', [FanClashAdminController::class, 'export'])->name('fanclash.export');
+
+        Route::get('events/{event}/survey', [SurveyAdminController::class, 'index'])->name('survey.index');
+        Route::post('events/{event}/survey/questions', [SurveyAdminController::class, 'storeQuestion'])->name('survey.questions.store');
+        Route::put('events/{event}/survey/questions/{surveyQuestion}', [SurveyAdminController::class, 'updateQuestion'])->scopeBindings()->name('survey.questions.update');
+        Route::delete('events/{event}/survey/questions/{surveyQuestion}', [SurveyAdminController::class, 'destroyQuestion'])->scopeBindings()->name('survey.questions.destroy');
+        Route::post('events/{event}/survey/reset', [SurveyAdminController::class, 'resetResponses'])->name('survey.reset');
+        Route::get('events/{event}/survey/export', [SurveyAdminController::class, 'export'])->name('survey.export');
 
         Route::get('events/{event}/statistics', [StatisticsController::class, 'index'])->name('statistics.index');
         Route::get('events/{event}/statistics/report', [StatisticsController::class, 'report'])->name('statistics.report');
@@ -199,4 +210,11 @@ Route::prefix('moderator')->name('moderator.')->middleware(['auth', 'event.moder
     Route::post('{event}/fanclash/end', [ModeratorFanClashController::class, 'endRound'])->name('fanclash.end');
     Route::post('{event}/fanclash/rounds/{round}/reset', [ModeratorFanClashController::class, 'resetRound'])->name('fanclash.rounds.reset');
     Route::get('{event}/fanclash/export', [ModeratorFanClashController::class, 'export'])->name('fanclash.export');
+
+    Route::get('{event}/survey', [ModeratorSurveyController::class, 'index'])->name('survey.index');
+    Route::post('{event}/survey/questions', [ModeratorSurveyController::class, 'storeQuestion'])->name('survey.questions.store');
+    Route::put('{event}/survey/questions/{surveyQuestion}', [ModeratorSurveyController::class, 'updateQuestion'])->scopeBindings()->name('survey.questions.update');
+    Route::delete('{event}/survey/questions/{surveyQuestion}', [ModeratorSurveyController::class, 'destroyQuestion'])->scopeBindings()->name('survey.questions.destroy');
+    Route::post('{event}/survey/reset', [ModeratorSurveyController::class, 'resetResponses'])->name('survey.reset');
+    Route::get('{event}/survey/export', [ModeratorSurveyController::class, 'export'])->name('survey.export');
 });

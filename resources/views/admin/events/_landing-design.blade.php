@@ -8,6 +8,7 @@
         'membership' => ['Membership / Community', 'crown'],
         'quiz' => ['Quiz to Win', 'brain'],
         'fanclash' => ['Fan Clash', 'swords'],
+        'survey' => ['Fan Survey', 'clipboard-list'],
     ];
 @endphp
 

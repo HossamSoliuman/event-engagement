@@ -74,6 +74,7 @@ $fontH = $event->font_heading ?: 'Syne';
         #screen-membership .mod-header-title .lucide-icon, #screen-membership .section-title .lucide-icon, #screen-membership .s-icon .lucide-icon { color: #22c55e; }
         #screen-quiz .mod-header-title .lucide-icon, #screen-quiz .section-title .lucide-icon, #screen-quiz .s-icon .lucide-icon { color: #f59e0b; }
         #screen-fanclash .mod-header-title .lucide-icon { color: #ef4444; }
+        #screen-survey .mod-header-title .lucide-icon, #screen-survey .section-title .lucide-icon, #screen-survey .s-icon .lucide-icon { color: #14b8a6; }
 
         html {
             -webkit-tap-highlight-color: transparent;
@@ -1447,7 +1448,7 @@ $fontH = $event->font_heading ?: 'Syne';
         </div>
 
         <div class="tile-grid">
-            @foreach ([['fotobomb', '<i data-lucide="camera" class="lucide-icon"></i>', $event->fotobomb_title, '#FF3D00'], ['voting', '<i data-lucide="trophy" class="lucide-icon"></i>', $event->voting_title, '#FFD700'], ['lottery', '<i data-lucide="ticket" class="lucide-icon"></i>', $event->lottery_title, '#6366f1'], ['membership', '<i data-lucide="crown" class="lucide-icon"></i>', $event->membership_title, '#22c55e'], ['quiz', '<i data-lucide="brain" class="lucide-icon"></i>', $event->quiz_title, '#f59e0b'], ['fanclash', '<i data-lucide="swords" class="lucide-icon"></i>', $event->fanclash_title, '#ef4444']] as [$mod, $defaultIcon, $defaultName, $defaultAccent])
+            @foreach ([['fotobomb', '<i data-lucide="camera" class="lucide-icon"></i>', $event->fotobomb_title, '#FF3D00'], ['voting', '<i data-lucide="trophy" class="lucide-icon"></i>', $event->voting_title, '#FFD700'], ['lottery', '<i data-lucide="ticket" class="lucide-icon"></i>', $event->lottery_title, '#6366f1'], ['membership', '<i data-lucide="crown" class="lucide-icon"></i>', $event->membership_title, '#22c55e'], ['quiz', '<i data-lucide="brain" class="lucide-icon"></i>', $event->quiz_title, '#f59e0b'], ['fanclash', '<i data-lucide="swords" class="lucide-icon"></i>', $event->fanclash_title, '#ef4444'], ['survey', '<i data-lucide="clipboard-list" class="lucide-icon"></i>', $event->survey_title, '#14b8a6']] as [$mod, $defaultIcon, $defaultName, $defaultAccent])
                 @if (!$event->{'module_' . $mod})
                     @continue
                 @endif
@@ -1473,6 +1474,7 @@ $fontH = $event->font_heading ?: 'Syne';
                             'membership' => 'background:linear-gradient(160deg,#071a07,#020d02)',
                             'quiz' => 'background:linear-gradient(160deg,#1c1200,#0a0800)',
                             'fanclash' => 'background:linear-gradient(160deg,#2a0808,#0d0303)',
+                            'survey' => 'background:linear-gradient(160deg,#04201d,#010d0c)',
                         };
 
                     $accentStyle = match ($mod) {
@@ -1482,6 +1484,7 @@ $fontH = $event->font_heading ?: 'Syne';
                         'membership' => 'background:#22c55e',
                         'quiz' => 'background:#f59e0b',
                         'fanclash' => 'background:#ef4444',
+                        'survey' => 'background:#14b8a6',
                     };
                 @endphp
 
@@ -1557,6 +1560,9 @@ $fontH = $event->font_heading ?: 'Syne';
                                     'fanclash' => $event->fanclash_desc
                                         ? \Illuminate\Support\Str::limit($event->fanclash_desc, 30)
                                         : 'Tap for your side',
+                                    'survey' => $event->survey_desc
+                                        ? \Illuminate\Support\Str::limit($event->survey_desc, 30)
+                                        : 'Share your opinion',
                                 } }}
                             @endif
                         </div>
@@ -2017,6 +2023,75 @@ $fontH = $event->font_heading ?: 'Syne';
         </div>
     @endif
 
+    @if ($event->module_survey)
+        @php
+            $surveyQuestions = $event->surveyQuestions;
+            $surveyAnswered = $surveyAnswered ?? false;
+        @endphp
+        <div class="module-screen" id="screen-survey">
+            <div class="mod-header">
+                <button class="mod-back" onclick="closeModule('survey')"><i data-lucide="arrow-left" class="lucide-icon"></i></button>
+                <div class="mod-header-title"><i data-lucide="clipboard-list" class="lucide-icon"></i> {{ $event->survey_title }}</div>
+            </div>
+            <div class="mod-body">
+                <style>
+                    .survey-q-num{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+                    .survey-q-text{font-size:16px;font-weight:700;line-height:1.4;margin-bottom:14px;word-break:break-word}
+                    .survey-req{color:#14b8a6}
+                    .survey-opts{margin-bottom:0}
+                    .survey-opt{width:100%;color:inherit;font:inherit;text-align:left}
+                    .survey-opt .v-name{flex:1;min-width:0;word-break:break-word}
+                    .survey-text{resize:vertical;min-height:84px;line-height:1.45}
+                    .survey-q.missing{border-color:#f87171}
+                </style>
+
+                <div id="surveyForm" @if ($surveyAnswered) style="display:none" @endif>
+                    <p class="section-title"><i data-lucide="clipboard-list" class="lucide-icon"></i> {{ $event->survey_title }}</p>
+                    <p class="section-desc">{{ $event->survey_desc }}</p>
+
+                    @forelse ($surveyQuestions as $question)
+                        <div class="glass survey-q" data-qid="{{ $question->id }}" data-type="{{ $question->type }}"
+                            data-required="{{ $question->is_required ? '1' : '0' }}">
+                            <div class="survey-q-num" data-en="Question {{ $loop->iteration }} of {{ $loop->count }}"
+                                data-de="Frage {{ $loop->iteration }} von {{ $loop->count }}">Question {{ $loop->iteration }} of {{ $loop->count }}</div>
+                            <p class="survey-q-text">{{ $question->question }}@if ($question->is_required)<span class="survey-req"> *</span>@endif</p>
+                            @if ($question->isChoice())
+                                <div class="vote-grid survey-opts">
+                                    @foreach ($question->optionList() as $option)
+                                        <button type="button" class="vote-card survey-opt" data-value="{{ $option }}"
+                                            aria-pressed="false" onclick="selectSurveyOption(this)">
+                                            <span class="v-name">{{ $option }}</span>
+                                            <span class="v-dot"></span>
+                                        </button>
+                                    @endforeach
+                                </div>
+                            @else
+                                <textarea class="field survey-text" rows="3" maxlength="{{ \App\Models\SurveyQuestion::MAX_ANSWER_LENGTH }}"
+                                    data-ph-en="Type your answer" data-ph-de="Deine Antwort" placeholder="Type your answer"></textarea>
+                            @endif
+                        </div>
+                    @empty
+                        <div class="glass" style="text-align:center;color:var(--muted)" data-en="The survey opens soon. Check back in a moment!"
+                            data-de="Die Umfrage startet gleich. Schau gleich wieder vorbei!">The survey opens soon. Check back in a moment!</div>
+                    @endforelse
+
+                    @if ($surveyQuestions->isNotEmpty())
+                        {!! $gdprSnippet('survey') !!}
+                        <button class="btn-main" id="surveyBtn" onclick="submitSurvey()">
+                            <span data-html data-en='<i data-lucide="send" class="lucide-icon"></i> Send Answers'
+                                data-de='<i data-lucide="send" class="lucide-icon"></i> Antworten senden'><i data-lucide="send" class="lucide-icon"></i> Send Answers</span>
+                        </button>
+                    @endif
+                </div>
+                <div class="success-state" id="surveySuccess" @unless ($surveyAnswered) style="display:none" @endunless>
+                    <div class="s-icon"><i data-lucide="clipboard-check" class="lucide-icon"></i></div>
+                    <h3 data-en="Thank you!" data-de="Danke!">Thank you!</h3>
+                    <p data-en="Your answers have been sent." data-de="Deine Antworten wurden gesendet.">Your answers have been sent.</p>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <div id="toast"></div>
 
     <script>
@@ -2298,6 +2373,53 @@ $fontH = $event->font_heading ?: 'Syne';
                 document.getElementById('memberSuccess').style.display = 'block';
                 setLang(lang);
             } else toast(d.message, true);
+        }
+
+        function selectSurveyOption(btn) {
+            btn.closest('.survey-opts').querySelectorAll('.survey-opt').forEach(o => {
+                o.classList.remove('sel');
+                o.setAttribute('aria-pressed', 'false');
+            });
+            btn.classList.add('sel');
+            btn.setAttribute('aria-pressed', 'true');
+            btn.closest('.survey-q').classList.remove('missing');
+        }
+
+        async function submitSurvey() {
+            const answers = {};
+            for (const q of document.querySelectorAll('#surveyForm .survey-q')) {
+                const value = q.dataset.type === 'choice' ?
+                    (q.querySelector('.survey-opt.sel')?.dataset.value || '') :
+                    q.querySelector('.survey-text').value.trim();
+                q.classList.toggle('missing', !value && q.dataset.required === '1');
+                if (q.classList.contains('missing')) {
+                    q.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    return toast(lang === 'de' ? 'Bitte beantworte alle Pflichtfragen (*).' :
+                        'Please answer all required questions (*).', true);
+                }
+                if (value) answers[q.dataset.qid] = value;
+            }
+            if (!Object.keys(answers).length) {
+                return toast(lang === 'de' ? 'Bitte beantworte mindestens eine Frage.' :
+                    'Please answer at least one question.', true);
+            }
+            if (!checkGdpr('survey')) return;
+            const btn = document.getElementById('surveyBtn');
+            btn.disabled = true;
+            try {
+                const d = await post(`/e/${SLUG}/survey`, { answers });
+                if (d.success) {
+                    document.getElementById('surveyForm').style.display = 'none';
+                    document.getElementById('surveySuccess').style.display = 'block';
+                    setLang(lang);
+                } else {
+                    toast(d.message || 'Could not send your answers.', true);
+                    btn.disabled = false;
+                }
+            } catch {
+                toast('Network error.', true);
+                btn.disabled = false;
+            }
         }
 
         function selectVote(card) {

@@ -247,6 +247,7 @@ trait CalculatesEventStatistics
             'membership' => ['Membership', $event->module_membership, fn () => $event->memberships()],
             'quiz' => ['Quiz', $event->module_quiz, fn () => $event->quizAnswers()],
             'fanclash' => ['Fan Clash', $event->module_fanclash, fn () => $event->fanClashParticipants()],
+            'survey' => ['Fan Survey', $event->module_survey, fn () => $event->surveyResponses()],
         ];
 
         $statistics = [];
@@ -292,6 +293,7 @@ trait CalculatesEventStatistics
             'membership' => fn () => $event->memberships(),
             'quiz' => fn () => $event->quizAnswers(),
             'fanclash' => fn () => $event->fanClashParticipants(),
+            'survey' => fn () => $event->surveyResponses(),
         ];
 
         foreach ($relations as $key => $relation) {

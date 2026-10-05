@@ -1207,6 +1207,12 @@
                     class="nav-item {{ request()->routeIs('admin.membership*') ? 'active' : '' }}">
                     <i class="ni-icon"><i data-lucide="star" class="lucide-icon"></i></i> Members
                 </a>
+                @if ($activeEvent->module_survey)
+                    <a href="{{ route('admin.survey.index', $activeEvent) }}"
+                        class="nav-item {{ request()->routeIs('admin.survey*') ? 'active' : '' }}">
+                        <i class="ni-icon"><i data-lucide="clipboard-list" class="lucide-icon"></i></i> Fan Survey
+                    </a>
+                @endif
                 <a href="{{ route('admin.statistics.index', $activeEvent) }}"
                     class="nav-item {{ request()->routeIs('admin.statistics*') ? 'active' : '' }}">
                     <i class="ni-icon"><i data-lucide="bar-chart-3" class="lucide-icon"></i></i> Statistics

@@ -71,6 +71,9 @@
         @if($event->module_fanclash)
         <a href="{{ route('moderator.fanclash.index', $event) }}" class="btn btn-secondary">Fan Clash</a>
         @endif
+        @if($event->module_survey)
+        <a href="{{ route('moderator.survey.index', $event) }}" class="btn btn-secondary">Fan Survey</a>
+        @endif
     </div>
 </div>
 

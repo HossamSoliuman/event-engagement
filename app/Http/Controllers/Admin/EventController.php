@@ -123,7 +123,7 @@ class EventController extends Controller
 
     public function toggleModule(Request $request, Event $event)
     {
-        $module = $request->validate(['module' => 'required|in:fotobomb,lottery,voting,membership,quiz,fanclash'])['module'];
+        $module = $request->validate(['module' => 'required|in:fotobomb,lottery,voting,membership,quiz,fanclash,survey'])['module'];
         $field = "module_{$module}";
         $event->update([$field => ! $event->$field]);
         ActivityLog::record('event.module_toggled', ['module' => $module, 'enabled' => $event->fresh()->$field], $event->id);
@@ -167,12 +167,14 @@ class EventController extends Controller
             'membership_title' => 'nullable|string|max:100',
             'quiz_title' => 'nullable|string|max:100',
             'fanclash_title' => 'nullable|string|max:100',
+            'survey_title' => 'nullable|string|max:100',
             'fotobomb_desc' => 'nullable|string|max:255',
             'lottery_desc' => 'nullable|string|max:255',
             'voting_desc' => 'nullable|string|max:255',
             'membership_desc' => 'nullable|string|max:255',
             'quiz_desc' => 'nullable|string|max:255',
             'fanclash_desc' => 'nullable|string|max:255',
+            'survey_desc' => 'nullable|string|max:255',
             'vidiwall_overlay_text' => 'nullable|string|max:255',
             'landing_style' => 'nullable|in:classic,clean',
             'landing_wordmark' => 'nullable|string|max:60',
@@ -201,6 +203,7 @@ class EventController extends Controller
             'tile_membership_image' => 'nullable|image|max:3072',
             'tile_quiz_image' => 'nullable|image|max:3072',
             'tile_fanclash_image' => 'nullable|image|max:3072',
+            'tile_survey_image' => 'nullable|image|max:3072',
         ]);
     }
 

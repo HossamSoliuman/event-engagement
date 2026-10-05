@@ -127,6 +127,7 @@
             'lottery.entered'      => '<i data-lucide="ticket" class="lucide-icon"></i>',
             'vote.cast'            => '<i data-lucide="check-square" class="lucide-icon"></i>',
             'membership.signup'    => '<i data-lucide="star" class="lucide-icon"></i>',
+            'survey.submitted'     => '<i data-lucide="clipboard-check" class="lucide-icon"></i>',
             'admin.login'          => '<i data-lucide="key" class="lucide-icon"></i>',
             'event.created'        => '<i data-lucide="calendar" class="lucide-icon"></i>',
             'event.updated'        => '<i data-lucide="edit-3" class="lucide-icon"></i>',

@@ -219,6 +219,12 @@
         </a>
         @endif
 
+        @if($event->module_survey)
+        <a href="{{ route('moderator.survey.index', $event) }}" class="nav-item {{ request()->routeIs('moderator.survey*') ? 'active' : '' }}">
+            <i class="ni-icon"><i data-lucide="clipboard-list" class="lucide-icon"></i></i> Fan Survey
+        </a>
+        @endif
+
         <a href="{{ route('moderator.statistics.index', $event) }}" class="nav-item {{ request()->routeIs('moderator.statistics*') ? 'active' : '' }}">
             <i class="ni-icon"><i data-lucide="bar-chart-3" class="lucide-icon"></i></i> Statistics
         </a>

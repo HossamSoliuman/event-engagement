@@ -299,7 +299,7 @@
                     </div>
                     <div class="card-body">
                         <div class="ev-grid-2">
-                            @foreach ([['fotobomb', '<i data-lucide="camera" class="lucide-icon"></i>', 'Foto Bomb'], ['lottery', '<i data-lucide="ticket" class="lucide-icon"></i>', 'Lottery'], ['voting', '<i data-lucide="trophy" class="lucide-icon"></i>', 'Voting'], ['membership', '<i data-lucide="star" class="lucide-icon"></i>', 'Membership'], ['quiz', '<i data-lucide="help-circle" class="lucide-icon"></i>', 'Quiz to Win'], ['fanclash', '<i data-lucide="swords" class="lucide-icon"></i>', 'Fan Clash']] as [$key, $ico, $def])
+                            @foreach ([['fotobomb', '<i data-lucide="camera" class="lucide-icon"></i>', 'Foto Bomb'], ['lottery', '<i data-lucide="ticket" class="lucide-icon"></i>', 'Lottery'], ['voting', '<i data-lucide="trophy" class="lucide-icon"></i>', 'Voting'], ['membership', '<i data-lucide="star" class="lucide-icon"></i>', 'Membership'], ['quiz', '<i data-lucide="help-circle" class="lucide-icon"></i>', 'Quiz to Win'], ['fanclash', '<i data-lucide="swords" class="lucide-icon"></i>', 'Fan Clash'], ['survey', '<i data-lucide="clipboard-list" class="lucide-icon"></i>', 'Fan Survey']] as [$key, $ico, $def])
                                 <div class="ev-subcard">
                                     <div class="ev-subcard-title">{!! $ico !!} {{ $def }}</div>
                                     <div class="form-group">

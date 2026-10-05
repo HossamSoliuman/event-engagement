@@ -36,18 +36,21 @@ class Event extends Model
         'module_membership',
         'module_quiz',
         'module_fanclash',
+        'module_survey',
         'fotobomb_title',
         'lottery_title',
         'voting_title',
         'membership_title',
         'quiz_title',
         'fanclash_title',
+        'survey_title',
         'fotobomb_desc',
         'lottery_desc',
         'voting_desc',
         'membership_desc',
         'quiz_desc',
         'fanclash_desc',
+        'survey_desc',
         'quiz_winner_text',
         'quiz_end_sponsor_logo_path',
         'voting_options',
@@ -77,6 +80,7 @@ class Event extends Model
         'tile_membership_config',
         'tile_quiz_config',
         'tile_fanclash_config',
+        'tile_survey_config',
         'lottery_extra_fields',
         'membership_extra_fields',
         'starts_at',
@@ -92,6 +96,7 @@ class Event extends Model
         'module_membership' => 'boolean',
         'module_quiz' => 'boolean',
         'module_fanclash' => 'boolean',
+        'module_survey' => 'boolean',
         'voting_closed' => 'boolean',
         'lottery_drawn' => 'boolean',
         'vidiwall_show_uploader' => 'boolean',
@@ -106,6 +111,7 @@ class Event extends Model
         'tile_membership_config' => 'array',
         'tile_quiz_config' => 'array',
         'tile_fanclash_config' => 'array',
+        'tile_survey_config' => 'array',
         'lottery_extra_fields' => 'array',
         'membership_extra_fields' => 'array',
     ];
@@ -193,6 +199,16 @@ class Event extends Model
     public function activeFanClashRound(): ?FanClashRound
     {
         return $this->fanClashRounds()->where('status', 'active')->latest()->first();
+    }
+
+    public function surveyQuestions(): HasMany
+    {
+        return $this->hasMany(SurveyQuestion::class)->orderBy('id');
+    }
+
+    public function surveyResponses(): HasMany
+    {
+        return $this->hasMany(SurveyResponse::class);
     }
 
     /**
@@ -441,6 +457,7 @@ class Event extends Model
             'membership' => 'crown',
             'quiz' => 'brain',
             'fanclash' => 'swords',
+            'survey' => 'clipboard-list',
         ];
     }
 
