@@ -644,7 +644,9 @@
         .ld-thumb-x:has(input:checked) { opacity:.45 }
 
         /* ── iPhone 16 preview ───────────────────────────────────────────── */
-        .ld-preview-col { position:sticky; top:78px }
+        /* Pinned below the topbar and above the save bar; scrolls on its own when the phone is taller than the window. */
+        .ld-preview-col { position:sticky; top:72px; max-height:calc(100vh - 160px); overflow-y:auto;
+            overscroll-behavior:contain; scrollbar-width:thin; border-radius:12px }
         .ld-preview-card { margin-bottom:0 }
         .ld-preview-head { display:flex; align-items:center; justify-content:space-between; gap:10px }
         .ld-preview-tools { display:flex; gap:5px }
@@ -677,7 +679,7 @@
 
         @media(max-width:1180px){
             .ld-layout { grid-template-columns:1fr }
-            .ld-preview-col { position:static; order:-1 }
+            .ld-preview-col { position:static; order:-1; max-height:none; overflow:visible }
             .ld-colors { grid-template-columns:1fr }
         }
     </style>

@@ -1096,7 +1096,7 @@ $fontH = $event->font_heading ?: 'Syne';
             opacity: .9
         }
 
-        .cl-grid .cl-card:nth-child(odd):last-child {
+        .cl-grid[data-cols="2"] .cl-card:nth-child(odd):last-child {
             grid-column: 1 / -1;
             aspect-ratio: calc(var(--cl-card-ratio, var(--cl-ratio, 1.42)) * 2.1)
         }
@@ -1354,7 +1354,7 @@ $fontH = $event->font_heading ?: 'Syne';
                     {!! $heroSub ? $emphasize($heroSub) : 'Be part of the show. <strong>Tap a tile</strong> to get started.' !!}</div>
             </div>
 
-            <div class="cl-grid">
+            <div class="cl-grid" data-cols="{{ (int) $ld['card_columns'] }}">
                 @foreach (\App\Models\Event::landingModules() as $mod => $iconName)
                     @continue(!$event->{'module_' . $mod})
                     @php
@@ -3018,6 +3018,10 @@ $fontH = $event->font_heading ?: 'Syne';
                 if (!d || d.__eb !== 'design') return;
 
                 applyVars(document.documentElement, d.root);
+
+                // The full-width orphan card only applies to the 2-column grid.
+                const grid = document.querySelector('.cl-grid');
+                if (grid && d.root && d.root['--cl-cols']) grid.dataset.cols = d.root['--cl-cols'];
 
                 for (const mod in (d.tiles || {})) {
                     applyVars(document.querySelector('.cl-card[data-mod="' + mod + '"]'), d.tiles[mod]);
