@@ -789,6 +789,10 @@ $fontH = $event->font_heading ?: 'Syne';
             margin-bottom: 14px
         }
 
+        .btn-main + .gdpr-box {
+            margin: 14px 0 0
+        }
+
         .gdpr-row {
             display: flex;
             align-items: flex-start;
@@ -1645,11 +1649,11 @@ $fontH = $event->font_heading ?: 'Syne';
                                 data-ph-de="z.B. Max aus Reihe D" placeholder="e.g. Ahmed from Row D"
                                 autocomplete="name">
                         </div>
-                        {!! $gdprSnippet('foto') !!}
                         <button class="btn-main" id="uploadBtn" onclick="submitFoto()" disabled>
                             <span id="uploadBtnText" data-en="Send to Vidiwall" data-de="Auf die Vidiwall">Send to
                                 Vidiwall</span>
                         </button>
+                        {!! $gdprSnippet('foto') !!}
                     </div>
                 </div>
                 <div class="success-state" id="fotoSuccess" style="display:none">
@@ -1699,10 +1703,10 @@ $fontH = $event->font_heading ?: 'Syne';
                                     placeholder="{{ $field['label'] }}" {{ $field['required'] ? 'required' : '' }}>
                             </div>
                         @endforeach
-                        {!! $gdprSnippet('lottery') !!}
                         <button class="btn-main" onclick="submitLottery()">
                             <span data-html data-en='<i data-lucide="ticket" class="lucide-icon"></i> Enter the Draw' data-de='<i data-lucide="ticket" class="lucide-icon"></i> Jetzt teilnehmen'><i data-lucide="ticket" class="lucide-icon"></i> Enter the Draw</span>
                         </button>
+                        {!! $gdprSnippet('lottery') !!}
                     </div>
                 </div>
                 <div class="success-state" id="lotterySuccess" style="display:none">
@@ -1754,10 +1758,10 @@ $fontH = $event->font_heading ?: 'Syne';
                         @endforeach
                     </div>
                     <div id="voteAction">
-                        {!! $gdprSnippet('vote') !!}
                         <button class="btn-main" id="voteBtn" onclick="submitVote()"> <span data-html
                                 data-en='<i data-lucide="check-square" class="lucide-icon"></i> Cast My Vote' data-de='<i data-lucide="check-square" class="lucide-icon"></i> Abstimmen'><i data-lucide="check-square" class="lucide-icon"></i> Cast My Vote</span>
                         </button>
+                        {!! $gdprSnippet('vote') !!}
                     </div>
                     <div class="success-state" id="voteSuccess" style="display:none">
                         <div class="s-icon"><i data-lucide="trophy" class="lucide-icon"></i></div>
@@ -1813,9 +1817,9 @@ $fontH = $event->font_heading ?: 'Syne';
                                 data-en="Subscribe to news &amp; offers"
                                 data-de="Newsletter &amp; Angebote erhalten">Subscribe to news &amp;
                                 offers</span></label>
-                        {!! $gdprSnippet('member') !!}
                         <button class="btn-main" onclick="submitMembership()"> <span data-html data-en='<i data-lucide="crown" class="lucide-icon"></i> Join Now'
                                 data-de='<i data-lucide="crown" class="lucide-icon"></i> Jetzt beitreten'><i data-lucide="crown" class="lucide-icon"></i> Join Now</span></button>
+                        {!! $gdprSnippet('member') !!}
                     </div>
                 </div>
                 <div class="success-state" id="memberSuccess" style="display:none">
@@ -2076,11 +2080,11 @@ $fontH = $event->font_heading ?: 'Syne';
                     @endforelse
 
                     @if ($surveyQuestions->isNotEmpty())
-                        {!! $gdprSnippet('survey') !!}
                         <button class="btn-main" id="surveyBtn" onclick="submitSurvey()">
                             <span data-html data-en='<i data-lucide="send" class="lucide-icon"></i> Send Answers'
                                 data-de='<i data-lucide="send" class="lucide-icon"></i> Antworten senden'><i data-lucide="send" class="lucide-icon"></i> Send Answers</span>
                         </button>
+                        {!! $gdprSnippet('survey') !!}
                     @endif
                 </div>
                 <div class="success-state" id="surveySuccess" @unless ($surveyAnswered) style="display:none" @endunless>
@@ -2164,6 +2168,7 @@ $fontH = $event->font_heading ?: 'Syne';
 
         function switchMedia(type) {
             currentMedia = type;
+            photoPickId++;
             const isPhoto = type === 'photo';
             document.getElementById('photoSection').style.display = isPhoto ? '' : 'none';
             document.getElementById('videoSection').style.display = isPhoto ? 'none' : '';
@@ -2184,15 +2189,64 @@ $fontH = $event->font_heading ?: 'Syne';
             document.getElementById('videoDurationError').style.display = 'none';
         }
 
-        document.getElementById('photoInput')?.addEventListener('change', e => {
+        /* Phone photos are 3–10 MB; the vidiwall never needs more than a 1920px edge,
+           so shrink and re-encode before upload. Falls back to the original on any failure. */
+        const PHOTO_MAX_EDGE = 1920,
+            PHOTO_QUALITY = 0.82,
+            PHOTO_SKIP_BYTES = 600 * 1024;
+        let photoPickId = 0;
+
+        async function compressPhoto(file) {
+            const url = URL.createObjectURL(file);
+            try {
+                const img = new Image();
+                img.src = url;
+                await img.decode();
+
+                const w = img.naturalWidth,
+                    h = img.naturalHeight;
+                const scale = Math.min(1, PHOTO_MAX_EDGE / Math.max(w, h));
+                if (scale === 1 && file.size <= PHOTO_SKIP_BYTES) return file;
+
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.round(w * scale);
+                canvas.height = Math.round(h * scale);
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', PHOTO_QUALITY));
+                if (!blob || blob.size >= file.size) return file;
+
+                const name = (file.name || 'photo').replace(/\.[^.]+$/, '') + '.jpg';
+                return new File([blob], name, {
+                    type: 'image/jpeg',
+                    lastModified: Date.now()
+                });
+            } catch {
+                return file;
+            } finally {
+                URL.revokeObjectURL(url);
+            }
+        }
+
+        document.getElementById('photoInput')?.addEventListener('change', async e => {
             const f = e.target.files[0];
             if (!f) return;
-            selFile = f;
+            const pickId = ++photoPickId;
+            const btn = document.getElementById('uploadBtn');
+            selFile = null;
+            btn.disabled = true;
             const p = document.getElementById('preview');
             p.src = URL.createObjectURL(f);
             p.classList.add('show');
             document.getElementById('uploadZone').style.display = 'none';
-            document.getElementById('uploadBtn').disabled = false;
+
+            const compressed = await compressPhoto(f);
+            if (pickId !== photoPickId || currentMedia !== 'photo') return;
+            selFile = compressed;
+            btn.disabled = false;
         });
 
         document.getElementById('videoInput')?.addEventListener('change', e => {
@@ -2252,6 +2306,10 @@ $fontH = $event->font_heading ?: 'Syne';
                     'Please accept the data protection agreement to continue.';
                 err.style.display = 'block';
                 box.style.borderColor = '#f87171';
+                cb.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
                 setTimeout(() => {
                     err.style.display = 'none';
                     box.style.borderColor = '';
@@ -2901,6 +2959,7 @@ $fontH = $event->font_heading ?: 'Syne';
         })();
 
         function resetFoto() {
+            photoPickId++;
             selFile = null;
             selVideo = null;
             selVideoDuration = null;

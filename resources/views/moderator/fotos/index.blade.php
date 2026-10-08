@@ -41,7 +41,7 @@
 
 @if($status === 'approved')
 <div class="alert alert-info" style="margin-bottom:16px">
-    Approved items play on the vidiwall automatically, once each, {{ \App\Models\FotoUpload::SCREEN_SECONDS }}s per photo (videos play through).
+    Approved items play on the vidiwall automatically, once each, {{ $event->vidiwall_photo_seconds }}s per photo (videos play through).
     <span id="queueSummary">@if($queued) <strong>{{ $queued }}</strong> waiting in the queue. @else The queue is empty &mdash; the screen shows the QR code. @endif</span>
     "Push Live" shows an item immediately, then the queue resumes.
 </div>

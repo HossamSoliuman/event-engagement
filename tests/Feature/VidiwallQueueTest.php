@@ -175,6 +175,101 @@ class VidiwallQueueTest extends TestCase
         $this->assertSame(8.5, $video->fresh()->screenSeconds());
     }
 
+    public function test_photo_slot_follows_the_event_autoplay_duration(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $event = Event::factory()->create(['vidiwall_photo_seconds' => 7]);
+        $foto = $this->upload($event, 'approved', ['approved_at' => now()->subMinute()]);
+
+        $this->getJson(route('vidiwall.feed', $event->slug))
+            ->assertJsonPath('foto.id', $foto->id)
+            ->assertJsonPath('foto.slot_ms', 7000);
+
+        $this->actingAs($admin)
+            ->getJson(route('admin.fotos.status', [$event, 'ids' => $foto->id]))
+            ->assertJsonPath('live.slot_ms', 7000);
+    }
+
+    public function test_server_expiry_uses_the_event_autoplay_duration(): void
+    {
+        $event = Event::factory()->create(['vidiwall_photo_seconds' => 10]);
+        $first = $this->upload($event, 'approved', ['approved_at' => now()->subMinutes(5)]);
+        $second = $this->upload($event, 'approved', ['approved_at' => now()->subMinutes(2)]);
+
+        Carbon::setTestNow('2026-09-18 12:00:00');
+        $this->getJson(route('vidiwall.feed', $event->slug))->assertJsonPath('foto.id', $first->id);
+
+        Carbon::setTestNow('2026-09-18 12:00:14');
+        $this->getJson(route('vidiwall.feed', $event->slug))->assertJsonPath('foto.id', $first->id);
+
+        Carbon::setTestNow('2026-09-18 12:00:16');
+        $this->getJson(route('vidiwall.feed', $event->slug))->assertJsonPath('foto.id', $second->id);
+    }
+
+    public function test_short_video_holds_the_screen_for_at_least_the_photo_duration(): void
+    {
+        $event = Event::factory()->create(['vidiwall_photo_seconds' => 6]);
+        $this->upload($event, 'approved', [
+            'media_type' => 'video',
+            'video_path' => 'fotos/clip.mp4',
+            'video_duration' => 2.5,
+            'approved_at' => now()->subMinute(),
+        ]);
+
+        $this->getJson(route('vidiwall.feed', $event->slug))->assertJsonPath('foto.slot_ms', 6000);
+    }
+
+    public function test_admin_can_set_the_autoplay_duration(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $event = Event::factory()->create();
+
+        $this->actingAs($admin)
+            ->put(route('admin.events.update', $event), $this->eventPayload($event, ['vidiwall_photo_seconds' => 12]))
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(12, $event->fresh()->vidiwall_photo_seconds);
+
+        $this->actingAs($admin)
+            ->get(route('admin.fotos.index', [$event, 'status' => 'approved']))
+            ->assertOk()
+            ->assertSee('12s per photo');
+    }
+
+    public function test_autoplay_duration_is_left_unchanged_when_not_submitted(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $event = Event::factory()->create(['vidiwall_photo_seconds' => 9]);
+
+        $this->actingAs($admin)
+            ->put(route('admin.events.update', $event), $this->eventPayload($event))
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(9, $event->fresh()->vidiwall_photo_seconds);
+    }
+
+    public function test_autoplay_duration_must_be_a_whole_number_between_1_and_60(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $event = Event::factory()->create(['vidiwall_photo_seconds' => 5]);
+
+        foreach (['', 0, 61, 2.5, 'abc'] as $invalid) {
+            $this->actingAs($admin)
+                ->put(route('admin.events.update', $event), $this->eventPayload($event, ['vidiwall_photo_seconds' => $invalid]))
+                ->assertSessionHasErrors('vidiwall_photo_seconds');
+        }
+
+        $this->assertSame(5, $event->fresh()->vidiwall_photo_seconds);
+    }
+
+    public function test_new_events_default_to_four_seconds(): void
+    {
+        $event = Event::factory()->create();
+
+        $this->assertSame(FotoUpload::SCREEN_SECONDS, $event->fresh()->vidiwall_photo_seconds);
+    }
+
     public function test_moderation_page_shows_queue_state(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
@@ -266,6 +361,19 @@ class VidiwallQueueTest extends TestCase
         $this->actingAs($moderator)
             ->getJson(route('moderator.fotos.status', $other))
             ->assertForbidden();
+    }
+
+    /**
+     * @param  array<string, mixed>  $overrides
+     * @return array<string, mixed>
+     */
+    private function eventPayload(Event $event, array $overrides = []): array
+    {
+        return array_merge([
+            'name' => $event->name,
+            'is_active' => 1,
+            'design' => Event::landingDesignDefaults(),
+        ], $overrides);
     }
 
     /**

@@ -220,6 +220,15 @@
                             event name and a large QR code. Fill in the frame text and branding below — leave a field blank
                             to hide that piece.</p>
 
+                        <div class="form-group" style="margin-bottom:16px;max-width:280px">
+                            <label class="form-label" for="vidiwall_photo_seconds">Photo Autoplay Duration (seconds)</label>
+                            <input type="number" name="vidiwall_photo_seconds" id="vidiwall_photo_seconds"
+                                class="form-control" min="1" max="60" step="1" required
+                                value="{{ old('vidiwall_photo_seconds', $event->vidiwall_photo_seconds ?? \App\Models\FotoUpload::SCREEN_SECONDS) }}">
+                            <div class="form-hint">How long each approved photo stays on the vidiwall before the next one.
+                                Videos always play to the end.</div>
+                        </div>
+
                         @php $fc = isset($event) ? $event->frameConfig() : (new \App\Models\Event)->frameConfig(); @endphp
                         <div class="form-row" style="margin-bottom:12px">
                             <div class="form-group mb-0">

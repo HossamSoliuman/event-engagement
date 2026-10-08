@@ -60,6 +60,7 @@ class Event extends Model
         'vidiwall_show_uploader',
         'vidiwall_slideshow_mode',
         'vidiwall_slideshow_interval',
+        'vidiwall_photo_seconds',
         'vidiwall_overlay_text',
         'vidiwall_frame_config',
         'landing_style',
@@ -101,6 +102,7 @@ class Event extends Model
         'lottery_drawn' => 'boolean',
         'vidiwall_show_uploader' => 'boolean',
         'vidiwall_slideshow_mode' => 'boolean',
+        'vidiwall_photo_seconds' => 'integer',
         'starts_at' => 'datetime',
         'ends_at' => 'datetime',
         'vidiwall_frame_config' => 'array',
@@ -370,6 +372,7 @@ class Event extends Model
             ->where('on_screen', true)
             ->orderByDesc('displayed_at')
             ->get()
+            ->each->setRelation('event', $this)
             ->filter(fn (FotoUpload $foto) => $foto->isLiveOnScreen())
             ->values();
     }
@@ -429,7 +432,8 @@ class Event extends Model
             ->where('status', 'approved')
             ->where('on_screen', true)
             ->latest('displayed_at')
-            ->first();
+            ->first()
+            ?->setRelation('event', $this);
 
         if ($current && $current->isLiveOnScreen() && $current->id !== $finishedFotoId) {
             return $current;
@@ -437,7 +441,7 @@ class Event extends Model
 
         $current?->removeFromScreen();
 
-        $next = $this->fotoUploads()->queuedForScreen()->first();
+        $next = $this->fotoUploads()->queuedForScreen()->first()?->setRelation('event', $this);
         $next?->pushToScreen();
 
         return $next;

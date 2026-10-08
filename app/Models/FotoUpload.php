@@ -14,7 +14,7 @@ class FotoUpload extends Model
     /** @var list<string> */
     public const MEDIA_COLUMNS = ['file_path', 'thumbnail_path', 'video_path'];
 
-    /** Seconds a photo holds the vidiwall before the queue advances. */
+    /** Default seconds a photo holds the vidiwall before the queue advances; events can override it. */
     public const SCREEN_SECONDS = 4;
 
     /** Extra seconds the server waits before expiring an item the screen never acknowledged. */
@@ -105,15 +105,17 @@ class FotoUpload extends Model
     }
 
     /**
-     * How long this item holds the screen: a fixed slot for photos, the clip length for videos.
+     * How long this item holds the screen: the event's photo slot for photos, the clip length for videos.
      */
     public function screenSeconds(): float
     {
+        $photoSeconds = (float) ($this->event?->vidiwall_photo_seconds ?: self::SCREEN_SECONDS);
+
         if ($this->isVideo() && $this->video_duration) {
-            return max((float) $this->video_duration, self::SCREEN_SECONDS);
+            return max((float) $this->video_duration, $photoSeconds);
         }
 
-        return self::SCREEN_SECONDS;
+        return $photoSeconds;
     }
 
     public function screenSlotMs(): int

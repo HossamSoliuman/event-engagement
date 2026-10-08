@@ -176,6 +176,7 @@ class EventController extends Controller
             'fanclash_desc' => 'nullable|string|max:255',
             'survey_desc' => 'nullable|string|max:255',
             'vidiwall_overlay_text' => 'nullable|string|max:255',
+            'vidiwall_photo_seconds' => 'sometimes|required|integer|min:1|max:60',
             'landing_style' => 'nullable|in:classic,clean',
             'landing_wordmark' => 'nullable|string|max:60',
             'landing_hero_title' => 'nullable|string|max:255',
