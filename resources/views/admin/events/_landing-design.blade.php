@@ -151,7 +151,7 @@
                         'suffix' => '%',
                         'var' => '--cl-bg-overlay',
                         'scale' => 0.01,
-                        'hint' => 'A dark veil over the photo. Push it up until the headline and buttons read clearly.',
+                        'hint' => 'A dark veil over the photo. Push it up until the headline and modules read clearly.',
                     ])
 
                     @include('admin.events._design-range', [
@@ -163,7 +163,7 @@
                         'suffix' => 'px',
                         'var' => '--cl-bg-blur',
                         'unit' => 'px',
-                        'hint' => 'Blurring a busy photo keeps the buttons the hero of the page.',
+                        'hint' => 'Blurring a busy photo keeps the modules the hero of the page.',
                     ])
 
                     @include('admin.events._design-range', [
@@ -233,14 +233,14 @@
                 </div>
             </details>
 
-            {{-- ── 4. Button grid ───────────────────────────────────────────── --}}
+            {{-- ── 4. Module grid ───────────────────────────────────────────── --}}
             <details class="ld-sec">
-                <summary><span class="ld-num">4</span> Button Grid <span class="ld-tag">applies to all 6</span> <i
+                <summary><span class="ld-num">4</span> Module Grid <span class="ld-tag">applies to all {{ count($ldModules) }}</span> <i
                         data-lucide="chevron-down" class="lucide-icon ld-chev"></i></summary>
                 <div class="ld-sec-body">
                     @include('admin.events._design-range', [
                         'name' => 'design[card_columns]',
-                        'label' => 'Buttons per row',
+                        'label' => 'Modules per row',
                         'value' => $ld['card_columns'],
                         'min' => 1,
                         'max' => 3,
@@ -248,17 +248,17 @@
                     ])
                     @include('admin.events._design-range', [
                         'name' => 'design[card_ratio]',
-                        'label' => 'Button shape',
+                        'label' => 'Module shape',
                         'value' => $ld['card_ratio'],
                         'min' => 0.7,
                         'max' => 2.4,
                         'step' => 0.02,
                         'var' => '--cl-ratio',
-                        'hint' => 'Low = tall buttons · High = wide, flat buttons.',
+                        'hint' => 'Low = tall modules · High = wide, flat modules.',
                     ])
                     @include('admin.events._design-range', [
                         'name' => 'design[card_gap]',
-                        'label' => 'Space between buttons',
+                        'label' => 'Space between modules',
                         'value' => $ld['card_gap'],
                         'min' => 0,
                         'max' => 40,
@@ -309,7 +309,7 @@
                 </div>
             </details>
 
-            {{-- ── 5-10. The six buttons ─────────────────────────────────────── --}}
+            {{-- ── 5+. One section per module ─────────────────────────────────────── --}}
             @foreach ($ldModules as $mod => [$modLabel, $modIcon])
                 @php
                     $tc = isset($event) ? $event->tileConfig($mod) : \App\Models\Event::tileConfigDefaults();
@@ -327,7 +327,7 @@
                     </summary>
                     <div class="ld-sec-body">
                         @unless ($isOn)
-                            <div class="ld-note ld-note-warn">This module is switched off, so the button is not shown on
+                            <div class="ld-note ld-note-warn">This module is switched off, so it is not shown on
                                 the landing page. Turn it on from the event dashboard.</div>
                         @endunless
 
@@ -361,7 +361,7 @@
                             'var' => '--cl-logo-scale',
                             'unit' => '%',
                             'scope' => $mod,
-                            'hint' => '100% ≈ half the button height. Push higher and the logo takes room from the text.',
+                            'hint' => '100% ≈ half the module height. Push higher and the logo takes room from the text.',
                         ])
 
                         <div class="ld-ctl">
@@ -370,7 +370,7 @@
                             <select class="form-control" id="tile_{{ $mod }}_logo_fit"
                                 name="tile_{{ $mod }}_logo_fit" data-dvar="--cl-fit" data-dscope="{{ $mod }}">
                                 <option value="contain" @selected(($tc['logo_fit'] ?? 'contain') === 'contain')>Show the whole logo</option>
-                                <option value="cover" @selected(($tc['logo_fit'] ?? 'contain') === 'cover')>Fill the button (crop)</option>
+                                <option value="cover" @selected(($tc['logo_fit'] ?? 'contain') === 'cover')>Fill the module (crop)</option>
                             </select>
                         </div>
 
@@ -484,7 +484,7 @@
 
             {{-- ── 11. Hashtag & footer ─────────────────────────────────────── --}}
             <details class="ld-sec">
-                <summary><span class="ld-num">11</span> Hashtag &amp; Footer <i data-lucide="chevron-down"
+                <summary><span class="ld-num">{{ count($ldModules) + 5 }}</span> Hashtag &amp; Footer <i data-lucide="chevron-down"
                         class="lucide-icon ld-chev"></i></summary>
                 <div class="ld-sec-body">
                     <label class="ld-switch">
