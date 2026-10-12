@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ReorderSurveyQuestionsRequest;
 use App\Http\Requests\StoreSurveyQuestionRequest;
 use App\Models\ActivityLog;
 use App\Models\Event;
@@ -10,6 +11,7 @@ use App\Models\SurveyAnswer;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -39,25 +41,50 @@ class SurveyController extends Controller
 
     public function storeQuestion(StoreSurveyQuestionRequest $request, Event $event): RedirectResponse
     {
-        $event->surveyQuestions()->create($request->questionAttributes());
+        $question = $event->surveyQuestions()->create(array_merge($request->questionAttributes(), [
+            'position' => (int) $event->surveyQuestions()->reorder()->max('position') + 1,
+        ]));
 
         ActivityLog::record('survey.question_added', ['event' => $event->name], $event->id);
 
-        return back()->with('success', 'Question added.');
+        return back()
+            ->with('success', 'Question '.$event->surveyQuestions()->count().' added.')
+            ->with('sv_highlight', $question->id)
+            ->with('sv_continue', true);
     }
 
     public function updateQuestion(StoreSurveyQuestionRequest $request, Event $event, SurveyQuestion $surveyQuestion): RedirectResponse
     {
         $surveyQuestion->update($request->questionAttributes());
 
-        return back()->with('success', 'Question updated.');
+        return back()
+            ->with('success', 'Question updated.')
+            ->with('sv_highlight', $surveyQuestion->id)
+            ->withFragment('sv-q-'.$surveyQuestion->id);
+    }
+
+    /**
+     * Saves the order the admin dragged the questions into. Positions are
+     * renumbered 1..n and only rows whose position changed are written.
+     */
+    public function reorderQuestions(ReorderSurveyQuestionsRequest $request, Event $event): JsonResponse
+    {
+        $positions = $event->surveyQuestions()->pluck('position', 'id');
+
+        foreach ($request->orderedIds() as $index => $id) {
+            if ((int) $positions->get($id) !== $index + 1) {
+                SurveyQuestion::query()->whereKey($id)->update(['position' => $index + 1]);
+            }
+        }
+
+        return response()->json(['success' => true]);
     }
 
     public function destroyQuestion(Event $event, SurveyQuestion $surveyQuestion): RedirectResponse
     {
         $surveyQuestion->delete();
 
-        return back()->with('success', 'Question removed.');
+        return back()->with('success', 'Question removed.')->withFragment('sv-questions');
     }
 
     public function resetResponses(Event $event): RedirectResponse
@@ -91,19 +118,29 @@ class SurveyController extends Controller
      * (even at zero) in their set order, followed by any value that is no longer
      * an option because the question was edited after fans answered.
      *
+     * "answered" counts fans, not picks, so on a several-answers question each
+     * option's percent is the share of fans who picked it and they can add up
+     * to more than 100%.
+     *
      * @param  Collection<int, SurveyQuestion>  $questions
      * @return array<int, array{answered: int, rows: list<array{label: string, count: int, percent: float}>}>
      */
     private function results(Collection $questions): array
     {
-        $tallies = SurveyAnswer::query()
-            ->whereIn('survey_question_id', $questions->pluck('id'))
+        $answers = SurveyAnswer::query()->whereIn('survey_question_id', $questions->pluck('id'));
+
+        $tallies = (clone $answers)
             ->selectRaw('survey_question_id, answer, COUNT(*) as total')
             ->groupBy('survey_question_id', 'answer')
             ->get()
             ->groupBy('survey_question_id');
 
-        return $questions->mapWithKeys(function (SurveyQuestion $question) use ($tallies) {
+        $respondents = (clone $answers)
+            ->selectRaw('survey_question_id, COUNT(DISTINCT survey_response_id) as total')
+            ->groupBy('survey_question_id')
+            ->pluck('total', 'survey_question_id');
+
+        return $questions->mapWithKeys(function (SurveyQuestion $question) use ($tallies, $respondents) {
             $counts = $tallies->get($question->id, collect())
                 ->mapWithKeys(fn (SurveyAnswer $row) => [$row->answer => (int) $row->total])
                 ->sortDesc();
@@ -114,7 +151,7 @@ class SurveyController extends Controller
                     ->union($counts);
             }
 
-            $answered = $counts->sum();
+            $answered = (int) $respondents->get($question->id, 0);
 
             return [$question->id => [
                 'answered' => $answered,
@@ -143,6 +180,7 @@ class SurveyController extends Controller
 
     /**
      * One row per fan, one column per question — opens straight into Excel.
+     * Several picks on one question share its cell, separated by semicolons.
      */
     private function responsesCsv(Event $event): StreamedResponse
     {
@@ -156,7 +194,9 @@ class SurveyController extends Controller
             $event->surveyResponses()->with('answers')->orderBy('id')->chunk(500, function (Collection $responses) use ($row, $questions, &$number) {
                 foreach ($responses as $response) {
                     /** @var SurveyResponse $response */
-                    $answers = $response->answers->pluck('answer', 'survey_question_id');
+                    $answers = $response->answers
+                        ->groupBy('survey_question_id')
+                        ->map(fn (Collection $picks) => $picks->pluck('answer')->implode('; '));
 
                     $row(array_merge(
                         [++$number, $response->created_at->format('Y-m-d H:i')],
@@ -182,7 +222,7 @@ class SurveyController extends Controller
             $row(['Question', 'Type', 'Answer', 'Count', 'Percent']);
 
             foreach ($questions as $question) {
-                $type = $question->isChoice() ? 'Multiple choice' : 'Free text';
+                $type = $question->answerTypeLabel();
                 $rows = $results[$question->id]['rows'];
 
                 if ($rows === []) {

@@ -37,12 +37,10 @@ class StoreSurveyQuestionRequest extends FormRequest
      */
     public function rules(): array
     {
-        $isChoice = $this->input('type') === SurveyQuestion::TYPE_CHOICE;
-
         return [
             'question' => ['required', 'string', 'max:255'],
-            'type' => ['required', Rule::in([SurveyQuestion::TYPE_CHOICE, SurveyQuestion::TYPE_TEXT])],
-            'options' => $isChoice
+            'type' => ['required', Rule::in(array_keys(SurveyQuestion::ANSWER_TYPES))],
+            'options' => $this->hasOptions()
                 ? ['array', 'min:'.SurveyQuestion::MIN_OPTIONS, 'max:'.SurveyQuestion::MAX_OPTIONS]
                 : ['array'],
             'options.*' => ['string', 'max:120'],
@@ -57,9 +55,9 @@ class StoreSurveyQuestionRequest extends FormRequest
     {
         return [
             'question.required' => 'Type the question fans should answer.',
-            'type.in' => 'Choose multiple choice or free text.',
-            'options.min' => 'A multiple-choice question needs at least '.SurveyQuestion::MIN_OPTIONS.' answer options.',
-            'options.max' => 'A multiple-choice question can have at most '.SurveyQuestion::MAX_OPTIONS.' answer options.',
+            'type.in' => 'Choose one answer, several answers or free text.',
+            'options.min' => 'A question with answer options needs at least '.SurveyQuestion::MIN_OPTIONS.' of them.',
+            'options.max' => 'A question can have at most '.SurveyQuestion::MAX_OPTIONS.' answer options.',
             'options.*.max' => 'Answer options can be at most 120 characters.',
         ];
     }
@@ -76,19 +74,35 @@ class StoreSurveyQuestionRequest extends FormRequest
     }
 
     /**
+     * Send a failed form back to where it sits on the page, not to the top.
+     */
+    protected function getRedirectUrl(): string
+    {
+        $question = $this->route('surveyQuestion');
+
+        return parent::getRedirectUrl().($question instanceof SurveyQuestion ? '#sv-q-'.$question->id : '#sv-add');
+    }
+
+    /**
      * The attributes to persist, normalised for the question type.
      *
-     * @return array{question: string, type: string, options: list<string>|null, is_required: bool}
+     * @return array{question: string, type: string, options: list<string>|null, allow_multiple: bool, is_required: bool}
      */
     public function questionAttributes(): array
     {
-        $type = $this->validated('type');
+        $hasOptions = $this->hasOptions();
 
         return [
             'question' => trim($this->validated('question')),
-            'type' => $type,
-            'options' => $type === SurveyQuestion::TYPE_CHOICE ? $this->validated('options') : null,
+            'type' => $hasOptions ? SurveyQuestion::TYPE_CHOICE : SurveyQuestion::TYPE_TEXT,
+            'options' => $hasOptions ? $this->validated('options') : null,
+            'allow_multiple' => $this->input('type') === SurveyQuestion::TYPE_MULTIPLE,
             'is_required' => $this->boolean('is_required'),
         ];
+    }
+
+    private function hasOptions(): bool
+    {
+        return in_array($this->input('type'), [SurveyQuestion::TYPE_CHOICE, SurveyQuestion::TYPE_MULTIPLE], true);
     }
 }

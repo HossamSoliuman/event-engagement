@@ -31,9 +31,18 @@ class SurveyController extends Controller
         $answers = [];
 
         foreach ($questions as $question) {
-            $value = trim((string) ($submitted[$question->id] ?? ''));
+            $submittedValue = $submitted[$question->id] ?? null;
 
-            if ($value === '') {
+            if (is_array($submittedValue) && ! $question->allowsMultiple()) {
+                return $this->reject("Please answer: {$question->question}");
+            }
+
+            $values = collect((array) $submittedValue)
+                ->map(fn ($value) => trim((string) $value))
+                ->filter(fn (string $value) => $value !== '')
+                ->unique();
+
+            if ($values->isEmpty()) {
                 if ($question->is_required) {
                     return $this->reject("Please answer: {$question->question}");
                 }
@@ -41,11 +50,17 @@ class SurveyController extends Controller
                 continue;
             }
 
-            if ($question->isChoice() && ! in_array($value, $question->optionList(), true)) {
-                return $this->reject("Please pick one of the options for: {$question->question}");
+            if ($question->isChoice()) {
+                if ($values->diff($question->optionList())->isNotEmpty()) {
+                    return $this->reject("Please pick one of the options for: {$question->question}");
+                }
+
+                $values = collect($question->optionList())->intersect($values);
             }
 
-            $answers[] = ['survey_question_id' => $question->id, 'answer' => $value];
+            foreach ($values as $value) {
+                $answers[] = ['survey_question_id' => $question->id, 'answer' => $value];
+            }
         }
 
         if ($answers === []) {
@@ -59,7 +74,7 @@ class SurveyController extends Controller
                 ->createMany($answers);
         });
 
-        ActivityLog::record('survey.submitted', ['answers' => count($answers)], $event->id);
+        ActivityLog::record('survey.submitted', ['answers' => collect($answers)->pluck('survey_question_id')->unique()->count()], $event->id);
 
         return response()->json(['success' => true, 'message' => 'Thanks for your feedback!']);
     }

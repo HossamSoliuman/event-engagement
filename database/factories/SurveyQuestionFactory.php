@@ -23,6 +23,7 @@ class SurveyQuestionFactory extends Factory
             'question' => rtrim(fake()->sentence(6), '.').'?',
             'type' => SurveyQuestion::TYPE_CHOICE,
             'options' => ['Great', 'Okay', 'Not for me'],
+            'allow_multiple' => false,
             'is_required' => true,
         ];
     }
@@ -32,6 +33,14 @@ class SurveyQuestionFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'type' => SurveyQuestion::TYPE_TEXT,
             'options' => null,
+        ]);
+    }
+
+    public function multiple(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'type' => SurveyQuestion::TYPE_CHOICE,
+            'allow_multiple' => true,
         ]);
     }
 

@@ -205,7 +205,7 @@ class Event extends Model
 
     public function surveyQuestions(): HasMany
     {
-        return $this->hasMany(SurveyQuestion::class)->orderBy('id');
+        return $this->hasMany(SurveyQuestion::class)->orderBy('position')->orderBy('id');
     }
 
     public function surveyResponses(): HasMany

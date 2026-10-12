@@ -130,6 +130,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('events/{event}/survey/questions', [SurveyAdminController::class, 'storeQuestion'])->name('survey.questions.store');
         Route::put('events/{event}/survey/questions/{surveyQuestion}', [SurveyAdminController::class, 'updateQuestion'])->scopeBindings()->name('survey.questions.update');
         Route::delete('events/{event}/survey/questions/{surveyQuestion}', [SurveyAdminController::class, 'destroyQuestion'])->scopeBindings()->name('survey.questions.destroy');
+        Route::put('events/{event}/survey/order', [SurveyAdminController::class, 'reorderQuestions'])->name('survey.questions.reorder');
         Route::post('events/{event}/survey/reset', [SurveyAdminController::class, 'resetResponses'])->name('survey.reset');
         Route::get('events/{event}/survey/export', [SurveyAdminController::class, 'export'])->name('survey.export');
 
@@ -215,6 +216,7 @@ Route::prefix('moderator')->name('moderator.')->middleware(['auth', 'event.moder
     Route::post('{event}/survey/questions', [ModeratorSurveyController::class, 'storeQuestion'])->name('survey.questions.store');
     Route::put('{event}/survey/questions/{surveyQuestion}', [ModeratorSurveyController::class, 'updateQuestion'])->scopeBindings()->name('survey.questions.update');
     Route::delete('{event}/survey/questions/{surveyQuestion}', [ModeratorSurveyController::class, 'destroyQuestion'])->scopeBindings()->name('survey.questions.destroy');
+    Route::put('{event}/survey/order', [ModeratorSurveyController::class, 'reorderQuestions'])->name('survey.questions.reorder');
     Route::post('{event}/survey/reset', [ModeratorSurveyController::class, 'resetResponses'])->name('survey.reset');
     Route::get('{event}/survey/export', [ModeratorSurveyController::class, 'export'])->name('survey.export');
 });

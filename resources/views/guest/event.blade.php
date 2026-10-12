@@ -2047,6 +2047,8 @@ $fontH = $event->font_heading ?: 'Syne';
                     .survey-opt .v-name{flex:1;min-width:0;word-break:break-word}
                     .survey-text{resize:vertical;min-height:84px;line-height:1.45}
                     .survey-q.missing{border-color:#f87171}
+                    .survey-q[data-multiple="1"] .v-dot{border-radius:6px;display:flex;align-items:center;justify-content:center}
+                    .survey-q[data-multiple="1"] .survey-opt.sel .v-dot::after{content:'';width:5px;height:10px;border:solid var(--on-p);border-width:0 2px 2px 0;transform:translateY(-1px) rotate(45deg)}
                 </style>
 
                 <div id="surveyForm" @if ($surveyAnswered) style="display:none" @endif>
@@ -2054,10 +2056,14 @@ $fontH = $event->font_heading ?: 'Syne';
                     <p class="section-desc">{{ $event->survey_desc }}</p>
 
                     @forelse ($surveyQuestions as $question)
+                        @php
+                            $surveyNumEn = "Question {$loop->iteration} of {$loop->count}" . ($question->allowsMultiple() ? ' · Pick all that apply' : '');
+                            $surveyNumDe = "Frage {$loop->iteration} von {$loop->count}" . ($question->allowsMultiple() ? ' · Mehrere Antworten möglich' : '');
+                        @endphp
                         <div class="glass survey-q" data-qid="{{ $question->id }}" data-type="{{ $question->type }}"
+                            data-multiple="{{ $question->allowsMultiple() ? '1' : '0' }}"
                             data-required="{{ $question->is_required ? '1' : '0' }}">
-                            <div class="survey-q-num" data-en="Question {{ $loop->iteration }} of {{ $loop->count }}"
-                                data-de="Frage {{ $loop->iteration }} von {{ $loop->count }}">Question {{ $loop->iteration }} of {{ $loop->count }}</div>
+                            <div class="survey-q-num" data-en="{{ $surveyNumEn }}" data-de="{{ $surveyNumDe }}">{{ $surveyNumEn }}</div>
                             <p class="survey-q-text">{{ $question->question }}@if ($question->is_required)<span class="survey-req"> *</span>@endif</p>
                             @if ($question->isChoice())
                                 <div class="vote-grid survey-opts">
@@ -2434,28 +2440,32 @@ $fontH = $event->font_heading ?: 'Syne';
         }
 
         function selectSurveyOption(btn) {
-            btn.closest('.survey-opts').querySelectorAll('.survey-opt').forEach(o => {
-                o.classList.remove('sel');
-                o.setAttribute('aria-pressed', 'false');
-            });
-            btn.classList.add('sel');
-            btn.setAttribute('aria-pressed', 'true');
-            btn.closest('.survey-q').classList.remove('missing');
+            const q = btn.closest('.survey-q');
+            const on = q.dataset.multiple === '1' ? !btn.classList.contains('sel') : true;
+            if (q.dataset.multiple !== '1') {
+                q.querySelectorAll('.survey-opt').forEach(o => {
+                    o.classList.remove('sel');
+                    o.setAttribute('aria-pressed', 'false');
+                });
+            }
+            btn.classList.toggle('sel', on);
+            btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+            q.classList.remove('missing');
         }
 
         async function submitSurvey() {
             const answers = {};
             for (const q of document.querySelectorAll('#surveyForm .survey-q')) {
-                const value = q.dataset.type === 'choice' ?
-                    (q.querySelector('.survey-opt.sel')?.dataset.value || '') :
-                    q.querySelector('.survey-text').value.trim();
-                q.classList.toggle('missing', !value && q.dataset.required === '1');
+                const picked = [...q.querySelectorAll('.survey-opt.sel')].map(o => o.dataset.value);
+                const value = q.dataset.type !== 'choice' ? q.querySelector('.survey-text').value.trim() :
+                    (q.dataset.multiple === '1' ? picked : (picked[0] || ''));
+                q.classList.toggle('missing', !value.length && q.dataset.required === '1');
                 if (q.classList.contains('missing')) {
                     q.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     return toast(lang === 'de' ? 'Bitte beantworte alle Pflichtfragen (*).' :
                         'Please answer all required questions (*).', true);
                 }
-                if (value) answers[q.dataset.qid] = value;
+                if (value.length) answers[q.dataset.qid] = value;
             }
             if (!Object.keys(answers).length) {
                 return toast(lang === 'de' ? 'Bitte beantworte mindestens eine Frage.' :
@@ -2481,7 +2491,7 @@ $fontH = $event->font_heading ?: 'Syne';
         }
 
         function selectVote(card) {
-            document.querySelectorAll('.vote-card').forEach(c => c.classList.remove('sel'));
+            document.querySelectorAll('#screen-voting .vote-card').forEach(c => c.classList.remove('sel'));
             card.classList.add('sel');
             selCandidate = card.dataset.cand;
         }
@@ -2498,7 +2508,7 @@ $fontH = $event->font_heading ?: 'Syne';
             if (d.success) {
                 if (d.tallies) {
                     const total = Object.values(d.tallies).reduce((a, b) => a + b, 0);
-                    document.querySelectorAll('.vote-card').forEach(c => {
+                    document.querySelectorAll('#screen-voting .vote-card').forEach(c => {
                         const cnt = d.tallies[c.dataset.cand] || 0;
                         c.querySelector('.v-fill').style.width = (total > 0 ? Math.round((cnt / total) *
                                 100) :

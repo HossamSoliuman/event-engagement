@@ -14,7 +14,8 @@ class SubmitSurveyRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Each answer is a string, or a list of picked options for a question
+     * that allows several answers. The controller checks which shape fits.
      *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
@@ -22,7 +23,8 @@ class SubmitSurveyRequest extends FormRequest
     {
         return [
             'answers' => ['required', 'array'],
-            'answers.*' => ['nullable', 'string', 'max:'.SurveyQuestion::MAX_ANSWER_LENGTH],
+            'answers.*' => ['nullable', 'max:'.SurveyQuestion::MAX_ANSWER_LENGTH],
+            'answers.*.*' => ['string', 'max:120'],
         ];
     }
 
@@ -34,6 +36,8 @@ class SubmitSurveyRequest extends FormRequest
         return [
             'answers.required' => 'Please answer the survey before sending it.',
             'answers.*.max' => 'Answers can be at most '.SurveyQuestion::MAX_ANSWER_LENGTH.' characters.',
+            'answers.*.*.string' => 'Please pick from the listed options.',
+            'answers.*.*.max' => 'Please pick from the listed options.',
         ];
     }
 }
