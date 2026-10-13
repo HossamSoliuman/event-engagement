@@ -285,7 +285,7 @@ class VidiwallQueueTest extends TestCase
         $this->getJson(route('vidiwall.feed', $event->slug))->assertJsonPath('foto.id', $second->id);
     }
 
-    public function test_short_video_holds_the_screen_for_at_least_the_photo_duration(): void
+    public function test_short_video_plays_for_its_own_length_not_the_photo_duration(): void
     {
         $event = Event::factory()->create(['vidiwall_photo_seconds' => 6]);
         $this->upload($event, 'approved', [
@@ -296,7 +296,7 @@ class VidiwallQueueTest extends TestCase
 
         $event->player()->play();
 
-        $this->getJson(route('vidiwall.feed', $event->slug))->assertJsonPath('foto.slot_ms', 6000);
+        $this->getJson(route('vidiwall.feed', $event->slug))->assertJsonPath('foto.slot_ms', 2500);
     }
 
     public function test_admin_can_set_the_autoplay_duration(): void

@@ -572,6 +572,267 @@ class VidiwallPlayerTest extends TestCase
         $this->assertSame(1, VidiwallPlayer::query()->where('event_id', $this->event->id)->count());
     }
 
+    public function test_play_while_playing_keeps_the_item_running(): void
+    {
+        $first = $this->upload();
+        $this->upload();
+
+        Carbon::setTestNow('2026-10-12 20:00:00');
+        $revision = $this->actingAs($this->admin)->postJson(route('admin.player.play', $this->event))->json('player.revision');
+
+        Carbon::setTestNow('2026-10-12 20:00:02');
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.play', $this->event))
+            ->assertJsonPath('now_playing.id', $first->id)
+            ->assertJsonPath('player.elapsed_ms', 2000)
+            ->assertJsonPath('player.revision', $revision);
+    }
+
+    public function test_pausing_after_the_item_ran_out_moves_on_when_resumed(): void
+    {
+        $first = $this->upload();
+        $second = $this->upload();
+
+        Carbon::setTestNow('2026-10-12 20:00:00');
+        $this->event->player()->play();
+
+        Carbon::setTestNow('2026-10-12 20:00:06');
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.pause', $this->event))
+            ->assertJsonPath('player.state', 'paused')
+            ->assertJsonPath('now_playing.id', $first->id)
+            ->assertJsonPath('player.elapsed_ms', 4000);
+
+        Carbon::setTestNow('2026-10-12 20:01:00');
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.play', $this->event))
+            ->assertJsonPath('player.state', 'playing')
+            ->assertJsonPath('now_playing.id', $second->id)
+            ->assertJsonPath('player.elapsed_ms', 0);
+    }
+
+    public function test_previous_on_the_first_item_restarts_it(): void
+    {
+        $first = $this->upload();
+        $this->upload();
+
+        Carbon::setTestNow('2026-10-12 20:00:00');
+        $revision = $this->actingAs($this->admin)->postJson(route('admin.player.play', $this->event))->json('player.revision');
+
+        Carbon::setTestNow('2026-10-12 20:00:03');
+        $response = $this->actingAs($this->admin)
+            ->postJson(route('admin.player.previous', $this->event))
+            ->assertJsonPath('now_playing.id', $first->id)
+            ->assertJsonPath('player.state', 'playing')
+            ->assertJsonPath('player.elapsed_ms', 0);
+
+        $this->assertGreaterThan($revision, $response->json('player.revision'));
+    }
+
+    public function test_previous_on_the_first_item_wraps_to_the_last_when_looping(): void
+    {
+        $this->upload();
+        $this->upload();
+        $last = $this->upload();
+        $this->event->player()->setLoop(true);
+        $this->event->player()->play();
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.previous', $this->event))
+            ->assertJsonPath('now_playing.id', $last->id)
+            ->assertJsonPath('player.state', 'playing');
+    }
+
+    public function test_a_single_looping_item_replays_after_the_screen_reports_it_done(): void
+    {
+        $only = $this->upload();
+        $this->event->player()->setLoop(true);
+
+        Carbon::setTestNow('2026-10-12 20:00:00');
+        $this->event->player()->play();
+        $revision = $this->getJson(route('vidiwall.feed', $this->event->slug))->json('revision');
+
+        Carbon::setTestNow('2026-10-12 20:00:04');
+        $response = $this->getJson(route('vidiwall.feed', ['slug' => $this->event->slug, 'done' => $only->id, 'rev' => $revision]))
+            ->assertJsonPath('state', 'playing')
+            ->assertJsonPath('foto.id', $only->id)
+            ->assertJsonPath('elapsed_ms', 0)
+            ->assertJsonPath('next', null);
+
+        $this->assertGreaterThan($revision, $response->json('revision'));
+    }
+
+    public function test_a_repeated_done_report_moves_on_only_once(): void
+    {
+        $first = $this->upload();
+        $second = $this->upload();
+        $this->upload();
+
+        $this->event->player()->play();
+        $revision = $this->getJson(route('vidiwall.feed', $this->event->slug))->json('revision');
+        $done = ['slug' => $this->event->slug, 'done' => $first->id, 'rev' => $revision];
+
+        $this->getJson(route('vidiwall.feed', $done))->assertJsonPath('foto.id', $second->id);
+        $this->getJson(route('vidiwall.feed', $done))->assertJsonPath('foto.id', $second->id);
+    }
+
+    public function test_a_done_report_while_paused_is_ignored(): void
+    {
+        $first = $this->upload();
+        $this->upload();
+
+        $this->event->player()->play();
+        $revision = $this->getJson(route('vidiwall.feed', $this->event->slug))->json('revision');
+        $this->event->player()->pause();
+
+        $this->getJson(route('vidiwall.feed', ['slug' => $this->event->slug, 'done' => $first->id, 'rev' => $revision]))
+            ->assertJsonPath('state', 'paused')
+            ->assertJsonPath('foto.id', $first->id);
+
+        $paused = $this->event->player()->fresh();
+        $this->getJson(route('vidiwall.feed', ['slug' => $this->event->slug, 'done' => $first->id, 'rev' => $paused->revision]))
+            ->assertJsonPath('state', 'paused')
+            ->assertJsonPath('foto.id', $first->id);
+    }
+
+    public function test_a_video_moves_on_as_soon_as_the_screen_reports_it_done(): void
+    {
+        $video = $this->upload('approved', null, ['media_type' => 'video', 'video_path' => 'fotos/clip.mp4', 'video_duration' => 8]);
+        $photo = $this->upload();
+
+        Carbon::setTestNow('2026-10-12 20:00:00');
+        $this->event->player()->play();
+        $revision = $this->getJson(route('vidiwall.feed', $this->event->slug))->assertJsonPath('foto.slot_ms', 8000)->json('revision');
+
+        Carbon::setTestNow('2026-10-12 20:00:07');
+        $this->getJson(route('vidiwall.feed', ['slug' => $this->event->slug, 'done' => $video->id, 'rev' => $revision]))
+            ->assertJsonPath('foto.id', $photo->id);
+    }
+
+    public function test_photo_seconds_leave_the_video_slot_alone(): void
+    {
+        $this->upload('approved', null, ['media_type' => 'video', 'video_path' => 'fotos/clip.mp4', 'video_duration' => 3]);
+        $this->event->player()->play();
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.photo-seconds', $this->event), ['seconds' => 20])
+            ->assertJsonPath('player.photo_seconds', 20)
+            ->assertJsonPath('now_playing.slot_ms', 3000);
+    }
+
+    public function test_lengthening_photo_seconds_while_paused_keeps_the_position(): void
+    {
+        $first = $this->upload();
+        $second = $this->upload();
+
+        Carbon::setTestNow('2026-10-12 20:00:00');
+        $this->event->player()->play();
+
+        Carbon::setTestNow('2026-10-12 20:00:02.500');
+        $this->event->player()->pause();
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.photo-seconds', $this->event), ['seconds' => 10])
+            ->assertJsonPath('player.state', 'paused')
+            ->assertJsonPath('player.elapsed_ms', 2500)
+            ->assertJsonPath('now_playing.slot_ms', 10000);
+
+        Carbon::setTestNow('2026-10-12 20:01:00');
+        $this->actingAs($this->admin)->postJson(route('admin.player.play', $this->event));
+
+        Carbon::setTestNow('2026-10-12 20:01:07.400');
+        $this->getJson(route('vidiwall.feed', $this->event->slug))->assertJsonPath('foto.id', $first->id);
+
+        Carbon::setTestNow('2026-10-12 20:01:07.500');
+        $this->getJson(route('vidiwall.feed', $this->event->slug))->assertJsonPath('foto.id', $second->id);
+    }
+
+    public function test_shortening_photo_seconds_below_the_paused_position_moves_on_when_resumed(): void
+    {
+        $this->event->update(['vidiwall_photo_seconds' => 10]);
+        $this->upload();
+        $second = $this->upload();
+
+        Carbon::setTestNow('2026-10-12 20:00:00');
+        $this->event->player()->play();
+
+        Carbon::setTestNow('2026-10-12 20:00:06');
+        $this->event->player()->pause();
+
+        $this->actingAs($this->admin)->postJson(route('admin.player.photo-seconds', $this->event), ['seconds' => 3]);
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.play', $this->event))
+            ->assertJsonPath('player.state', 'playing')
+            ->assertJsonPath('now_playing.id', $second->id);
+    }
+
+    public function test_next_while_paused_on_the_last_item_wraps_paused_when_looping(): void
+    {
+        $first = $this->upload();
+        $last = $this->upload();
+        $this->event->player()->setLoop(true);
+        $this->event->player()->playFrom($last);
+        $this->event->player()->pause();
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.next', $this->event))
+            ->assertJsonPath('player.state', 'paused')
+            ->assertJsonPath('now_playing.id', $first->id)
+            ->assertJsonPath('player.elapsed_ms', 0);
+    }
+
+    public function test_play_from_while_paused_starts_playing(): void
+    {
+        $this->upload();
+        $second = $this->upload();
+        $this->event->player()->play();
+        $this->event->player()->pause();
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.play-from', [$this->event, $second]))
+            ->assertJsonPath('player.state', 'playing')
+            ->assertJsonPath('now_playing.id', $second->id);
+    }
+
+    public function test_rejecting_the_paused_item_cues_the_next_one_paused(): void
+    {
+        $first = $this->upload();
+        $second = $this->upload();
+        $this->event->player()->play();
+        $this->event->player()->pause();
+
+        $this->actingAs($this->admin)->postJson(route('admin.fotos.reject', $first))->assertOk();
+
+        $this->getJson(route('vidiwall.feed', $this->event->slug))
+            ->assertJsonPath('state', 'paused')
+            ->assertJsonPath('foto.id', $second->id)
+            ->assertJsonPath('elapsed_ms', 0);
+    }
+
+    public function test_feed_names_the_item_due_next_so_the_screen_can_load_it_early(): void
+    {
+        $first = $this->upload();
+        $second = $this->upload();
+
+        $this->getJson(route('vidiwall.feed', $this->event->slug))->assertJsonPath('next.id', $first->id);
+
+        $this->event->player()->play();
+        $this->getJson(route('vidiwall.feed', $this->event->slug))
+            ->assertJsonPath('foto.id', $first->id)
+            ->assertJsonPath('next.id', $second->id)
+            ->assertJsonPath('next.media_type', 'photo');
+
+        $this->event->player()->next();
+        $this->getJson(route('vidiwall.feed', $this->event->slug))->assertJsonPath('next', null);
+
+        $this->event->player()->setLoop(true);
+        $this->getJson(route('vidiwall.feed', $this->event->slug))->assertJsonPath('next.id', $first->id);
+
+        $this->event->player()->stop();
+        $this->getJson(route('vidiwall.feed', $this->event->slug))->assertJsonPath('next.id', $first->id);
+    }
+
     /**
      * @return list<int>
      */

@@ -136,13 +136,11 @@ class FotoUpload extends Model
      */
     public function screenSeconds(): float
     {
-        $photoSeconds = (float) ($this->event?->vidiwall_photo_seconds ?: self::SCREEN_SECONDS);
-
         if ($this->isVideo() && $this->video_duration) {
-            return max((float) $this->video_duration, $photoSeconds);
+            return (float) $this->video_duration;
         }
 
-        return $photoSeconds;
+        return (float) ($this->event?->vidiwall_photo_seconds ?: self::SCREEN_SECONDS);
     }
 
     public function screenSlotMs(): int

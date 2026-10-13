@@ -221,6 +221,8 @@
             let shownKey = null;
             let clock = { id: null, elapsed: 0, slot: 0, at: 0 };
             let seq = 0;
+            let pending = 0;
+            let commands = Promise.resolve();
             let last = null;
             let drag = null;
             let msgTimer = null;
@@ -441,7 +443,8 @@
             const secondsInput = $('vpSeconds');
             let savedSeconds = Number(secondsInput.value);
             let secondsTimer = null;
-            let secondsSaving = false;
+            let secondsSaving = 0;
+            let requestedSeconds = null;
             let savedTimer = null;
 
             function clampSeconds(value) {
@@ -470,13 +473,17 @@
                 const seconds = secondsInput.value === '' || !Number.isFinite(raw) ? savedSeconds : clampSeconds(raw);
                 secondsInput.value = seconds;
                 paintSeconds(seconds);
-                if (seconds === savedSeconds) {
+                if (seconds === (secondsSaving ? requestedSeconds : savedSeconds)) {
                     return;
                 }
-                secondsSaving = true;
+                requestedSeconds = seconds;
+                secondsSaving++;
                 const data = await send(URLS.photoSeconds, 'POST', { seconds });
-                secondsSaving = false;
-                if (document.activeElement !== secondsInput && !secondsTimer) {
+                secondsSaving--;
+                if (data) {
+                    savedSeconds = data.player.photo_seconds;
+                }
+                if (document.activeElement !== secondsInput && !secondsTimer && !secondsSaving) {
                     secondsInput.value = savedSeconds;
                     paintSeconds(savedSeconds);
                 }
@@ -537,17 +544,43 @@
                 return id === undefined ? null : itemsById.get(id) || null;
             }
 
-            async function send(url, method = 'POST', body = {}) {
+            /**
+             * Sends one press. Presses go out one after another in the order they
+             * were made, so a quick pause and play cannot reach the server the
+             * other way round.
+             */
+            function send(url, method = 'POST', body = {}) {
                 const mine = ++seq;
+                pending++;
+                const run = async () => {
+                    let outcome = { data: null, synced: false };
+                    try {
+                        outcome = await request(url, method, body, mine);
+                    } finally {
+                        pending--;
+                    }
+                    if (!outcome.synced && mine === seq) {
+                        poll();
+                    }
+                    return outcome.data;
+                };
+                const result = commands.then(run, run);
+                commands = result;
+                return result;
+            }
+
+            /** Answers the server's data (null when the press failed) and whether it came with a snapshot to render. */
+            async function request(url, method, body, mine) {
                 try {
                     const response = await fetch(url, {
                         method,
                         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF },
                         body: JSON.stringify({ ...body, v: version }),
+                        signal: window.AbortSignal?.timeout ? AbortSignal.timeout(10000) : undefined,
                     });
                     if (response.status === 419) {
                         flashMessage('Your session expired. Reload the page.');
-                        return null;
+                        return { data: null, synced: false };
                     }
                     const data = await response.json().catch(() => ({}));
                     if (data.player && mine === seq) {
@@ -556,21 +589,18 @@
                     if (mine === seq || !response.ok) {
                         flashMessage(data.message || (response.ok ? '' : 'That did not work. Try again.'));
                     }
-                    if (!data.player && mine === seq) {
-                        poll();
-                    }
-                    return response.ok ? data : null;
+                    return { data: response.ok ? data : null, synced: !!data.player };
                 } catch (e) {
                     flashMessage('No connection to the server.');
-                    if (mine === seq) {
-                        poll();
-                    }
-                    return null;
+                    return { data: null, synced: false };
                 }
             }
 
-            /** A poll is dropped when a press happened while it was in flight, so a stale answer never undoes the press. */
+            /** Skipped while presses are on their way, and dropped when a press happened while it was in flight, so a stale answer never undoes a press. */
             async function poll() {
+                if (pending) {
+                    return;
+                }
                 const mine = seq;
                 try {
                     const response = await fetch(URLS.status + '?v=' + encodeURIComponent(drag ? '' : version), {
@@ -579,7 +609,7 @@
                     });
                     if (response.ok) {
                         const data = await response.json();
-                        if (mine === seq) {
+                        if (mine === seq && !pending) {
                             render(data);
                         }
                     }

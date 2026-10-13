@@ -20,7 +20,8 @@ class VidiwallController extends Controller
      * Vidiwall poll. The screen passes `done=<id>&rev=<revision>` when the item it
      * was showing has finished so the playlist advances on the screen's clock
      * rather than the poll tick. `elapsed_ms` lets a screen that joins mid-item
-     * (or resumes after a pause) pick up where the player is.
+     * (or resumes after a pause) pick up where the player is, and `next` is the
+     * item due after this one so the screen can load it in advance.
      */
     public function feed(Request $request, string $slug)
     {
@@ -57,6 +58,7 @@ class VidiwallController extends Controller
             $request->has('rev') ? $request->integer('rev') : null,
         );
         $onScreen = $player?->screenFoto();
+        $upNext = $player ? $player->upNext() : $event->playlist()->first();
 
         return response()->json([
             'mode' => 'player',
@@ -71,6 +73,12 @@ class VidiwallController extends Controller
                 'uploader' => $onScreen->uploader_name,
                 'displayed_at' => $onScreen->displayed_at,
                 'slot_ms' => $onScreen->screenSlotMs(),
+            ] : null,
+            'next' => $upNext ? [
+                'id' => $upNext->id,
+                'media_type' => $upNext->media_type,
+                'url' => $upNext->file_url,
+                'video_url' => $upNext->video_url,
             ] : null,
             'show_uploader' => $event->vidiwall_show_uploader,
             'overlay_text' => $event->vidiwall_overlay_text,

@@ -112,6 +112,22 @@ class VidiwallPlayer extends Model
     }
 
     /**
+     * The item that plays after the current one, or the top of the playlist while
+     * stopped, so the screen can load it before it is due.
+     */
+    public function upNext(): ?FotoUpload
+    {
+        $current = $this->isStopped() ? null : $this->foto;
+
+        if (! $current) {
+            return $this->playlist()->first();
+        }
+
+        return $this->playlist()->afterInPlaylist($current)->first()
+            ?? ($this->loop ? $this->playlist()->whereKeyNot($current->id)->first() : null);
+    }
+
+    /**
      * Starts from the top of the playlist when stopped and resumes when paused.
      * Returns false when the playlist is empty.
      */
@@ -407,6 +423,9 @@ class VidiwallPlayer extends Model
     /**
      * Applies a change to the freshest copy of the player under a row lock, so
      * the screen and several operators polling at once cannot double-advance.
+     * The lock is claimed with a write before anything is read: SQLite has no
+     * row locks and fails a transaction that reads and then writes when another
+     * write got in between, while one that writes first waits its turn.
      *
      * @template TReturn
      *
@@ -418,6 +437,7 @@ class VidiwallPlayer extends Model
         $event = $this->event;
 
         [$fresh, $result] = DB::transaction(function () use ($change, $event): array {
+            static::query()->whereKey($this->id)->toBase()->update(['revision' => DB::raw('revision')]);
             $fresh = static::query()->lockForUpdate()->findOrFail($this->id)->setRelation('event', $event);
             $result = $change($fresh);
 

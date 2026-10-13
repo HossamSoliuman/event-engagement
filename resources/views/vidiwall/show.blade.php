@@ -729,6 +729,8 @@
         let pollSeq = 0;
         let playerRev = null;
         let playerState = null;
+        let pendingDone = null;
+        let preloaded = { url: null, media: null };
 
         function setBackground(url) {
             document.getElementById('stageBg').style.backgroundImage = url ? `url('${url}')` : '';
@@ -761,6 +763,7 @@
             document.getElementById('videoBadge').style.display = 'none';
 
             const liveVideo = document.getElementById('liveVideo');
+            liveVideo.onerror = null;
             liveVideo.pause();
             liveVideo.src = '';
 
@@ -794,8 +797,9 @@
 
             const frame = document.getElementById('videoFrame');
             const liveVideo = document.getElementById('liveVideo');
-            liveVideo.src = videoUrl;
             liveVideo.onended = onEnded || null;
+            liveVideo.onerror = onEnded || null;
+            liveVideo.src = videoUrl;
             if (autoplay) {
                 liveVideo.play().catch(() => {});
             }
@@ -819,6 +823,7 @@
             slideFotos = [];
             clearTimeout(slideTimer);
             clearTimeout(queueTimer);
+            document.getElementById('liveVideo').onerror = null;
             document.getElementById('liveVideo').pause();
             document.getElementById('liveVideo').src = '';
         }
@@ -879,7 +884,36 @@
 
         /* ── Player: the operator's playlist drives the screen. The screen times
               the current item from the server's elapsed time and reports it
-              done (with the revision it was showing) so the next one comes up. ── */
+              done (with the revision it was showing) so the next one comes up.
+              The report rides along on every poll until the server has moved
+              on, so a request lost on the way does not hold the item up. ── */
+        function preloadNext(item) {
+            const isVideo = !!(item && item.media_type === 'video' && item.video_url);
+            const url = item ? (isVideo ? item.video_url : item.url) : null;
+            if (url === preloaded.url) {
+                return;
+            }
+            if (preloaded.media instanceof HTMLVideoElement) {
+                preloaded.media.removeAttribute('src');
+                preloaded.media.load();
+            }
+            preloaded = { url, media: null };
+            if (!url) {
+                return;
+            }
+            if (isVideo) {
+                const video = document.createElement('video');
+                video.muted = true;
+                video.preload = 'auto';
+                video.src = url;
+                preloaded.media = video;
+            } else {
+                const img = new Image();
+                img.src = url;
+                preloaded.media = img;
+            }
+        }
+
         function runQueueProgress(fromMs, slotMs) {
             const progress = document.getElementById('slideProgress');
             progress.style.display = 'block';
@@ -894,10 +928,15 @@
             lastFotoId = null;
             playerRev = null;
             playerState = null;
+            pendingDone = null;
         }
 
         function applyPlayer(data) {
             const foto = data.foto;
+
+            if (pendingDone && (!foto || foto.id !== pendingDone.id || data.revision !== pendingDone.rev)) {
+                pendingDone = null;
+            }
 
             if (!foto || data.state === 'stopped') {
                 if (lastFotoId !== null || playerState !== 'stopped') {
@@ -929,7 +968,8 @@
                 if (acked) return;
                 acked = true;
                 clearTimeout(queueTimer);
-                poll(foto.id, revision);
+                pendingDone = { id: foto.id, rev: revision };
+                poll();
             };
 
             if (foto.media_type === 'video' && foto.video_url) {
@@ -941,6 +981,7 @@
                     showVideo(foto.video_url + startAt, foto.uploader, undefined, undefined, finish, playing);
                 } else {
                     video.onended = finish;
+                    video.onerror = finish;
                     if (Math.abs(video.currentTime * 1000 - elapsed) > 1500) {
                         video.currentTime = elapsed / 1000;
                     }
@@ -966,11 +1007,12 @@
             }
         }
 
-        async function poll(doneId, doneRev) {
+        async function poll() {
             if (clashActive) return;
             const seq = ++pollSeq;
+            const done = pendingDone;
             try {
-                const url = `/screen/${SLUG}/feed` + (doneId ? `?done=${doneId}&rev=${doneRev}` : '');
+                const url = `/screen/${SLUG}/feed` + (done ? `?done=${done.id}&rev=${done.rev}` : '');
                 const res = await fetch(url, { cache: 'no-store', signal: window.AbortSignal?.timeout ? AbortSignal.timeout(5000) : undefined });
                 const data = await res.json();
                 if (seq !== pollSeq) return;
@@ -989,6 +1031,7 @@
                 } else {
                     clearTimeout(slideTimer);
                     applyPlayer(data);
+                    preloadNext(data.next);
                 }
             } catch (e) {}
         }
