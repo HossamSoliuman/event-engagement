@@ -6,84 +6,53 @@ use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Event;
 use App\Models\FotoUpload;
+use App\Traits\ServesFotoQueue;
 use App\Traits\StagesMediaFiles;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class FotoModerationController extends Controller
 {
-    use StagesMediaFiles;
+    use ServesFotoQueue, StagesMediaFiles;
 
-    public function index(Event $event, Request $request)
+    public function index(Event $event, Request $request): View|JsonResponse
     {
-        $status = $request->get('status', 'pending');
-
-        $fotos = $event->fotoUploads()
-            ->where('status', $status)
-            ->latest()
-            ->paginate(24);
-
-        $counts = [
-            'pending' => $event->fotoUploads()->where('status', 'pending')->count(),
-            'approved' => $event->fotoUploads()->where('status', 'approved')->count(),
-            'rejected' => $event->fotoUploads()->where('status', 'rejected')->count(),
-        ];
-
-        $onScreen = $event->getOnScreenFotos()->first();
-        $queued = $event->getQueuedFotosCount();
-
-        return view('moderator.fotos.index', compact('event', 'fotos', 'status', 'counts', 'onScreen', 'queued'));
+        return $this->showFotoQueue($request, $event, 'moderator.fotos.index');
     }
 
-    /**
-     * Live snapshot of the vidiwall queue, polled by the moderation page so the
-     * live card, queue count and card states follow the screen in real time.
-     * `ids` lists the cards on the page whose state should be included.
-     */
     public function status(Event $event, Request $request): JsonResponse
     {
-        $ids = array_values(array_filter(array_map('intval', explode(',', (string) $request->query('ids', '')))));
-
-        return response()->json($event->screenQueueStatus($ids));
+        return $this->fotoQueueSnapshot($request, $event);
     }
 
-    public function approve(Event $event, FotoUpload $foto)
+    public function approve(Request $request, Event $event, FotoUpload $foto): JsonResponse|RedirectResponse
     {
         $foto->approve(auth()->id());
         ActivityLog::record('foto.approved', ['foto_id' => $foto->id, 'uploader' => $foto->uploader_name], $foto->event_id);
 
-        return back()->with('success', 'Approved and queued for the vidiwall.');
+        return $this->fotoActionResponse($request, $event, 'Approved and added to the playlist.');
     }
 
-    public function reject(Request $request, Event $event, FotoUpload $foto)
+    public function reject(Request $request, Event $event, FotoUpload $foto): JsonResponse|RedirectResponse
     {
         $foto->reject($request->input('note'));
         ActivityLog::record('foto.rejected', ['foto_id' => $foto->id], $foto->event_id);
 
-        return back()->with('success', 'Rejected.');
+        return $this->fotoActionResponse($request, $event, 'Rejected.');
     }
 
-    public function pushToScreen(Event $event, FotoUpload $foto)
-    {
-        if (! $foto->isApproved()) {
-            $foto->approve(auth()->id());
-        }
-        $foto->pushToScreen();
-        ActivityLog::record('foto.pushed_to_screen', ['foto_id' => $foto->id, 'uploader' => $foto->uploader_name], $foto->event_id);
-
-        return back()->with('success', 'Now LIVE on the vidiwall!');
-    }
-
-    public function removeFromScreen(Event $event, FotoUpload $foto)
+    public function removeFromScreen(Request $request, Event $event, FotoUpload $foto): JsonResponse|RedirectResponse
     {
         $foto->removeFromScreen();
         ActivityLog::record('foto.removed_from_screen', ['foto_id' => $foto->id], $foto->event_id);
 
-        return back()->with('success', 'Removed from screen.');
+        return $this->fotoActionResponse($request, $event, 'Removed from screen.');
     }
 
-    public function destroy(Event $event, FotoUpload $foto)
+    public function destroy(Request $request, Event $event, FotoUpload $foto): JsonResponse|RedirectResponse
     {
         Storage::disk('media')->delete($foto->file_path);
         if ($foto->thumbnail_path) {
@@ -95,12 +64,13 @@ class FotoModerationController extends Controller
         $foto->delete();
         ActivityLog::record('foto.deleted', ['foto_id' => $foto->id], $foto->event_id);
 
-        return back()->with('success', 'Deleted.');
+        return $this->fotoActionResponse($request, $event, 'Deleted.');
     }
 
     public function export(Event $event)
     {
         $fotos = $event->fotoUploads()->get();
+        $onScreenId = $event->onScreenFotoId();
         $csv = "ID,Uploader Name,Phone,Media Type,Duration (s),Status,On Screen,Uploaded At\n";
         foreach ($fotos as $f) {
             $csv .= implode(',', [
@@ -110,7 +80,7 @@ class FotoModerationController extends Controller
                 $f->media_type,
                 $f->video_duration ?? '',
                 $f->status,
-                $f->on_screen ? 'Yes' : 'No',
+                $f->id === $onScreenId ? 'Yes' : 'No',
                 $f->created_at->format('Y-m-d H:i'),
             ])."\n";
         }

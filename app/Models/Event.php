@@ -6,6 +6,7 @@ use App\Traits\ReferencesMediaFiles;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
@@ -121,6 +122,55 @@ class Event extends Model
     public function fotoUploads()
     {
         return $this->hasMany(FotoUpload::class);
+    }
+
+    /**
+     * Approved uploads in the order the vidiwall plays them.
+     */
+    public function playlist(): HasMany
+    {
+        return $this->fotoUploads()->inPlaylist();
+    }
+
+    public function vidiwallPlayer(): HasOne
+    {
+        return $this->hasOne(VidiwallPlayer::class);
+    }
+
+    /**
+     * The event's vidiwall player, created stopped the first time it is needed.
+     */
+    public function player(): VidiwallPlayer
+    {
+        $player = $this->vidiwallPlayer ?? $this->vidiwallPlayer()->createOrFirst([]);
+        $player->setRelation('event', $this);
+        $this->setRelation('vidiwallPlayer', $player);
+
+        return $player;
+    }
+
+    /**
+     * Lets the player move on if its current item is done, then returns it.
+     * Null when no one has used the player for this event yet (it is stopped).
+     */
+    public function syncPlayer(?int $finishedFotoId = null, ?int $finishedRevision = null): ?VidiwallPlayer
+    {
+        $player = $this->vidiwallPlayer?->setRelation('event', $this);
+        $player?->sync($finishedFotoId, $finishedRevision);
+
+        return $player;
+    }
+
+    public function onScreenFoto(): ?FotoUpload
+    {
+        return $this->vidiwallPlayer?->setRelation('event', $this)->screenFoto();
+    }
+
+    public function onScreenFotoId(): ?int
+    {
+        $player = $this->vidiwallPlayer;
+
+        return $player && ! $player->isStopped() ? $player->foto_upload_id : null;
     }
 
     public function lotteryEntries()
@@ -339,6 +389,25 @@ class Event extends Model
         return $this->fotoUploads()->where('status', 'pending')->count();
     }
 
+    /**
+     * Uploads per moderation status, for the Foto Queue tabs.
+     *
+     * @return array{pending: int, approved: int, rejected: int}
+     */
+    public function fotoStatusCounts(): array
+    {
+        $totals = $this->fotoUploads()
+            ->selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        return [
+            'pending' => (int) ($totals['pending'] ?? 0),
+            'approved' => (int) ($totals['approved'] ?? 0),
+            'rejected' => (int) ($totals['rejected'] ?? 0),
+        ];
+    }
+
     public function getVoteTallies(): array
     {
         return $this->votes()->selectRaw('candidate_name, candidate_slug, COUNT(*) as total')->groupBy('candidate_name', 'candidate_slug')->orderByDesc('total')->get()->toArray();
@@ -365,35 +434,24 @@ class Event extends Model
         $this->update(['lottery_drawn' => false, 'lottery_winner_id' => null]);
     }
 
-    public function getOnScreenFotos()
-    {
-        return $this->fotoUploads()
-            ->where('status', 'approved')
-            ->where('on_screen', true)
-            ->orderByDesc('displayed_at')
-            ->get()
-            ->each->setRelation('event', $this)
-            ->filter(fn (FotoUpload $foto) => $foto->isLiveOnScreen())
-            ->values();
-    }
-
     public function getQueuedFotosCount(): int
     {
         return $this->fotoUploads()->queuedForScreen()->count();
     }
 
     /**
-     * Snapshot of the vidiwall queue for the moderation pages, which poll it to
-     * stay in sync with the screen. `$fotoIds` are the cards currently rendered.
+     * Snapshot of the vidiwall for the moderation pages, which poll it to stay
+     * in sync with the screen. `$fotoIds` are the cards currently rendered.
      *
      * @param  array<int, int>  $fotoIds
      * @return array{live: array<string, mixed>|null, queued: int, counts: array<string, int>, items: array<int, array<string, mixed>>}
      */
     public function screenQueueStatus(array $fotoIds = []): array
     {
-        $live = $this->getOnScreenFotos()->first();
+        $player = $this->vidiwallPlayer;
+        $live = $this->onScreenFoto();
 
-        $items = $fotoIds === [] ? collect() : $this->fotoUploads()->whereIn('id', $fotoIds)->get();
+        $items = $fotoIds === [] ? collect() : $this->fotoUploads()->whereIn('id', $fotoIds)->get()->each->setRelation('event', $this);
 
         return [
             'live' => $live ? [
@@ -402,49 +460,22 @@ class Event extends Model
                 'is_video' => $live->isVideo(),
                 'video_duration' => $live->video_duration ? round((float) $live->video_duration, 1) : null,
                 'thumbnail_url' => $live->thumbnail_url,
-                'displayed_human' => $live->displayed_at?->diffForHumans(),
+                'state' => $player->state,
+                'revision' => $player->revision,
                 'screen_seconds' => $live->screenSeconds(),
                 'slot_ms' => $live->screenSlotMs(),
-                'elapsed_ms' => max(0, now()->getTimestampMs() - $live->displayed_at->getTimestampMs()),
+                'elapsed_ms' => $player->elapsedMs(),
             ] : null,
+            'player_state' => $player?->state ?? VidiwallPlayer::STATE_STOPPED,
             'queued' => $this->getQueuedFotosCount(),
-            'counts' => [
-                'pending' => $this->fotoUploads()->where('status', 'pending')->count(),
-                'approved' => $this->fotoUploads()->where('status', 'approved')->count(),
-                'rejected' => $this->fotoUploads()->where('status', 'rejected')->count(),
-            ],
+            'counts' => $this->fotoStatusCounts(),
             'items' => $items->map(fn (FotoUpload $foto) => [
                 'id' => $foto->id,
                 'state' => $foto->screenState(),
                 'shown_human' => $foto->displayed_at?->diffForHumans(),
+                'shown_ms' => $foto->displayed_at?->getTimestampMs(),
             ])->values()->all(),
         ];
-    }
-
-    /**
-     * What the vidiwall should show right now. Holds the current item while its
-     * slot is running (or until the screen reports it finished), then pops the
-     * next approved item off the queue. Returns null when the queue is empty.
-     */
-    public function resolveOnScreenFoto(?int $finishedFotoId = null): ?FotoUpload
-    {
-        $current = $this->fotoUploads()
-            ->where('status', 'approved')
-            ->where('on_screen', true)
-            ->latest('displayed_at')
-            ->first()
-            ?->setRelation('event', $this);
-
-        if ($current && $current->isLiveOnScreen() && $current->id !== $finishedFotoId) {
-            return $current;
-        }
-
-        $current?->removeFromScreen();
-
-        $next = $this->fotoUploads()->queuedForScreen()->first()?->setRelation('event', $this);
-        $next?->pushToScreen();
-
-        return $next;
     }
 
     /**

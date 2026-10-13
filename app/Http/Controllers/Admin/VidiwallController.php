@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Event;
+use App\Models\VidiwallPlayer;
 use Illuminate\Http\Request;
 
 class VidiwallController extends Controller
@@ -16,8 +17,10 @@ class VidiwallController extends Controller
     }
 
     /**
-     * Vidiwall poll. The screen passes `done=<id>` when the item it was showing has
-     * finished so the queue advances on the screen's clock rather than the poll tick.
+     * Vidiwall poll. The screen passes `done=<id>&rev=<revision>` when the item it
+     * was showing has finished so the playlist advances on the screen's clock
+     * rather than the poll tick. `elapsed_ms` lets a screen that joins mid-item
+     * (or resumes after a pause) pick up where the player is.
      */
     public function feed(Request $request, string $slug)
     {
@@ -49,10 +52,17 @@ class VidiwallController extends Controller
             ]);
         }
 
-        $onScreen = $event->resolveOnScreenFoto($request->integer('done') ?: null);
+        $player = $event->syncPlayer(
+            $request->integer('done') ?: null,
+            $request->has('rev') ? $request->integer('rev') : null,
+        );
+        $onScreen = $player?->screenFoto();
 
         return response()->json([
-            'mode' => 'queue',
+            'mode' => 'player',
+            'state' => $player?->state ?? VidiwallPlayer::STATE_STOPPED,
+            'revision' => $player?->revision ?? 0,
+            'elapsed_ms' => $onScreen ? $player->elapsedMs() : 0,
             'foto' => $onScreen ? [
                 'id' => $onScreen->id,
                 'media_type' => $onScreen->media_type,
@@ -62,7 +72,6 @@ class VidiwallController extends Controller
                 'displayed_at' => $onScreen->displayed_at,
                 'slot_ms' => $onScreen->screenSlotMs(),
             ] : null,
-            'queued' => $event->getQueuedFotosCount(),
             'show_uploader' => $event->vidiwall_show_uploader,
             'overlay_text' => $event->vidiwall_overlay_text,
             'primary_color' => $event->primary_color,

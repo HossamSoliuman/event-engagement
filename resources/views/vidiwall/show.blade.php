@@ -650,7 +650,7 @@
             </div>
 
             <div class="video-frame" id="videoFrame" style="display:none">
-                <video id="liveVideo" src="" autoplay muted playsinline></video>
+                <video id="liveVideo" src="" muted playsinline preload="auto"></video>
             </div>
 
             <div class="uploader" id="uploaderTag" style="display:none">
@@ -727,6 +727,8 @@
         let slideFotos = [];
         let queueTimer = null;
         let pollSeq = 0;
+        let playerRev = null;
+        let playerState = null;
 
         function setBackground(url) {
             document.getElementById('stageBg').style.backgroundImage = url ? `url('${url}')` : '';
@@ -780,7 +782,7 @@
             setBackground(url);
         }
 
-        function showVideo(videoUrl, name, slideNum, total, onEnded) {
+        function showVideo(videoUrl, name, slideNum, total, onEnded, autoplay = true) {
             document.getElementById('idleState').style.display = 'none';
             document.getElementById('photoFrame').style.display = 'none';
             document.getElementById('liveBadge').style.display = 'none';
@@ -794,7 +796,9 @@
             const liveVideo = document.getElementById('liveVideo');
             liveVideo.src = videoUrl;
             liveVideo.onended = onEnded || null;
-            liveVideo.play().catch(() => {});
+            if (autoplay) {
+                liveVideo.play().catch(() => {});
+            }
             frame.style.display = 'block';
 
             setBackground(null);
@@ -873,49 +877,101 @@
             nextSlide();
         }
 
-        /* ── Queue: each approved item plays once, then the screen tells the
-              server it is done so the next one (or the QR idle) comes up. ── */
-        function runQueueProgress(ms) {
+        /* ── Player: the operator's playlist drives the screen. The screen times
+              the current item from the server's elapsed time and reports it
+              done (with the revision it was showing) so the next one comes up. ── */
+        function runQueueProgress(fromMs, slotMs) {
             const progress = document.getElementById('slideProgress');
             progress.style.display = 'block';
             progress.style.transition = 'none';
-            progress.style.width = '0%';
+            progress.style.width = Math.min(100, fromMs / slotMs * 100) + '%';
             progress.offsetHeight;
-            progress.style.transition = `width ${ms}ms linear`;
+            progress.style.transition = `width ${Math.max(0, slotMs - fromMs)}ms linear`;
             progress.style.width = '100%';
         }
 
-        function showQueueItem(foto) {
+        function resetPlayerView() {
+            lastFotoId = null;
+            playerRev = null;
+            playerState = null;
+        }
+
+        function applyPlayer(data) {
+            const foto = data.foto;
+
+            if (!foto || data.state === 'stopped') {
+                if (lastFotoId !== null || playerState !== 'stopped') {
+                    showIdle();
+                }
+                playerState = 'stopped';
+                playerRev = data.revision;
+                return;
+            }
+
+            if (foto.id === lastFotoId && data.revision === playerRev) {
+                return;
+            }
+
             clearTimeout(queueTimer);
+
+            const isNewItem = foto.id !== lastFotoId;
+            const revision = data.revision;
+            const elapsed = data.elapsed_ms || 0;
+            const slot = foto.slot_ms || 4000;
+            const playing = data.state === 'playing';
+
             lastFotoId = foto.id;
+            playerRev = revision;
+            playerState = data.state;
 
             let acked = false;
             const finish = () => {
                 if (acked) return;
                 acked = true;
                 clearTimeout(queueTimer);
-                poll(foto.id);
+                poll(foto.id, revision);
             };
 
-            const slot = foto.slot_ms || 4000;
-
             if (foto.media_type === 'video' && foto.video_url) {
+                const video = document.getElementById('liveVideo');
                 document.getElementById('slideProgress').style.display = 'none';
-                showVideo(foto.video_url, foto.uploader, undefined, undefined, finish);
-                queueTimer = setTimeout(finish, slot + 3000);
+
+                if (isNewItem) {
+                    const startAt = elapsed > 500 ? '#t=' + (elapsed / 1000).toFixed(1) : '';
+                    showVideo(foto.video_url + startAt, foto.uploader, undefined, undefined, finish, playing);
+                } else {
+                    video.onended = finish;
+                    if (Math.abs(video.currentTime * 1000 - elapsed) > 1500) {
+                        video.currentTime = elapsed / 1000;
+                    }
+                }
+
+                if (playing) {
+                    video.play().catch(() => {});
+                    queueTimer = setTimeout(finish, Math.max(0, slot - elapsed) + 3000);
+                } else {
+                    video.pause();
+                }
             } else {
-                showPhoto(foto.url, foto.uploader);
-                runQueueProgress(slot);
-                queueTimer = setTimeout(finish, slot);
+                if (isNewItem) {
+                    showPhoto(foto.url, foto.uploader);
+                }
+
+                if (playing) {
+                    runQueueProgress(elapsed, slot);
+                    queueTimer = setTimeout(finish, Math.max(0, slot - elapsed));
+                } else {
+                    document.getElementById('slideProgress').style.display = 'none';
+                }
             }
         }
 
-        async function poll(doneId) {
+        async function poll(doneId, doneRev) {
             if (clashActive) return;
             const seq = ++pollSeq;
             try {
-                const url = `/screen/${SLUG}/feed` + (doneId ? `?done=${doneId}` : '');
-                const res = await fetch(url);
+                const url = `/screen/${SLUG}/feed` + (doneId ? `?done=${doneId}&rev=${doneRev}` : '');
+                const res = await fetch(url, { cache: 'no-store', signal: window.AbortSignal?.timeout ? AbortSignal.timeout(5000) : undefined });
                 const data = await res.json();
                 if (seq !== pollSeq) return;
 
@@ -932,18 +988,17 @@
                     }
                 } else {
                     clearTimeout(slideTimer);
-
-                    if (data.foto && data.foto.id !== lastFotoId) {
-                        showQueueItem(data.foto);
-                    } else if (!data.foto) {
-                        showIdle();
-                    }
+                    applyPlayer(data);
                 }
             } catch (e) {}
         }
 
-        poll();
-        setInterval(() => poll(), 3000);
+        /* Polls again shortly after each answer, so play and pause from the
+           operator's remote reach the screen within a fraction of a second. */
+        (async function pollLoop() {
+            await poll();
+            setTimeout(pollLoop, 400);
+        })();
 
         /* ── Fan Clash rope: fast poll while a round is live ──────── */
         (function () {
@@ -1047,7 +1102,7 @@
                         clashActive = false;
                         overlay.style.display = 'none';
                         winner.style.display = 'none';
-                        lastFotoId = null;
+                        resetPlayerView();
                         slideFotos = [];
                         poll();
                     }

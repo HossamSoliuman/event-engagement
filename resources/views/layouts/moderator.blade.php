@@ -199,9 +199,9 @@
         </a>
 
         <div class="sb-label">Manage</div>
-        <a href="{{ route('moderator.fotos.index', $event) }}" class="nav-item {{ request()->routeIs('moderator.fotos*') ? 'active' : '' }}">
+        <a href="{{ route('moderator.fotos.index', $event) }}" class="nav-item {{ request()->routeIs('moderator.fotos*', 'moderator.player*') ? 'active' : '' }}">
             <i class="ni-icon"><i data-lucide="camera" class="lucide-icon"></i></i> Foto Queue
-            @if(isset($pendingCount) && $pendingCount > 0)<span class="nav-badge">{{ $pendingCount }}</span>@endif
+            <span class="nav-badge" data-pending-badge="{{ $event->id }}" @if(($pendingCount ?? 0) === 0) style="display:none" @endif>{{ $pendingCount ?? 0 }}</span>
         </a>
         @if($event->module_lottery)
         <a href="{{ route('moderator.lottery.index', $event) }}" class="nav-item {{ request()->routeIs('moderator.lottery*') ? 'active' : '' }}">

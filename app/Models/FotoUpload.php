@@ -22,7 +22,14 @@ class FotoUpload extends Model
 
     protected $fillable = ['event_id', 'visitor_id', 'file_path', 'thumbnail_path', 'video_path', 'media_type', 'video_duration', 'original_filename', 'file_size', 'mime_type', 'uploader_name', 'uploader_phone', 'uploader_session', 'status', 'on_screen', 'display_order', 'admin_note', 'approved_at', 'displayed_at', 'approved_by'];
 
-    protected $casts = ['on_screen' => 'boolean', 'approved_at' => 'datetime', 'displayed_at' => 'datetime', 'video_duration' => 'float'];
+    protected $casts = ['on_screen' => 'boolean', 'display_order' => 'integer', 'approved_at' => 'datetime', 'displayed_at' => 'datetime', 'video_duration' => 'float'];
+
+    protected static function booted(): void
+    {
+        static::deleting(function (FotoUpload $foto) {
+            VidiwallPlayer::query()->where('foto_upload_id', $foto->id)->first()?->skip($foto);
+        });
+    }
 
     public function event()
     {
@@ -35,14 +42,34 @@ class FotoUpload extends Model
     }
 
     /**
-     * Approved items that have not been shown on the vidiwall yet, in approval order.
+     * Approved items that have not played on the vidiwall yet.
      */
     public function scopeQueuedForScreen(Builder $query): Builder
     {
-        return $query->where('status', 'approved')
-            ->whereNull('displayed_at')
-            ->orderBy('approved_at')
-            ->orderBy('id');
+        return $query->where('status', 'approved')->whereNull('displayed_at');
+    }
+
+    /**
+     * Approved items in the order the vidiwall plays them.
+     */
+    public function scopeInPlaylist(Builder $query): Builder
+    {
+        return $query->where('status', 'approved')->orderBy('display_order')->orderBy('id');
+    }
+
+    public function scopeAfterInPlaylist(Builder $query, FotoUpload $foto): Builder
+    {
+        return $query->where(fn (Builder $query) => $query->where('display_order', '>', $foto->display_order)
+            ->orWhere(fn (Builder $query) => $query->where('display_order', $foto->display_order)->where('id', '>', $foto->id)));
+    }
+
+    public function scopeBeforeInPlaylist(Builder $query, FotoUpload $foto): Builder
+    {
+        return $query->where(fn (Builder $query) => $query->where('display_order', '<', $foto->display_order)
+            ->orWhere(fn (Builder $query) => $query->where('display_order', $foto->display_order)->where('id', '<', $foto->id)))
+            ->reorder()
+            ->orderByDesc('display_order')
+            ->orderByDesc('id');
     }
 
     public function getFileUrlAttribute(): string
@@ -86,12 +113,12 @@ class FotoUpload extends Model
     }
 
     /**
-     * Where this item stands with the vidiwall: live, queued, shown, or its
-     * moderation status when it is not approved.
+     * Where this item stands with the vidiwall: live (at the player's playhead),
+     * queued (not played yet), shown, or its moderation status when it is not approved.
      */
     public function screenState(): string
     {
-        if ($this->isLiveOnScreen()) {
+        if ($this->isApproved() && $this->event?->onScreenFotoId() === $this->id) {
             return 'live';
         }
         if ($this->isQueuedForScreen()) {
@@ -124,30 +151,18 @@ class FotoUpload extends Model
     }
 
     /**
-     * True while the item is on screen and its slot (plus grace for an unacknowledged screen) has not run out.
-     * `displayed_at` is second-precise, so the screen times the slot itself; this is the server-side fallback.
-     */
-    public function isLiveOnScreen(): bool
-    {
-        if (! $this->on_screen || ! $this->displayed_at) {
-            return false;
-        }
-
-        $expiresMs = $this->displayed_at->getTimestampMs() + (int) round(($this->screenSeconds() + self::SCREEN_GRACE_SECONDS) * 1000);
-
-        return $expiresMs > now()->getTimestampMs();
-    }
-
-    /**
-     * Approving (or restoring) an item drops it into the vidiwall queue.
+     * Approving (or restoring) an item adds it to the end of the vidiwall playlist, unplayed.
      */
     public function approve(int $adminId): void
     {
         $attributes = ['status' => 'approved', 'approved_at' => now(), 'approved_by' => $adminId];
 
         if (! $this->isApproved()) {
-            $attributes['on_screen'] = false;
             $attributes['displayed_at'] = null;
+            $attributes['display_order'] = (int) static::query()
+                ->where('event_id', $this->event_id)
+                ->where('status', 'approved')
+                ->max('display_order') + 1;
         }
 
         $this->update($attributes);
@@ -155,17 +170,24 @@ class FotoUpload extends Model
 
     public function reject(?string $note = null): void
     {
-        $this->update(['status' => 'rejected', 'on_screen' => false, 'admin_note' => $note]);
+        $this->update(['status' => 'rejected', 'admin_note' => $note]);
+
+        $this->removeFromScreen();
     }
 
+    /**
+     * "Push Live": plays the item right now, then the playlist carries on.
+     */
     public function pushToScreen(): void
     {
-        static::where('event_id', $this->event_id)->where('id', '!=', $this->id)->update(['on_screen' => false]);
-        $this->update(['on_screen' => true, 'displayed_at' => now()]);
+        $this->event->player()->playNow($this);
     }
 
+    /**
+     * Skips the item when it is the one on the vidiwall.
+     */
     public function removeFromScreen(): void
     {
-        $this->update(['on_screen' => false]);
+        VidiwallPlayer::query()->where('foto_upload_id', $this->id)->first()?->skip($this);
     }
 }

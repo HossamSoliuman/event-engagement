@@ -4,8 +4,6 @@ namespace App\Http\Controllers\Moderator;
 
 use App\Http\Controllers\Controller;
 use App\Models\Event;
-use App\Models\ActivityLog;
-use App\Models\FotoUpload;
 
 class DashboardController extends Controller
 {
@@ -16,13 +14,13 @@ class DashboardController extends Controller
             'lotteryEntries',
             'votes',
             'memberships',
-            'fotoUploads as pending_count'  => fn($q) => $q->where('status', 'pending'),
-            'fotoUploads as approved_count' => fn($q) => $q->where('status', 'approved'),
+            'fotoUploads as pending_count' => fn ($q) => $q->where('status', 'pending'),
+            'fotoUploads as approved_count' => fn ($q) => $q->where('status', 'approved'),
         ]);
 
-        $tallies    = $event->getVoteTallies();
-        $onScreen   = $event->getOnScreenFotos()->first();
-        $recentLog  = $event->activityLog()->with('user')->where('event_id', $event->id)->latest()->limit(10)->get();
+        $tallies = $event->getVoteTallies();
+        $onScreen = $event->onScreenFoto();
+        $recentLog = $event->activityLog()->with('user')->where('event_id', $event->id)->latest()->limit(10)->get();
 
         return view('moderator.dashboard', compact('event', 'tallies', 'onScreen', 'recentLog'));
     }

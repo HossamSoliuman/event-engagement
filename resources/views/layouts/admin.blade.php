@@ -1188,12 +1188,10 @@
                 <div class="sb-label">Live: {{ Str::limit($activeEvent->name, 18) }}</div>
 
                 <a href="{{ route('admin.fotos.index', $activeEvent) }}"
-                    class="nav-item {{ request()->routeIs('admin.fotos*') ? 'active' : '' }}">
+                    class="nav-item {{ request()->routeIs('admin.fotos*', 'admin.player*') ? 'active' : '' }}">
                     <i class="ni-icon"><i data-lucide="camera" class="lucide-icon"></i></i> Foto Queue
                     @php $pend = $activeEvent->getPendingFotosCount() @endphp
-                    @if ($pend > 0)
-                        <span class="nav-badge">{{ $pend }}</span>
-                    @endif
+                    <span class="nav-badge" data-pending-badge="{{ $activeEvent->id }}" @if ($pend === 0) style="display:none" @endif>{{ $pend }}</span>
                 </a>
                 <a href="{{ route('admin.lottery.index', $activeEvent) }}"
                     class="nav-item {{ request()->routeIs('admin.lottery*') ? 'active' : '' }}">

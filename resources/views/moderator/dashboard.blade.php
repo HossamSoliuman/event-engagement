@@ -56,6 +56,7 @@
             Foto Queue
             @if($event->pending_count > 0)<span style="background:rgba(255,255,255,.2);padding:1px 8px;border-radius:10px;font-size:11px">{{ $event->pending_count }} pending</span>@endif
         </a>
+        <a href="{{ route('moderator.player.index', $event) }}" class="btn btn-secondary">Vidiwall Player</a>
         @if($event->module_lottery)
         <a href="{{ route('moderator.lottery.index', $event) }}" class="btn btn-secondary">Lottery</a>
         @endif
@@ -86,8 +87,9 @@
             <div class="font-bold">{{ $onScreen->uploader_name ?? 'Anonymous' }}</div>
             <div class="text-muted text-sm">On screen since {{ $onScreen->displayed_at?->diffForHumans() }}</div>
         </div>
+        <a href="{{ route('moderator.player.index', $event) }}" class="btn btn-secondary btn-sm">Player</a>
         <form method="POST" action="{{ route('moderator.fotos.remove-from-screen', [$event, $onScreen]) }}">
-            @csrf <button class="btn btn-danger btn-sm">Remove</button>
+            @csrf <button class="btn btn-danger btn-sm">Skip</button>
         </form>
     </div>
 </div>

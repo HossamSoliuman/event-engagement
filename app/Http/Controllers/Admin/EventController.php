@@ -55,7 +55,7 @@ class EventController extends Controller
             'fotoUploads as approved_count' => fn ($q) => $q->where('status', 'approved'),
         ]);
         $tallies = $event->getVoteTallies();
-        $onScreen = $event->getOnScreenFotos()->first();
+        $onScreen = $event->onScreenFoto();
         $recentLog = $event->activityLog()->with('user')->latest()->limit(10)->get();
 
         return view('admin.events.show', compact('event', 'tallies', 'onScreen', 'recentLog'));

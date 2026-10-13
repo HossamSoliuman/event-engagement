@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\StatisticsController;
 use App\Http\Controllers\Admin\SurveyController as SurveyAdminController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\VidiwallController;
+use App\Http\Controllers\Admin\VidiwallPlayerController;
 use App\Http\Controllers\Admin\VotingAdminController;
 use App\Http\Controllers\Api\MobileApiController;
 use App\Http\Controllers\ArtisanController;
@@ -34,6 +35,7 @@ use App\Http\Controllers\Moderator\MembershipController as ModeratorMembershipCo
 use App\Http\Controllers\Moderator\QuizController as ModeratorQuizController;
 use App\Http\Controllers\Moderator\StatisticsController as ModeratorStatisticsController;
 use App\Http\Controllers\Moderator\SurveyController as ModeratorSurveyController;
+use App\Http\Controllers\Moderator\VidiwallPlayerController as ModeratorVidiwallPlayerController;
 use App\Http\Controllers\Moderator\VotingController as ModeratorVotingController;
 use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Route;
@@ -86,11 +88,22 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('events/{event}/fotos/status', [FotoModerationController::class, 'status'])->name('fotos.status');
         Route::post('fotos/{foto}/approve', [FotoModerationController::class, 'approve'])->name('fotos.approve');
         Route::post('fotos/{foto}/reject', [FotoModerationController::class, 'reject'])->name('fotos.reject');
-        Route::post('fotos/{foto}/push-to-screen', [FotoModerationController::class, 'pushToScreen'])->name('fotos.push-to-screen');
         Route::post('fotos/{foto}/remove-from-screen', [FotoModerationController::class, 'removeFromScreen'])->name('fotos.remove-from-screen');
         Route::delete('fotos/{foto}', [FotoModerationController::class, 'destroy'])->name('fotos.destroy');
         Route::get('events/{event}/fotos/export', [FotoModerationController::class, 'export'])->name('fotos.export');
         Route::get('events/{event}/fotos/download-all', [FotoModerationController::class, 'downloadAll'])->name('fotos.download-all');
+
+        Route::get('events/{event}/player', [VidiwallPlayerController::class, 'index'])->name('player.index');
+        Route::get('events/{event}/player/status', [VidiwallPlayerController::class, 'status'])->name('player.status');
+        Route::post('events/{event}/player/play', [VidiwallPlayerController::class, 'play'])->name('player.play');
+        Route::post('events/{event}/player/pause', [VidiwallPlayerController::class, 'pause'])->name('player.pause');
+        Route::post('events/{event}/player/stop', [VidiwallPlayerController::class, 'stop'])->name('player.stop');
+        Route::post('events/{event}/player/next', [VidiwallPlayerController::class, 'next'])->name('player.next');
+        Route::post('events/{event}/player/previous', [VidiwallPlayerController::class, 'previous'])->name('player.previous');
+        Route::post('events/{event}/player/loop', [VidiwallPlayerController::class, 'loop'])->name('player.loop');
+        Route::put('events/{event}/player/order', [VidiwallPlayerController::class, 'reorder'])->name('player.reorder');
+        Route::post('events/{event}/player/fotos/{fotoUpload}/play', [VidiwallPlayerController::class, 'playFrom'])->scopeBindings()->name('player.play-from');
+        Route::post('events/{event}/player/fotos/{fotoUpload}/next', [VidiwallPlayerController::class, 'playNext'])->scopeBindings()->name('player.play-next');
         Route::get('events/{event}/lottery', [LotteryAdminController::class, 'index'])->name('lottery.index');
         Route::post('events/{event}/lottery/draw', [LotteryAdminController::class, 'draw'])->name('lottery.draw');
         Route::post('events/{event}/lottery/reset', [LotteryAdminController::class, 'reset'])->name('lottery.reset');
@@ -170,11 +183,22 @@ Route::prefix('moderator')->name('moderator.')->middleware(['auth', 'event.moder
     Route::get('{event}/fotos/status', [ModeratorFotoController::class, 'status'])->name('fotos.status');
     Route::post('{event}/fotos/{foto}/approve', [ModeratorFotoController::class, 'approve'])->name('fotos.approve');
     Route::post('{event}/fotos/{foto}/reject', [ModeratorFotoController::class, 'reject'])->name('fotos.reject');
-    Route::post('{event}/fotos/{foto}/push-to-screen', [ModeratorFotoController::class, 'pushToScreen'])->name('fotos.push-to-screen');
     Route::post('{event}/fotos/{foto}/remove-from-screen', [ModeratorFotoController::class, 'removeFromScreen'])->name('fotos.remove-from-screen');
     Route::delete('{event}/fotos/{foto}', [ModeratorFotoController::class, 'destroy'])->name('fotos.destroy');
     Route::get('{event}/fotos/export', [ModeratorFotoController::class, 'export'])->name('fotos.export');
     Route::get('{event}/fotos/download-all', [ModeratorFotoController::class, 'downloadAll'])->name('fotos.download-all');
+
+    Route::get('{event}/player', [ModeratorVidiwallPlayerController::class, 'index'])->name('player.index');
+    Route::get('{event}/player/status', [ModeratorVidiwallPlayerController::class, 'status'])->name('player.status');
+    Route::post('{event}/player/play', [ModeratorVidiwallPlayerController::class, 'play'])->name('player.play');
+    Route::post('{event}/player/pause', [ModeratorVidiwallPlayerController::class, 'pause'])->name('player.pause');
+    Route::post('{event}/player/stop', [ModeratorVidiwallPlayerController::class, 'stop'])->name('player.stop');
+    Route::post('{event}/player/next', [ModeratorVidiwallPlayerController::class, 'next'])->name('player.next');
+    Route::post('{event}/player/previous', [ModeratorVidiwallPlayerController::class, 'previous'])->name('player.previous');
+    Route::post('{event}/player/loop', [ModeratorVidiwallPlayerController::class, 'loop'])->name('player.loop');
+    Route::put('{event}/player/order', [ModeratorVidiwallPlayerController::class, 'reorder'])->name('player.reorder');
+    Route::post('{event}/player/fotos/{fotoUpload}/play', [ModeratorVidiwallPlayerController::class, 'playFrom'])->scopeBindings()->name('player.play-from');
+    Route::post('{event}/player/fotos/{fotoUpload}/next', [ModeratorVidiwallPlayerController::class, 'playNext'])->scopeBindings()->name('player.play-next');
 
     Route::get('{event}/lottery', [ModeratorLotteryController::class, 'index'])->name('lottery.index');
     Route::post('{event}/lottery/draw', [ModeratorLotteryController::class, 'draw'])->name('lottery.draw');

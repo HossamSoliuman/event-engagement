@@ -1,0 +1,505 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Event;
+use App\Models\FotoUpload;
+use App\Models\User;
+use App\Models\VidiwallPlayer;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
+use Tests\TestCase;
+
+class VidiwallPlayerTest extends TestCase
+{
+    use DatabaseTransactions;
+
+    private User $admin;
+
+    private Event $event;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->admin = User::factory()->create(['role' => 'admin']);
+        $this->event = Event::factory()->create();
+    }
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+
+        parent::tearDown();
+    }
+
+    public function test_player_page_renders_for_admins_and_assigned_moderators(): void
+    {
+        $this->upload('pending');
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.player.index', $this->event))
+            ->assertOk()
+            ->assertSee('Vidiwall Player')
+            ->assertSee(json_encode(route('admin.player.play', $this->event)), false)
+            ->assertSee(route('admin.fotos.index', [$this->event, 'status' => 'pending']))
+            ->assertSee('data-count="pending">1</span>', false);
+
+        $moderator = User::factory()->create(['role' => 'moderator']);
+        $this->event->moderators()->attach($moderator);
+
+        $this->actingAs($moderator)
+            ->get(route('moderator.player.index', $this->event))
+            ->assertOk()
+            ->assertSee(json_encode(route('moderator.player.play', $this->event)), false)
+            ->assertSee(route('moderator.fotos.index', [$this->event, 'status' => 'pending']));
+    }
+
+    public function test_nothing_plays_until_an_operator_presses_play(): void
+    {
+        $first = $this->upload();
+        $this->upload();
+
+        $this->getJson(route('vidiwall.feed', $this->event->slug))->assertJsonPath('foto', null);
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.play', $this->event))
+            ->assertOk()
+            ->assertJsonPath('player.state', 'playing')
+            ->assertJsonPath('now_playing.id', $first->id)
+            ->assertJsonPath('counts.total', 2)
+            ->assertJsonPath('counts.unplayed', 1);
+
+        $this->getJson(route('vidiwall.feed', $this->event->slug))
+            ->assertJsonPath('state', 'playing')
+            ->assertJsonPath('foto.id', $first->id);
+    }
+
+    public function test_play_with_an_empty_playlist_says_there_is_nothing_to_play(): void
+    {
+        $this->upload('pending');
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.play', $this->event))
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'Nothing to play yet. Approve photos or videos first.')
+            ->assertJsonPath('player.state', 'stopped');
+    }
+
+    public function test_pause_freezes_the_current_item_and_play_resumes_where_it_left_off(): void
+    {
+        $first = $this->upload();
+        $second = $this->upload();
+
+        Carbon::setTestNow('2026-10-12 20:00:00');
+        $this->actingAs($this->admin)->postJson(route('admin.player.play', $this->event));
+
+        Carbon::setTestNow('2026-10-12 20:00:02.500');
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.pause', $this->event))
+            ->assertJsonPath('player.state', 'paused')
+            ->assertJsonPath('player.elapsed_ms', 2500);
+
+        Carbon::setTestNow('2026-10-12 20:05:00');
+        $this->getJson(route('vidiwall.feed', $this->event->slug))
+            ->assertJsonPath('state', 'paused')
+            ->assertJsonPath('foto.id', $first->id)
+            ->assertJsonPath('elapsed_ms', 2500);
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.play', $this->event))
+            ->assertJsonPath('player.state', 'playing')
+            ->assertJsonPath('now_playing.id', $first->id)
+            ->assertJsonPath('player.elapsed_ms', 2500);
+
+        Carbon::setTestNow('2026-10-12 20:05:01.400');
+        $this->getJson(route('vidiwall.feed', $this->event->slug))->assertJsonPath('foto.id', $first->id);
+
+        Carbon::setTestNow('2026-10-12 20:05:01.500');
+        $this->getJson(route('vidiwall.feed', $this->event->slug))->assertJsonPath('foto.id', $second->id);
+    }
+
+    public function test_stop_clears_the_screen_and_play_starts_over_from_the_top(): void
+    {
+        $first = $this->upload();
+        $second = $this->upload();
+
+        $this->event->player()->playFrom($second);
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.stop', $this->event))
+            ->assertJsonPath('player.state', 'stopped')
+            ->assertJsonPath('now_playing', null);
+
+        $this->getJson(route('vidiwall.feed', $this->event->slug))->assertJsonPath('foto', null);
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.play', $this->event))
+            ->assertJsonPath('now_playing.id', $first->id);
+    }
+
+    public function test_next_and_previous_step_through_the_playlist(): void
+    {
+        $first = $this->upload();
+        $second = $this->upload();
+        $third = $this->upload();
+
+        $this->actingAs($this->admin)->postJson(route('admin.player.play', $this->event));
+
+        $this->actingAs($this->admin)->postJson(route('admin.player.next', $this->event))->assertJsonPath('now_playing.id', $second->id);
+        $this->actingAs($this->admin)->postJson(route('admin.player.next', $this->event))->assertJsonPath('now_playing.id', $third->id);
+        $this->actingAs($this->admin)->postJson(route('admin.player.previous', $this->event))->assertJsonPath('now_playing.id', $second->id);
+        $this->actingAs($this->admin)->postJson(route('admin.player.previous', $this->event))->assertJsonPath('now_playing.id', $first->id);
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.previous', $this->event))
+            ->assertJsonPath('now_playing.id', $first->id)
+            ->assertJsonPath('player.state', 'playing');
+    }
+
+    public function test_next_past_the_last_item_stops_without_loop(): void
+    {
+        $this->upload();
+        $last = $this->upload();
+
+        $this->event->player()->playFrom($last);
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.next', $this->event))
+            ->assertJsonPath('player.state', 'stopped')
+            ->assertJsonPath('now_playing', null);
+    }
+
+    public function test_stepping_while_paused_cues_the_item_without_playing_it(): void
+    {
+        $this->upload();
+        $second = $this->upload();
+
+        $this->event->player()->play();
+        $this->event->player()->pause();
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.next', $this->event))
+            ->assertJsonPath('player.state', 'paused')
+            ->assertJsonPath('now_playing.id', $second->id)
+            ->assertJsonPath('player.elapsed_ms', 0);
+    }
+
+    public function test_next_and_previous_do_nothing_while_stopped(): void
+    {
+        $this->upload();
+
+        $this->actingAs($this->admin)->postJson(route('admin.player.next', $this->event))->assertJsonPath('now_playing', null);
+        $this->actingAs($this->admin)->postJson(route('admin.player.previous', $this->event))->assertJsonPath('now_playing', null);
+    }
+
+    public function test_loop_wraps_around_to_the_first_item_after_the_last(): void
+    {
+        $first = $this->upload();
+        $last = $this->upload();
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.loop', $this->event), ['loop' => true])
+            ->assertOk()
+            ->assertJsonPath('player.loop', true);
+
+        Carbon::setTestNow('2026-10-12 20:00:00');
+        $this->event->player()->playFrom($last);
+
+        Carbon::setTestNow('2026-10-12 20:00:04');
+        $this->getJson(route('vidiwall.feed', $this->event->slug))
+            ->assertJsonPath('state', 'playing')
+            ->assertJsonPath('foto.id', $first->id);
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.previous', $this->event))
+            ->assertJsonPath('now_playing.id', $last->id);
+    }
+
+    public function test_loop_requires_a_boolean(): void
+    {
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.loop', $this->event), ['loop' => 'sometimes'])
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'Choose whether the playlist should loop.');
+    }
+
+    public function test_play_from_jumps_to_the_item_and_continues_from_there(): void
+    {
+        $this->upload();
+        $second = $this->upload();
+        $third = $this->upload();
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.play-from', [$this->event, $second]))
+            ->assertOk()
+            ->assertJsonPath('player.state', 'playing')
+            ->assertJsonPath('now_playing.id', $second->id);
+
+        $this->actingAs($this->admin)->postJson(route('admin.player.next', $this->event))->assertJsonPath('now_playing.id', $third->id);
+    }
+
+    public function test_play_next_moves_the_item_right_after_the_current_one(): void
+    {
+        $first = $this->upload();
+        $second = $this->upload();
+        $third = $this->upload();
+        $fourth = $this->upload();
+
+        $this->event->player()->playFrom($second);
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.play-next', [$this->event, $fourth]))
+            ->assertOk()
+            ->assertJsonPath('now_playing.id', $second->id)
+            ->assertJsonPath('items.2.id', $fourth->id);
+
+        $this->assertSame([$first->id, $second->id, $fourth->id, $third->id], $this->playlistIds());
+
+        $this->actingAs($this->admin)->postJson(route('admin.player.next', $this->event))->assertJsonPath('now_playing.id', $fourth->id);
+    }
+
+    public function test_play_next_while_stopped_moves_the_item_to_the_top(): void
+    {
+        $first = $this->upload();
+        $second = $this->upload();
+
+        $this->actingAs($this->admin)->postJson(route('admin.player.play-next', [$this->event, $second]))->assertOk();
+
+        $this->assertSame([$second->id, $first->id], $this->playlistIds());
+        $this->actingAs($this->admin)->postJson(route('admin.player.play', $this->event))->assertJsonPath('now_playing.id', $second->id);
+    }
+
+    public function test_item_actions_refuse_items_that_are_not_approved(): void
+    {
+        $pending = $this->upload('pending');
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.play-from', [$this->event, $pending]))
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'That item is no longer approved.');
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.play-next', [$this->event, $pending]))
+            ->assertStatus(422);
+    }
+
+    public function test_item_actions_are_scoped_to_the_event(): void
+    {
+        $otherEvent = Event::factory()->create();
+        $foreign = $this->upload('approved', $otherEvent);
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.play-from', [$this->event, $foreign]))
+            ->assertNotFound();
+    }
+
+    public function test_reorder_saves_the_dragged_order(): void
+    {
+        $first = $this->upload();
+        $second = $this->upload();
+        $third = $this->upload();
+
+        $this->actingAs($this->admin)
+            ->putJson(route('admin.player.reorder', $this->event), ['order' => [$third->id, $first->id, $second->id]])
+            ->assertOk()
+            ->assertJsonPath('items.0.id', $third->id);
+
+        $this->assertSame([$third->id, $first->id, $second->id], $this->playlistIds());
+        $this->actingAs($this->admin)->postJson(route('admin.player.play', $this->event))->assertJsonPath('now_playing.id', $third->id);
+    }
+
+    public function test_reorder_keeps_items_approved_meanwhile_at_the_end_and_ignores_unknown_ids(): void
+    {
+        $first = $this->upload();
+        $second = $this->upload();
+        $rejected = $this->upload('rejected');
+        $foreign = $this->upload('approved', Event::factory()->create());
+        $approvedMeanwhile = $this->upload();
+
+        $this->actingAs($this->admin)
+            ->putJson(route('admin.player.reorder', $this->event), ['order' => [$second->id, $rejected->id, $foreign->id, $first->id]])
+            ->assertOk();
+
+        $this->assertSame([$second->id, $first->id, $approvedMeanwhile->id], $this->playlistIds());
+    }
+
+    public function test_reorder_validates_the_order(): void
+    {
+        $this->actingAs($this->admin)
+            ->putJson(route('admin.player.reorder', $this->event), ['order' => ['abc']])
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'The playlist order is invalid.');
+
+        $this->actingAs($this->admin)
+            ->putJson(route('admin.player.reorder', $this->event), [])
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'Send the playlist in its new order.');
+    }
+
+    public function test_playback_follows_a_new_order_made_while_playing(): void
+    {
+        $first = $this->upload();
+        $second = $this->upload();
+        $third = $this->upload();
+
+        $this->event->player()->play();
+        $this->event->player()->reorder([$first->id, $third->id, $second->id]);
+
+        $this->actingAs($this->admin)->postJson(route('admin.player.next', $this->event))->assertJsonPath('now_playing.id', $third->id);
+    }
+
+    public function test_newly_approved_items_join_the_end_of_a_running_playlist(): void
+    {
+        $first = $this->upload();
+        $pending = $this->upload('pending');
+
+        $this->event->player()->play();
+        $this->actingAs($this->admin)->post(route('admin.fotos.approve', $pending));
+
+        $this->assertSame([$first->id, $pending->id], $this->playlistIds());
+        $this->actingAs($this->admin)->postJson(route('admin.player.next', $this->event))->assertJsonPath('now_playing.id', $pending->id);
+    }
+
+    public function test_status_only_sends_the_playlist_when_it_changed(): void
+    {
+        $this->upload();
+
+        $version = $this->actingAs($this->admin)
+            ->getJson(route('admin.player.status', $this->event))
+            ->assertJsonCount(1, 'items')
+            ->json('version');
+
+        $this->actingAs($this->admin)
+            ->getJson(route('admin.player.status', [$this->event, 'v' => $version]))
+            ->assertJsonMissingPath('items');
+
+        $this->upload();
+
+        $this->actingAs($this->admin)
+            ->getJson(route('admin.player.status', [$this->event, 'v' => $version]))
+            ->assertJsonCount(2, 'items');
+    }
+
+    public function test_status_reports_the_foto_queue_tab_counts(): void
+    {
+        $this->upload('pending');
+        $this->upload('pending');
+        $this->upload();
+        $this->upload('rejected');
+        $this->upload('pending', Event::factory()->create());
+
+        $this->actingAs($this->admin)
+            ->getJson(route('admin.player.status', $this->event))
+            ->assertJsonPath('counts.pending', 2)
+            ->assertJsonPath('counts.approved', 1)
+            ->assertJsonPath('counts.rejected', 1)
+            ->assertJsonPath('counts.total', 1)
+            ->assertJsonPath('player.state', 'stopped');
+    }
+
+    public function test_every_playback_change_bumps_the_revision(): void
+    {
+        $this->upload();
+        $this->upload();
+
+        $revisions = collect(['play', 'pause', 'play', 'next', 'stop'])->map(function (string $action) {
+            return $this->actingAs($this->admin)->postJson(route('admin.player.'.$action, $this->event))->json('player.revision');
+        });
+
+        $this->assertSame($revisions->sort()->values()->all(), $revisions->all());
+        $this->assertSame($revisions->count(), $revisions->unique()->count());
+    }
+
+    public function test_deleting_the_item_on_screen_moves_the_player_on(): void
+    {
+        Storage::fake('media');
+        $first = $this->upload();
+        $second = $this->upload();
+
+        $this->event->player()->play();
+
+        $this->actingAs($this->admin)->delete(route('admin.fotos.destroy', $first))->assertRedirect();
+
+        $this->getJson(route('vidiwall.feed', $this->event->slug))->assertJsonPath('foto.id', $second->id);
+    }
+
+    public function test_feed_lets_a_screen_join_mid_item(): void
+    {
+        $video = $this->upload('approved', null, ['media_type' => 'video', 'video_path' => 'fotos/clip.mp4', 'video_duration' => 20]);
+
+        Carbon::setTestNow('2026-10-12 20:00:00');
+        $this->event->player()->play();
+
+        Carbon::setTestNow('2026-10-12 20:00:07.250');
+        $this->getJson(route('vidiwall.feed', $this->event->slug))
+            ->assertJsonPath('foto.id', $video->id)
+            ->assertJsonPath('foto.slot_ms', 20000)
+            ->assertJsonPath('elapsed_ms', 7250);
+    }
+
+    public function test_player_controls_require_a_login(): void
+    {
+        $this->postJson(route('admin.player.play', $this->event))->assertUnauthorized();
+        $this->getJson(route('admin.player.status', $this->event))->assertUnauthorized();
+
+        $this->assertNull($this->event->vidiwallPlayer()->first());
+    }
+
+    public function test_moderators_control_only_their_assigned_events(): void
+    {
+        $moderator = User::factory()->create(['role' => 'moderator']);
+        $this->event->moderators()->attach($moderator);
+        $foto = $this->upload();
+        $otherEvent = Event::factory()->create();
+
+        $this->actingAs($moderator)
+            ->postJson(route('moderator.player.play', $this->event))
+            ->assertOk()
+            ->assertJsonPath('now_playing.id', $foto->id);
+
+        $this->actingAs($moderator)->postJson(route('moderator.player.play', $otherEvent))->assertForbidden();
+    }
+
+    public function test_each_event_gets_a_single_player(): void
+    {
+        $this->event->player();
+        $this->event->fresh()->player();
+
+        $this->assertSame(1, VidiwallPlayer::query()->where('event_id', $this->event->id)->count());
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function playlistIds(): array
+    {
+        return $this->event->playlist()->pluck('id')->map(fn ($id) => (int) $id)->all();
+    }
+
+    /**
+     * Approved uploads join the end of the playlist, as approving them would.
+     *
+     * @param  array<string, mixed>  $overrides
+     */
+    private function upload(string $status = 'approved', ?Event $event = null, array $overrides = []): FotoUpload
+    {
+        $event ??= $this->event;
+        $position = $status === 'approved'
+            ? (int) FotoUpload::query()->where('event_id', $event->id)->where('status', 'approved')->max('display_order') + 1
+            : 0;
+
+        return FotoUpload::query()->create(array_merge([
+            'event_id' => $event->id,
+            'file_path' => 'fotos/event-'.$event->id.'/'.uniqid('upload-', true).'.jpg',
+            'media_type' => 'photo',
+            'mime_type' => 'image/jpeg',
+            'file_size' => 1024,
+            'uploader_name' => 'Guest',
+            'status' => $status,
+            'display_order' => $position,
+            'approved_at' => $status === 'approved' ? now() : null,
+        ], $overrides));
+    }
+}
