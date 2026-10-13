@@ -56,6 +56,7 @@ Route::post('/e/{slug}/survey', [GuestSurveyController::class, 'submit'])->name(
 Route::get('/screen/{slug}', [VidiwallController::class, 'show'])->middleware('track.view:vidiwall')->name('vidiwall.show');
 Route::get('/screen/{slug}/feed', [VidiwallController::class, 'feed'])->name('vidiwall.feed');
 Route::get('/screen/{slug}/clash/feed', [VidiwallController::class, 'clashFeed'])->name('vidiwall.clash.feed');
+Route::get('/screen/{slug}/lottery/feed', [VidiwallController::class, 'lotteryFeed'])->name('vidiwall.lottery.feed');
 
 Route::get('login', [AdminAuthController::class, 'showLogin'])->name('login');
 
@@ -110,6 +111,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('events/{event}/lottery/reset', [LotteryAdminController::class, 'reset'])->name('lottery.reset');
         Route::delete('lottery/{entry}', [LotteryAdminController::class, 'destroy'])->name('lottery.destroy');
         Route::get('events/{event}/lottery/export', [LotteryAdminController::class, 'export'])->name('lottery.export');
+        Route::post('events/{event}/lottery/winners/{lotteryEntry}/redraw', [LotteryAdminController::class, 'redraw'])->scopeBindings()->name('lottery.redraw');
+        Route::post('events/{event}/lottery/winners/{lotteryEntry}/release', [LotteryAdminController::class, 'release'])->scopeBindings()->name('lottery.release');
+        Route::get('events/{event}/lottery/screen', [LotteryAdminController::class, 'screen'])->name('lottery.screen');
+        Route::put('events/{event}/lottery/screen', [LotteryAdminController::class, 'updateScreen'])->name('lottery.screen.update');
+        Route::post('events/{event}/lottery/screen/winners/{lotteryEntry}', [LotteryAdminController::class, 'showWinner'])->scopeBindings()->name('lottery.screen.winner');
+        Route::post('events/{event}/lottery/screen/board', [LotteryAdminController::class, 'showBoard'])->name('lottery.screen.board');
+        Route::post('events/{event}/lottery/screen/reveal', [LotteryAdminController::class, 'revealNow'])->name('lottery.screen.reveal');
+        Route::post('events/{event}/lottery/screen/hide', [LotteryAdminController::class, 'hideScreen'])->name('lottery.screen.hide');
         Route::get('events/{event}/voting', [VotingAdminController::class, 'index'])->name('voting.index');
         Route::post('events/{event}/voting/close', [VotingAdminController::class, 'close'])->name('voting.close');
         Route::post('events/{event}/voting/reopen', [VotingAdminController::class, 'reopen'])->name('voting.reopen');
@@ -205,8 +214,16 @@ Route::prefix('moderator')->name('moderator.')->middleware(['auth', 'event.moder
     Route::get('{event}/lottery', [ModeratorLotteryController::class, 'index'])->name('lottery.index');
     Route::post('{event}/lottery/draw', [ModeratorLotteryController::class, 'draw'])->name('lottery.draw');
     Route::post('{event}/lottery/reset', [ModeratorLotteryController::class, 'reset'])->name('lottery.reset');
-    Route::delete('{event}/lottery/{entry}', [ModeratorLotteryController::class, 'destroy'])->name('lottery.destroy');
+    Route::delete('{event}/lottery/{lotteryEntry}', [ModeratorLotteryController::class, 'destroyEntry'])->scopeBindings()->name('lottery.destroy');
     Route::get('{event}/lottery/export', [ModeratorLotteryController::class, 'export'])->name('lottery.export');
+    Route::post('{event}/lottery/winners/{lotteryEntry}/redraw', [ModeratorLotteryController::class, 'redraw'])->scopeBindings()->name('lottery.redraw');
+    Route::post('{event}/lottery/winners/{lotteryEntry}/release', [ModeratorLotteryController::class, 'release'])->scopeBindings()->name('lottery.release');
+    Route::get('{event}/lottery/screen', [ModeratorLotteryController::class, 'screen'])->name('lottery.screen');
+    Route::put('{event}/lottery/screen', [ModeratorLotteryController::class, 'updateScreen'])->name('lottery.screen.update');
+    Route::post('{event}/lottery/screen/winners/{lotteryEntry}', [ModeratorLotteryController::class, 'showWinner'])->scopeBindings()->name('lottery.screen.winner');
+    Route::post('{event}/lottery/screen/board', [ModeratorLotteryController::class, 'showBoard'])->name('lottery.screen.board');
+    Route::post('{event}/lottery/screen/reveal', [ModeratorLotteryController::class, 'revealNow'])->name('lottery.screen.reveal');
+    Route::post('{event}/lottery/screen/hide', [ModeratorLotteryController::class, 'hideScreen'])->name('lottery.screen.hide');
 
     Route::get('{event}/voting', [ModeratorVotingController::class, 'index'])->name('voting.index');
     Route::post('{event}/voting/close', [ModeratorVotingController::class, 'close'])->name('voting.close');

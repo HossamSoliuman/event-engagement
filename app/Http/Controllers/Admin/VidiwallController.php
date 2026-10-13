@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Models\VidiwallPlayer;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class VidiwallController extends Controller
@@ -86,6 +87,18 @@ class VidiwallController extends Controller
             'accent_color' => $event->accent_color,
             'event_name' => $event->name,
         ]);
+    }
+
+    /**
+     * Lottery show feed: the draw, a winner or the winners board, timed from
+     * the moment of the request so the screen can run it on its own clock.
+     */
+    public function lotteryFeed(string $slug): JsonResponse
+    {
+        $event = Event::where('slug', $slug)->firstOrFail();
+        $screen = $event->lotteryScreen?->setRelation('event', $event);
+
+        return response()->json($screen ? $screen->screenFeed() : ['revision' => 0, 'show' => null]);
     }
 
     /**

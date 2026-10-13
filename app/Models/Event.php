@@ -3,12 +3,14 @@
 namespace App\Models;
 
 use App\Traits\ReferencesMediaFiles;
+use Closure;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class Event extends Model
@@ -17,6 +19,13 @@ class Event extends Model
 
     /** @var list<string> */
     public const MEDIA_COLUMNS = ['qr_code_path', 'logo_path', 'sponsor_logo_path', 'background_image_path', 'quiz_end_sponsor_logo_path'];
+
+    /**
+     * What a lottery entry looks like once it is no longer a winner.
+     *
+     * @var array<string, mixed>
+     */
+    private const NOT_A_WINNER = ['is_winner' => false, 'won_at' => null, 'winner_rank' => null, 'prize' => null];
 
     protected $fillable = [
         'name',
@@ -173,9 +182,35 @@ class Event extends Model
         return $player && ! $player->isStopped() ? $player->foto_upload_id : null;
     }
 
-    public function lotteryEntries()
+    public function lotteryEntries(): HasMany
     {
         return $this->hasMany(LotteryEntry::class);
+    }
+
+    /**
+     * Winners in the order they were drawn.
+     */
+    public function lotteryWinners(): HasMany
+    {
+        return $this->lotteryEntries()->where('is_winner', true)->orderBy('winner_rank')->orderBy('won_at')->orderBy('id');
+    }
+
+    public function lotteryScreen(): HasOne
+    {
+        return $this->hasOne(LotteryScreen::class);
+    }
+
+    /**
+     * The lottery's vidiwall settings and show, created with the defaults the
+     * first time they are needed.
+     */
+    public function lotteryShow(): LotteryScreen
+    {
+        $screen = $this->lotteryScreen ?? $this->lotteryScreen()->createOrFirst([]);
+        $screen->setRelation('event', $this);
+        $this->setRelation('lotteryScreen', $screen);
+
+        return $screen;
     }
 
     public function votes()
@@ -413,30 +448,140 @@ class Event extends Model
         return $this->votes()->selectRaw('candidate_name, candidate_slug, COUNT(*) as total')->groupBy('candidate_name', 'candidate_slug')->orderByDesc('total')->get()->toArray();
     }
 
-    public function currentLotteryWinner(): ?LotteryEntry
+    /**
+     * The winner drawn most recently.
+     */
+    public function latestLotteryWinner(): ?LotteryEntry
     {
-        return $this->lotteryEntries()->where('is_winner', true)->first();
+        return $this->lotteryEntries()->where('is_winner', true)->latest('won_at')->orderByDesc('winner_rank')->first();
     }
 
-    public function drawLotteryWinner(): ?LotteryEntry
+    /**
+     * Draws one more winner from the entries that have not won yet; earlier
+     * winners keep their places. With `$asRank`, the draw only goes ahead when
+     * it would be that winner number, so a form sent twice draws once. Null
+     * when there is no one left to draw or that number is already drawn.
+     */
+    public function drawLotteryWinner(?string $prize = null, ?int $asRank = null): ?LotteryEntry
     {
-        if ($current = $this->currentLotteryWinner()) {
-            return $current;
-        }
-        $winner = $this->lotteryEntries()->inRandomOrder()->first();
-        if (! $winner) {
-            return null;
-        }
-        $winner->update(['is_winner' => true, 'won_at' => now()]);
-        $this->update(['lottery_drawn' => true, 'lottery_winner_id' => $winner->id]);
+        return $this->withLotteryLock(function () use ($prize, $asRank): ?LotteryEntry {
+            $rank = (int) $this->lotteryEntries()->where('is_winner', true)->max('winner_rank') + 1;
+            $winner = $asRank === null || $asRank === $rank ? $this->pickLotteryEntry() : null;
 
-        return $winner;
+            if (! $winner) {
+                return null;
+            }
+
+            $winner->update([
+                'is_winner' => true,
+                'won_at' => now(),
+                'winner_rank' => $rank,
+                'prize' => $prize,
+            ]);
+            $this->syncLotteryDrawn();
+
+            return $winner;
+        });
+    }
+
+    /**
+     * Draws a replacement for a winner, say one who did not claim the prize.
+     * The new winner takes over the rank and prize and the old one goes back
+     * into the draw as a regular entry. Null when there is no one left to draw.
+     */
+    public function redrawLotteryWinner(LotteryEntry $winner): ?LotteryEntry
+    {
+        return $this->withLotteryLock(function () use ($winner): ?LotteryEntry {
+            $winner->refresh();
+            $replacement = $winner->is_winner ? $this->pickLotteryEntry() : null;
+
+            if (! $replacement) {
+                return null;
+            }
+
+            $replacement->update([
+                'is_winner' => true,
+                'won_at' => now(),
+                'winner_rank' => $winner->winner_rank,
+                'prize' => $winner->prize,
+            ]);
+            $winner->update(self::NOT_A_WINNER);
+            $this->syncLotteryDrawn();
+
+            return $replacement;
+        });
+    }
+
+    /**
+     * Puts a winner back into the draw as a regular entry; the winners after
+     * them move up a place.
+     */
+    public function releaseLotteryWinner(LotteryEntry $winner): void
+    {
+        $this->withLotteryLock(function () use ($winner): void {
+            $winner->update(self::NOT_A_WINNER);
+            $this->renumberLotteryWinners();
+        });
     }
 
     public function resetLottery(): void
     {
-        $this->lotteryEntries()->update(['is_winner' => false, 'won_at' => null]);
+        $this->lotteryEntries()->update(self::NOT_A_WINNER);
         $this->update(['lottery_drawn' => false, 'lottery_winner_id' => null]);
+        $this->lotteryScreen?->setRelation('event', $this)->hide();
+    }
+
+    /**
+     * Closes the gap a removed winner leaves, so winners stay numbered 1, 2, 3
+     * in the order they were drawn.
+     */
+    public function renumberLotteryWinners(): void
+    {
+        $this->lotteryWinners()->get(['id', 'winner_rank'])->values()->each(function (LotteryEntry $winner, int $index): void {
+            if ($winner->winner_rank !== $index + 1) {
+                $winner->update(['winner_rank' => $index + 1]);
+            }
+        });
+
+        $this->syncLotteryDrawn();
+    }
+
+    protected function syncLotteryDrawn(): void
+    {
+        $latest = $this->latestLotteryWinner();
+
+        $this->update(['lottery_drawn' => $latest !== null, 'lottery_winner_id' => $latest?->id]);
+    }
+
+    /**
+     * A random entry that has not won yet, picked with a cryptographically
+     * secure random offset.
+     */
+    protected function pickLotteryEntry(): ?LotteryEntry
+    {
+        $pool = $this->lotteryEntries()->where('is_winner', false);
+        $count = (clone $pool)->count();
+
+        return $count ? $pool->orderBy('id')->skip(random_int(0, $count - 1))->first() : null;
+    }
+
+    /**
+     * Runs a change to the winners one at a time per event, so two operators or
+     * a double click cannot pick the same entry or hand out the same rank. The
+     * lock is claimed with a write first, as SQLite has no row locks.
+     *
+     * @template TReturn
+     *
+     * @param  Closure(): TReturn  $change
+     * @return TReturn
+     */
+    protected function withLotteryLock(Closure $change): mixed
+    {
+        return DB::transaction(function () use ($change): mixed {
+            static::query()->whereKey($this->id)->toBase()->update(['lottery_drawn' => DB::raw('lottery_drawn')]);
+
+            return $change();
+        });
     }
 
     public function getQueuedFotosCount(): int

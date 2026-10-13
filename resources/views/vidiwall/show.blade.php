@@ -607,6 +607,451 @@
             padding: 12px 22px;
             margin-top: 10px
         }
+
+        /* ── Lottery show ──────────────────────────────────────────── */
+        .lot {
+            position: absolute;
+            inset: 0;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+            padding: clamp(18px, 4vh, 56px) clamp(20px, 4vw, 72px);
+            background: var(--bg);
+            background: radial-gradient(120% 90% at 50% 38%, color-mix(in srgb, var(--p) 24%, var(--bg)) 0%, var(--bg) 64%);
+            color: var(--on-bg);
+            animation: lotIn .6s cubic-bezier(.22, 1, .36, 1)
+        }
+
+        .lot[hidden] {
+            display: none
+        }
+
+        .lot.is-leaving {
+            animation: lotOut .5s ease forwards
+        }
+
+        @keyframes lotIn {
+            from {
+                opacity: 0;
+                transform: scale(1.04)
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1)
+            }
+        }
+
+        @keyframes lotOut {
+            to {
+                opacity: 0;
+                transform: scale(.98)
+            }
+        }
+
+        .lot-head {
+            position: relative;
+            z-index: 2;
+            flex: 0 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: clamp(8px, 1.6vh, 18px);
+            max-width: 100%;
+            text-align: center
+        }
+
+        .lot-headline {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: clamp(18px, 3vw, 52px);
+            letter-spacing: .24em;
+            text-transform: uppercase;
+            color: var(--acc);
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap
+        }
+
+        .lot-prize {
+            display: inline-flex;
+            align-items: center;
+            gap: .5em;
+            max-width: 100%;
+            padding: .45em 1.2em;
+            border-radius: 999px;
+            border: 2px solid color-mix(in srgb, var(--acc) 70%, transparent);
+            background: color-mix(in srgb, var(--acc) 12%, transparent);
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: clamp(14px, 1.9vw, 32px);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis
+        }
+
+        .lot-prize[hidden] {
+            display: none
+        }
+
+        .lot-prize svg {
+            width: 1.05em;
+            height: 1.05em;
+            flex: 0 0 auto;
+            color: var(--acc)
+        }
+
+        .lot-body {
+            position: relative;
+            z-index: 2;
+            flex: 1 1 auto;
+            width: 100%;
+            min-height: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+
+        .lot-scene {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center
+        }
+
+        .lot-scene[hidden] {
+            display: none
+        }
+
+        .lot-ticket {
+            width: clamp(90px, 22vh, 260px);
+            height: clamp(90px, 22vh, 260px);
+            color: var(--acc);
+            animation: lotFloat 1.4s ease-in-out infinite
+        }
+
+        .lot-ticket svg {
+            width: 100%;
+            height: 100%
+        }
+
+        @keyframes lotFloat {
+
+            0%,
+            100% {
+                transform: translateY(0) rotate(-6deg)
+            }
+
+            50% {
+                transform: translateY(-4%) rotate(6deg)
+            }
+        }
+
+        .lot-intro-text {
+            margin-top: clamp(10px, 2.4vh, 30px);
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: clamp(26px, 5vw, 90px);
+            letter-spacing: .04em;
+            text-transform: uppercase
+        }
+
+        .lot-count {
+            --ring: min(62vh, 52vw)
+        }
+
+        .lot-ring {
+            position: absolute;
+            width: var(--ring);
+            height: var(--ring);
+            transform: rotate(-90deg)
+        }
+
+        .lot-ring circle {
+            fill: none;
+            stroke-width: 5
+        }
+
+        .lot-ring-track {
+            stroke: color-mix(in srgb, var(--on-bg) 12%, transparent)
+        }
+
+        .lot-ring-fill {
+            stroke: var(--acc);
+            stroke-linecap: round;
+            stroke-dasharray: 339.292
+        }
+
+        .lot-count-num {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: calc(var(--ring) * .5);
+            line-height: 1;
+            font-variant-numeric: tabular-nums
+        }
+
+        .lot-count-num.is-tick {
+            animation: lotTick .9s cubic-bezier(.22, 1, .36, 1)
+        }
+
+        @keyframes lotTick {
+            from {
+                opacity: .2;
+                transform: scale(1.35)
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1)
+            }
+        }
+
+        .lot-reel {
+            --row: clamp(56px, 13vh, 170px);
+            position: relative;
+            width: min(100%, 1400px);
+            height: calc(var(--row) * 3);
+            overflow: hidden;
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 28%, #000 72%, transparent 100%);
+            mask-image: linear-gradient(to bottom, transparent 0%, #000 28%, #000 72%, transparent 100%)
+        }
+
+        .lot-reel::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: var(--row);
+            height: var(--row);
+            border-top: 3px solid var(--acc);
+            border-bottom: 3px solid var(--acc);
+            background: color-mix(in srgb, var(--acc) 10%, transparent);
+            box-shadow: 0 0 60px color-mix(in srgb, var(--acc) 30%, transparent);
+            z-index: 0
+        }
+
+        .lot-reel-strip {
+            position: relative;
+            z-index: 1;
+            will-change: transform
+        }
+
+        .lot-reel-item {
+            height: var(--row);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4%;
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: calc(var(--row) * .5);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            opacity: .45;
+            transition: opacity .15s
+        }
+
+        .lot-reel-item.is-center {
+            opacity: 1
+        }
+
+        .lot-rays {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 160vmax;
+            height: 160vmax;
+            margin: -80vmax 0 0 -80vmax;
+            background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--acc) 16%, transparent) 0deg 7deg, transparent 7deg 22deg);
+            -webkit-mask-image: radial-gradient(circle, #000 0%, transparent 42%);
+            mask-image: radial-gradient(circle, #000 0%, transparent 42%);
+            animation: lotSpin 40s linear infinite;
+            pointer-events: none
+        }
+
+        @keyframes lotSpin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        .lot-result>*:not(.lot-rays) {
+            position: relative
+        }
+
+        .lot-eyebrow {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: clamp(16px, 2.6vw, 46px);
+            letter-spacing: .34em;
+            text-transform: uppercase;
+            color: var(--acc)
+        }
+
+        .lot-name {
+            width: 100%;
+            margin-top: clamp(6px, 1.6vh, 20px);
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: clamp(48px, 11vw, 220px);
+            line-height: 1;
+            text-align: center;
+            white-space: nowrap;
+            text-shadow: 0 0 60px color-mix(in srgb, var(--acc) 55%, transparent)
+        }
+
+        .lot-name.is-wrapped {
+            white-space: normal;
+            overflow-wrap: anywhere
+        }
+
+        .lot-detail {
+            margin-top: clamp(10px, 2.2vh, 28px);
+            font-size: clamp(16px, 2.2vw, 38px);
+            font-weight: 600;
+            letter-spacing: .12em;
+            opacity: .7
+        }
+
+        .lot-detail:empty {
+            display: none
+        }
+
+        .lot-result.is-revealed .lot-eyebrow {
+            animation: lotRise .7s .05s cubic-bezier(.22, 1, .36, 1) both
+        }
+
+        .lot-result.is-revealed .lot-name {
+            animation: lotPop .9s .15s cubic-bezier(.34, 1.56, .64, 1) both
+        }
+
+        .lot-result.is-revealed .lot-detail {
+            animation: lotRise .7s .5s cubic-bezier(.22, 1, .36, 1) both
+        }
+
+        @keyframes lotPop {
+            from {
+                opacity: 0;
+                transform: scale(.6)
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1)
+            }
+        }
+
+        @keyframes lotRise {
+            from {
+                opacity: 0;
+                transform: translateY(24px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        .lot-board {
+            overflow: hidden
+        }
+
+        .lot-board-grid {
+            --bsz: 48px;
+            width: min(100%, 1600px);
+            display: grid;
+            grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr));
+            gap: clamp(10px, 1.8vh, 22px) clamp(14px, 2vw, 32px)
+        }
+
+        .lot-board-card {
+            display: flex;
+            align-items: center;
+            gap: calc(var(--bsz) * .55);
+            min-width: 0;
+            padding: calc(var(--bsz) * .32) calc(var(--bsz) * .5);
+            border-radius: calc(var(--bsz) * .4);
+            background: color-mix(in srgb, var(--on-bg) 7%, transparent);
+            border: 1px solid color-mix(in srgb, var(--on-bg) 12%, transparent);
+            animation: lotRise .6s cubic-bezier(.22, 1, .36, 1) both
+        }
+
+        .lot-board-rank {
+            flex: 0 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: calc(var(--bsz) * 1.5);
+            height: calc(var(--bsz) * 1.5);
+            border-radius: 50%;
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: calc(var(--bsz) * .6);
+            background: var(--acc);
+            color: var(--bg)
+        }
+
+        .lot-board-text {
+            min-width: 0
+        }
+
+        .lot-board-name {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: var(--bsz);
+            line-height: 1.1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis
+        }
+
+        .lot-board-prize {
+            margin-top: .2em;
+            font-size: calc(var(--bsz) * .5);
+            font-weight: 600;
+            color: var(--acc);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis
+        }
+
+        .lot-foot {
+            position: relative;
+            z-index: 2;
+            flex: 0 0 auto;
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: clamp(13px, 1.6vw, 26px);
+            letter-spacing: .22em;
+            text-transform: uppercase;
+            opacity: .55
+        }
+
+        .lot-progress {
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            height: 4px;
+            width: 0;
+            background: var(--acc);
+            z-index: 3
+        }
+
+        .lot-confetti {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 4
+        }
     </style>
 </head>
 
@@ -693,6 +1138,56 @@
                     </div>
                 </div>
             @endif
+
+            @if ($event->module_lottery)
+                <div class="lot" id="lotOverlay" hidden>
+                    <div class="lot-head">
+                        <div class="lot-headline" id="lotHeadline"></div>
+                        <div class="lot-prize" id="lotPrize" hidden>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/></svg>
+                            <span id="lotPrizeText"></span>
+                        </div>
+                    </div>
+
+                    <div class="lot-body">
+                        <div class="lot-scene" data-scene="intro" hidden>
+                            <div class="lot-ticket">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>
+                            </div>
+                            <div class="lot-intro-text">Get ready</div>
+                        </div>
+
+                        <div class="lot-scene lot-count" data-scene="countdown" hidden>
+                            <svg class="lot-ring" viewBox="0 0 120 120" aria-hidden="true">
+                                <circle class="lot-ring-track" cx="60" cy="60" r="54" />
+                                <circle class="lot-ring-fill" id="lotRingFill" cx="60" cy="60" r="54" />
+                            </svg>
+                            <div class="lot-count-num" id="lotCountNum"></div>
+                        </div>
+
+                        <div class="lot-scene" data-scene="drawing" hidden>
+                            <div class="lot-reel" id="lotReel">
+                                <div class="lot-reel-strip" id="lotReelStrip"></div>
+                            </div>
+                        </div>
+
+                        <div class="lot-scene lot-result" data-scene="result" id="lotResult" hidden>
+                            <div class="lot-rays"></div>
+                            <div class="lot-eyebrow" id="lotEyebrow">Winner</div>
+                            <div class="lot-name" id="lotName"></div>
+                            <div class="lot-detail" id="lotDetail"></div>
+                        </div>
+
+                        <div class="lot-scene lot-board" data-scene="board" hidden>
+                            <div class="lot-board-grid" id="lotBoardGrid"></div>
+                        </div>
+                    </div>
+
+                    <div class="lot-foot" id="lotFoot" hidden></div>
+                    <div class="lot-progress" id="lotProgress"></div>
+                    <canvas class="lot-confetti" id="lotConfetti"></canvas>
+                </div>
+            @endif
         </div>
 
         <div class="fr-rail fr-right">
@@ -719,6 +1214,7 @@
         const SLUG = '{{ $event->slug }}';
         const SHOW_NAME = {{ $event->vidiwall_show_uploader ? 'true' : 'false' }};
         const HAS_FANCLASH = {{ $event->module_fanclash ? 'true' : 'false' }};
+        const HAS_LOTTERY = {{ $event->module_lottery ? 'true' : 'false' }};
 
         let clashActive = false;
         let lastFotoId = null;
@@ -1168,6 +1664,366 @@
                 }
             }
 
+            tick();
+        })();
+
+        /* ── Lottery show: the server says which show is on and how far into it
+              the room is; the screen runs the phases on its own clock from
+              there (intro, countdown, the reel landing on the winner, result),
+              and re-syncs on every poll. ── */
+        (function () {
+            if (!HAS_LOTTERY) return;
+
+            const overlay = document.getElementById('lotOverlay');
+            if (!overlay) return;
+
+            const el = id => document.getElementById(id);
+            const headline = el('lotHeadline'), prize = el('lotPrize'), prizeText = el('lotPrizeText'),
+                countNum = el('lotCountNum'), ringFill = el('lotRingFill'),
+                reel = el('lotReel'), strip = el('lotReelStrip'),
+                result = el('lotResult'), eyebrow = el('lotEyebrow'), nameEl = el('lotName'), detail = el('lotDetail'),
+                boardGrid = el('lotBoardGrid'), foot = el('lotFoot'), progress = el('lotProgress'), confettiCanvas = el('lotConfetti');
+            const scenes = overlay.querySelectorAll('[data-scene]');
+            const RING = 339.292;
+
+            let show = null;
+            let revision = null;
+            let origin = 0;
+            let scene = null;
+            let lastCount = null;
+            let revealedRevision = null;
+            let closedRevision = null;
+            let reelLength = 0;
+            let reelItems = [];
+            let leaveTimer = null;
+            let pollTimer = null;
+            let confettiFrame = null;
+
+            function phaseOf(s, elapsed) {
+                const revealAt = s.countdown_ms + s.drawing_ms;
+                if (elapsed < 0) return 'intro';
+                if (elapsed < s.countdown_ms) return 'countdown';
+                if (elapsed < revealAt) return 'drawing';
+                if (s.result_ms === 0 || elapsed < revealAt + s.result_ms) return 'result';
+                return null;
+            }
+
+            function setScene(name) {
+                if (scene === name) return;
+                scene = name;
+                scenes.forEach(node => node.hidden = node.dataset.scene !== name);
+                if (name === 'result') fitName();
+                if (name === 'board') fitBoard();
+            }
+
+            function open() {
+                clearTimeout(leaveTimer);
+                overlay.classList.remove('is-leaving');
+                overlay.hidden = false;
+            }
+
+            function close() {
+                closedRevision = revision;
+                show = null;
+                scene = null;
+                overlay.classList.add('is-leaving');
+                clearTimeout(leaveTimer);
+                leaveTimer = setTimeout(() => {
+                    overlay.hidden = true;
+                    overlay.classList.remove('is-leaving');
+                    stopConfetti();
+                }, 500);
+            }
+
+            function buildReel() {
+                const winner = show.winner ? show.winner.name : '';
+                const pool = show.reel.length ? show.reel : [winner];
+                reelLength = Math.max(24, Math.round(show.drawing_ms / 1000 * 9));
+                const names = [];
+                for (let i = 0; i < reelLength; i++) names.push(pool[i % pool.length]);
+                names.push(winner);
+                names.push(pool[reelLength % pool.length], pool[(reelLength + 1) % pool.length]);
+
+                strip.replaceChildren(...names.map(name => {
+                    const item = document.createElement('div');
+                    item.className = 'lot-reel-item';
+                    item.textContent = name;
+                    return item;
+                }));
+                reelItems = Array.from(strip.children);
+            }
+
+            function moveReel(t) {
+                const row = reel.clientHeight / 3;
+                const eased = 1 - Math.pow(1 - Math.min(1, Math.max(0, t)), 4);
+                const position = eased * reelLength;
+                const speed = 4 * Math.pow(1 - t, 3) * reelLength / Math.max(.001, show.drawing_ms / 1000);
+                strip.style.transform = `translate3d(0, ${(1 - position) * row}px, 0)`;
+                strip.style.filter = speed > 14 ? `blur(${Math.min(5, speed / 12).toFixed(1)}px)` : 'none';
+                const center = Math.round(position);
+                reelItems.forEach((item, index) => item.classList.toggle('is-center', index === center));
+            }
+
+            function buildResult() {
+                const winner = show.winner || {};
+                eyebrow.textContent = winner.rank > 1 ? `Winner #${winner.rank}` : 'Winner';
+                nameEl.textContent = winner.name || '';
+                detail.textContent = winner.detail || '';
+            }
+
+            function fitName() {
+                nameEl.classList.remove('is-wrapped');
+                nameEl.style.fontSize = '';
+                const available = nameEl.clientWidth;
+                const needed = nameEl.scrollWidth;
+                if (needed > available && available > 0) {
+                    const size = parseFloat(getComputedStyle(nameEl).fontSize) * available / needed * .96;
+                    if (size < 44) {
+                        nameEl.style.fontSize = '44px';
+                        nameEl.classList.add('is-wrapped');
+                    } else {
+                        nameEl.style.fontSize = Math.floor(size) + 'px';
+                    }
+                }
+            }
+
+            /* Tries one to three columns, shrinks each until every name fits
+               the stage in full, and keeps the layout with the largest text. */
+            function fitBoard() {
+                const scene = boardGrid.parentElement;
+                if (scene.hidden || !boardGrid.children.length) return;
+                const available = scene.clientHeight;
+                const names = boardGrid.querySelectorAll('.lot-board-name, .lot-board-prize');
+                const apply = (cols, size) => {
+                    boardGrid.style.setProperty('--cols', cols);
+                    boardGrid.style.setProperty('--bsz', size + 'px');
+                };
+                const sizeFor = cols => {
+                    let size = Math.min(96, available * .14);
+                    apply(cols, size);
+                    for (let i = 0; i < 8; i++) {
+                        let overflow = boardGrid.scrollHeight / available;
+                        names.forEach(n => overflow = Math.max(overflow, n.scrollWidth / Math.max(1, n.clientWidth)));
+                        if (overflow <= 1.005 || size <= 12) break;
+                        size = Math.max(12, size / overflow * .97);
+                        apply(cols, size);
+                    }
+                    return size;
+                };
+
+                let best = { cols: 1, size: 0 };
+                for (let cols = 1; cols <= Math.min(3, boardGrid.children.length); cols++) {
+                    const size = sizeFor(cols);
+                    if (size > best.size * 1.05) best = { cols, size };
+                }
+                apply(best.cols, best.size);
+            }
+
+            function buildBoard() {
+                const winners = show.winners || [];
+                boardGrid.replaceChildren(...winners.map((winner, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'lot-board-card';
+                    card.style.animationDelay = (index * 0.08) + 's';
+                    const rank = document.createElement('div');
+                    rank.className = 'lot-board-rank';
+                    rank.textContent = winner.rank ?? index + 1;
+                    const text = document.createElement('div');
+                    text.className = 'lot-board-text';
+                    const name = document.createElement('div');
+                    name.className = 'lot-board-name';
+                    name.textContent = winner.name;
+                    text.appendChild(name);
+                    if (winner.prize) {
+                        const prizeLine = document.createElement('div');
+                        prizeLine.className = 'lot-board-prize';
+                        prizeLine.textContent = winner.prize;
+                        text.appendChild(prizeLine);
+                    }
+                    card.append(rank, text);
+                    return card;
+                }));
+            }
+
+            function build() {
+                headline.textContent = show.type === 'board' ? `${show.headline} · Winners` : show.headline;
+                const prizeName = show.type !== 'board' && show.winner ? show.winner.prize : null;
+                prize.hidden = !prizeName;
+                prizeText.textContent = prizeName || '';
+                foot.textContent = show.entries ? `${show.entries.toLocaleString()} ${show.entries === 1 ? 'entry' : 'entries'} in the draw` : '';
+                lastCount = null;
+                scene = null;
+                if (show.type === 'draw') buildReel();
+                if (show.type === 'board') buildBoard();
+                else buildResult();
+            }
+
+            function reveal() {
+                result.classList.remove('is-revealed');
+                result.offsetHeight;
+                result.classList.add('is-revealed');
+                if (show.confetti) burstConfetti();
+            }
+
+            function render(now) {
+                const elapsed = now - origin;
+                const phase = phaseOf(show, elapsed);
+                if (!phase) {
+                    close();
+                    return;
+                }
+
+                foot.hidden = !foot.textContent || phase === 'result';
+
+                if (phase === 'intro') {
+                    setScene('intro');
+                } else if (phase === 'countdown') {
+                    setScene('countdown');
+                    const left = show.countdown_ms - elapsed;
+                    const count = Math.max(1, Math.ceil(left / 1000));
+                    if (count !== lastCount) {
+                        lastCount = count;
+                        countNum.textContent = count;
+                        countNum.classList.remove('is-tick');
+                        countNum.offsetHeight;
+                        countNum.classList.add('is-tick');
+                    }
+                    ringFill.style.strokeDashoffset = (RING * (1 - left / show.countdown_ms)).toFixed(2);
+                } else if (phase === 'drawing') {
+                    setScene('drawing');
+                    moveReel((elapsed - show.countdown_ms) / show.drawing_ms);
+                } else {
+                    setScene(show.type === 'board' ? 'board' : 'result');
+                    if (revealedRevision !== revision && show.type !== 'board') {
+                        revealedRevision = revision;
+                        reveal();
+                    }
+                    if (show.result_ms > 0) {
+                        const shown = elapsed - show.countdown_ms - show.drawing_ms;
+                        progress.style.width = Math.max(0, 100 - shown / show.result_ms * 100) + '%';
+                    } else {
+                        progress.style.width = '0';
+                    }
+                }
+
+                if (phase !== 'result') {
+                    progress.style.width = '0';
+                }
+            }
+
+            function frame(now) {
+                if (show) render(now);
+                requestAnimationFrame(frame);
+            }
+
+            function apply(d) {
+                if (!d.show) {
+                    if (show) close();
+                    revision = d.revision;
+                    return;
+                }
+
+                /* A show this screen has already timed out is not brought back
+                   by a poll that reached the server a moment before it did. */
+                if (!show && d.revision === closedRevision) return;
+
+                const nextOrigin = performance.now() - d.show.elapsed_ms;
+
+                if (!show || d.revision !== revision) {
+                    const wasRevealed = show && revealedRevision === revision && d.show.type === show.type
+                        && JSON.stringify(d.show.winner) === JSON.stringify(show.winner);
+                    revision = d.revision;
+                    show = d.show;
+                    origin = nextOrigin;
+                    if (wasRevealed) revealedRevision = revision;
+                    open();
+                    build();
+                    return;
+                }
+
+                if (Math.abs(nextOrigin - origin) > 350) origin = nextOrigin;
+
+                if (show.type === 'board' && JSON.stringify(d.show.winners) !== JSON.stringify(show.winners)) {
+                    show.winners = d.show.winners;
+                    buildBoard();
+                    fitBoard();
+                }
+            }
+
+            function schedule(ms) {
+                clearTimeout(pollTimer);
+                pollTimer = setTimeout(tick, ms);
+            }
+
+            async function tick() {
+                try {
+                    const res = await fetch(`/screen/${SLUG}/lottery/feed`, { cache: 'no-store' });
+                    apply(await res.json());
+                    schedule(show ? 600 : 1000);
+                } catch (e) {
+                    schedule(2000);
+                }
+            }
+
+            /* ── Confetti burst on the reveal ── */
+            function stopConfetti() {
+                cancelAnimationFrame(confettiFrame);
+                const ctx = confettiCanvas.getContext('2d');
+                ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+            }
+
+            function burstConfetti() {
+                stopConfetti();
+                const w = confettiCanvas.width = overlay.clientWidth;
+                const h = confettiCanvas.height = overlay.clientHeight;
+                const ctx = confettiCanvas.getContext('2d');
+                const colors = [getComputedStyle(overlay).getPropertyValue('--acc').trim() || '#FFD700',
+                    getComputedStyle(overlay).getPropertyValue('--p').trim() || '#FF3D00', '#ffffff', '#FFD700', '#22C55E', '#3B82F6'];
+                const pieces = Array.from({ length: 220 }, () => {
+                    const angle = -Math.PI / 2 + (Math.random() - .5) * Math.PI * .9;
+                    const speed = (Math.random() * .55 + .45) * h * .028;
+                    return {
+                        x: w / 2 + (Math.random() - .5) * w * .3,
+                        y: h * .62,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed,
+                        size: Math.random() * 10 + 6,
+                        spin: Math.random() * Math.PI,
+                        spinSpeed: (Math.random() - .5) * .3,
+                        color: colors[Math.floor(Math.random() * colors.length)],
+                    };
+                });
+                const started = performance.now();
+
+                function draw(now) {
+                    ctx.clearRect(0, 0, w, h);
+                    const age = now - started;
+                    pieces.forEach(p => {
+                        p.vy += h * .0006;
+                        p.vx *= .992;
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        p.spin += p.spinSpeed;
+                        ctx.save();
+                        ctx.globalAlpha = Math.max(0, 1 - age / 6000);
+                        ctx.translate(p.x, p.y);
+                        ctx.rotate(p.spin);
+                        ctx.fillStyle = p.color;
+                        ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+                        ctx.restore();
+                    });
+                    if (age < 6000) confettiFrame = requestAnimationFrame(draw);
+                    else ctx.clearRect(0, 0, w, h);
+                }
+                confettiFrame = requestAnimationFrame(draw);
+            }
+
+            window.addEventListener('resize', () => {
+                if (scene === 'result') fitName();
+                if (scene === 'board') fitBoard();
+            });
+
+            requestAnimationFrame(frame);
             tick();
         })();
     </script>
