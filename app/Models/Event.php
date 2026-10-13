@@ -413,10 +413,15 @@ class Event extends Model
         return $this->votes()->selectRaw('candidate_name, candidate_slug, COUNT(*) as total')->groupBy('candidate_name', 'candidate_slug')->orderByDesc('total')->get()->toArray();
     }
 
+    public function currentLotteryWinner(): ?LotteryEntry
+    {
+        return $this->lotteryEntries()->where('is_winner', true)->first();
+    }
+
     public function drawLotteryWinner(): ?LotteryEntry
     {
-        if ($this->lottery_drawn) {
-            return $this->lotteryEntries()->where('is_winner', true)->first();
+        if ($current = $this->currentLotteryWinner()) {
+            return $current;
         }
         $winner = $this->lotteryEntries()->inRandomOrder()->first();
         if (! $winner) {

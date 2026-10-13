@@ -14,8 +14,8 @@
     <h2>Winner: {{ $winner->name }}</h2>
     <p>{{ $winner->phone }} @if($winner->email)· {{ $winner->email }}@endif</p>
     <p class="text-xs text-muted" style="margin-top:8px">Drawn {{ $winner->won_at?->diffForHumans() }}</p>
-    <form method="POST" action="{{ route('moderator.lottery.reset', $event) }}" style="margin-top:16px" data-confirm="Reset the lottery? The winner will be cleared.">
-        @csrf <button class="btn btn-outline btn-sm">Reset Draw</button>
+    <form method="POST" action="{{ route('moderator.lottery.reset', $event) }}" style="margin-top:20px" data-confirm="Clear {{ $winner->name }} as the winner and reopen the draw?">
+        @csrf <button class="btn btn-gold btn-lg"><i data-lucide="rotate-ccw" class="lucide-icon"></i> Reset Lottery</button>
     </form>
 </div>
 @endif
@@ -27,13 +27,9 @@
             <form method="GET" action="{{ route('moderator.lottery.index', $event) }}" class="search-bar">
                 <input name="search" class="form-control" style="width:200px" placeholder="Search name or phone…" value="{{ $search }}">
             </form>
-            @if(!$event->lottery_drawn)
+            @if(!$winner)
             <form method="POST" action="{{ route('moderator.lottery.draw', $event) }}" data-confirm="Draw the lottery winner now?">
                 @csrf <button class="btn btn-gold">Draw Winner</button>
-            </form>
-            @else
-            <form method="POST" action="{{ route('moderator.lottery.reset', $event) }}" data-confirm="Reset the lottery?">
-                @csrf <button class="btn btn-outline">Reset</button>
             </form>
             @endif
         </div>
@@ -91,11 +87,3 @@
 </div>
 
 @endsection
-
-@push('scripts')
-<script>
-document.querySelectorAll('form[data-confirm]').forEach(f => {
-    f.addEventListener('submit', e => { if (!confirm(f.dataset.confirm)) e.preventDefault(); });
-});
-</script>
-@endpush

@@ -20,7 +20,7 @@
         <div class="stat-card">
             <div class="stat-label">Status</div>
             <div class="stat-value" style="font-size:18px;padding-top:6px">
-                @if ($event->lottery_drawn)
+                @if ($winner)
                     <i data-lucide="party-popper" class="lucide-icon"></i> Winner Drawn
                 @else
                     <i data-lucide="ticket" class="lucide-icon"></i> Open
@@ -30,7 +30,7 @@
     </div>
 
     
-    @if ($winner && $event->lottery_drawn)
+    @if ($winner)
         <div class="winner-card mb-3" id="winnerCard">
             <div class="trophy"><i data-lucide="trophy" class="lucide-icon" style="width:52px;height:52px;color:var(--gold)"></i></div>
             <h2>WINNER!</h2>
@@ -41,10 +41,11 @@
             @endif
             <p class="text-muted" style="margin-top:8px;font-size:12px">Drawn {{ $winner->won_at?->format('M d Y · H:i') }}
             </p>
-            <div style="margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-                <form method="POST" action="{{ route('admin.lottery.reset', $event) }}">
-                    @csrf <button class="btn btn-outline btn-sm"
-                        onclick="return confirm('Reset the lottery? The winner will be cleared.')"><i data-lucide="rotate-ccw" class="lucide-icon"></i> Reset Lottery</button>
+            <div style="margin-top:22px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+                <form method="POST" action="{{ route('admin.lottery.reset', $event) }}"
+                    onsubmit="return confirm(@js('Clear '.$winner->name.' as the winner and reopen the draw?'))">
+                    @csrf
+                    <button class="btn btn-gold btn-lg"><i data-lucide="rotate-ccw" class="lucide-icon"></i> Reset Lottery</button>
                 </form>
             </div>
         </div>
@@ -148,7 +149,7 @@
 @endsection
 
 @push('scripts')
-    @if (!$event->lottery_drawn && $totalCount > 0)
+    @if (! $winner && $totalCount > 0)
         <script>
             function animateDraw() {
                 const btn = document.getElementById('drawBtn');
@@ -169,61 +170,61 @@
                     document.getElementById('drawForm').submit();
                 }, 2800);
             }
+        </script>
+    @endif
+    @if (session('winner_drawn'))
+        <script>
+            (function confetti() {
+                const canvas = document.createElement('canvas');
+                canvas.style.cssText =
+                    'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999';
+                document.body.appendChild(canvas);
+                const ctx = canvas.getContext('2d');
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                const pieces = Array.from({
+                    length: 120
+                }, () => ({
+                    x: Math.random() * canvas.width,
+                    y: -20,
+                    r: Math.random() * 8 + 4,
+                    d: Math.random() * 80 + 20,
+                    color: ['#FF3D00', '#FFD700', '#22C55E', '#3B82F6', '#fff'][Math.floor(Math.random() *
+                        5)],
+                    tilt: Math.random() * 10 - 10,
+                    tiltAngle: 0,
+                    tiltSpeed: Math.random() * 0.1 + 0.05
+                }));
+                let angle = 0,
+                    frame;
 
-            // Confetti if winner just drawn
-            @if (session('winner_drawn'))
-                (function confetti() {
-                    const canvas = document.createElement('canvas');
-                    canvas.style.cssText =
-                        'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999';
-                    document.body.appendChild(canvas);
-                    const ctx = canvas.getContext('2d');
-                    canvas.width = window.innerWidth;
-                    canvas.height = window.innerHeight;
-                    const pieces = Array.from({
-                        length: 120
-                    }, () => ({
-                        x: Math.random() * canvas.width,
-                        y: -20,
-                        r: Math.random() * 8 + 4,
-                        d: Math.random() * 80 + 20,
-                        color: ['#FF3D00', '#FFD700', '#22C55E', '#3B82F6', '#fff'][Math.floor(Math.random() *
-                            5)],
-                        tilt: Math.random() * 10 - 10,
-                        tiltAngle: 0,
-                        tiltSpeed: Math.random() * 0.1 + 0.05
-                    }));
-                    let angle = 0,
-                        frame;
-
-                    function draw() {
-                        ctx.clearRect(0, 0, canvas.width, canvas.height);
-                        angle += 0.01;
-                        pieces.forEach(p => {
-                            p.tiltAngle += p.tiltSpeed;
-                            p.y += (Math.cos(angle + p.d) + 1.5) * 1.8;
-                            p.x += Math.sin(angle) * 1.5;
-                            p.tilt = Math.sin(p.tiltAngle) * 15;
-                            ctx.beginPath();
-                            ctx.lineWidth = p.r / 2;
-                            ctx.strokeStyle = p.color;
-                            ctx.moveTo(p.x + p.tilt + p.r / 4, p.y);
-                            ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 4);
-                            ctx.stroke();
-                        });
-                        if (pieces.some(p => p.y <= canvas.height)) frame = requestAnimationFrame(draw);
-                        else {
-                            cancelAnimationFrame(frame);
-                            canvas.remove();
-                        }
-                    }
-                    draw();
-                    setTimeout(() => {
+                function draw() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    angle += 0.01;
+                    pieces.forEach(p => {
+                        p.tiltAngle += p.tiltSpeed;
+                        p.y += (Math.cos(angle + p.d) + 1.5) * 1.8;
+                        p.x += Math.sin(angle) * 1.5;
+                        p.tilt = Math.sin(p.tiltAngle) * 15;
+                        ctx.beginPath();
+                        ctx.lineWidth = p.r / 2;
+                        ctx.strokeStyle = p.color;
+                        ctx.moveTo(p.x + p.tilt + p.r / 4, p.y);
+                        ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 4);
+                        ctx.stroke();
+                    });
+                    if (pieces.some(p => p.y <= canvas.height)) frame = requestAnimationFrame(draw);
+                    else {
                         cancelAnimationFrame(frame);
                         canvas.remove();
-                    }, 5000);
-                })();
-            @endif
+                    }
+                }
+                draw();
+                setTimeout(() => {
+                    cancelAnimationFrame(frame);
+                    canvas.remove();
+                }, 5000);
+            })();
         </script>
     @endif
 @endpush
