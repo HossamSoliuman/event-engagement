@@ -57,6 +57,7 @@ Route::get('/screen/{slug}', [VidiwallController::class, 'show'])->middleware('t
 Route::get('/screen/{slug}/feed', [VidiwallController::class, 'feed'])->name('vidiwall.feed');
 Route::get('/screen/{slug}/clash/feed', [VidiwallController::class, 'clashFeed'])->name('vidiwall.clash.feed');
 Route::get('/screen/{slug}/lottery/feed', [VidiwallController::class, 'lotteryFeed'])->name('vidiwall.lottery.feed');
+Route::get('/screen/{slug}/voting/feed', [VidiwallController::class, 'votingFeed'])->name('vidiwall.voting.feed');
 
 Route::get('login', [AdminAuthController::class, 'showLogin'])->name('login');
 
@@ -124,6 +125,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('events/{event}/voting/reopen', [VotingAdminController::class, 'reopen'])->name('voting.reopen');
         Route::post('events/{event}/voting/reset', [VotingAdminController::class, 'reset'])->name('voting.reset');
         Route::get('events/{event}/voting/export', [VotingAdminController::class, 'export'])->name('voting.export');
+        Route::get('events/{event}/voting/screen', [VotingAdminController::class, 'screen'])->name('voting.screen');
+        Route::put('events/{event}/voting/screen', [VotingAdminController::class, 'updateScreen'])->name('voting.screen.update');
+        Route::post('events/{event}/voting/screen/live', [VotingAdminController::class, 'showLive'])->name('voting.screen.live');
+        Route::post('events/{event}/voting/screen/reveal', [VotingAdminController::class, 'reveal'])->name('voting.screen.reveal');
+        Route::post('events/{event}/voting/screen/podium', [VotingAdminController::class, 'showPodium'])->name('voting.screen.podium');
+        Route::post('events/{event}/voting/screen/reveal-now', [VotingAdminController::class, 'revealNow'])->name('voting.screen.reveal-now');
+        Route::post('events/{event}/voting/screen/hide', [VotingAdminController::class, 'hideScreen'])->name('voting.screen.hide');
         Route::get('events/{event}/membership', [MembershipAdminController::class, 'index'])->name('membership.index');
         Route::delete('membership/{member}', [MembershipAdminController::class, 'destroy'])->name('membership.destroy');
         Route::get('events/{event}/membership/export', [MembershipAdminController::class, 'export'])->name('membership.export');
@@ -230,6 +238,13 @@ Route::prefix('moderator')->name('moderator.')->middleware(['auth', 'event.moder
     Route::post('{event}/voting/reopen', [ModeratorVotingController::class, 'reopen'])->name('voting.reopen');
     Route::post('{event}/voting/reset', [ModeratorVotingController::class, 'reset'])->name('voting.reset');
     Route::get('{event}/voting/export', [ModeratorVotingController::class, 'export'])->name('voting.export');
+    Route::get('{event}/voting/screen', [ModeratorVotingController::class, 'screen'])->name('voting.screen');
+    Route::put('{event}/voting/screen', [ModeratorVotingController::class, 'updateScreen'])->name('voting.screen.update');
+    Route::post('{event}/voting/screen/live', [ModeratorVotingController::class, 'showLive'])->name('voting.screen.live');
+    Route::post('{event}/voting/screen/reveal', [ModeratorVotingController::class, 'reveal'])->name('voting.screen.reveal');
+    Route::post('{event}/voting/screen/podium', [ModeratorVotingController::class, 'showPodium'])->name('voting.screen.podium');
+    Route::post('{event}/voting/screen/reveal-now', [ModeratorVotingController::class, 'revealNow'])->name('voting.screen.reveal-now');
+    Route::post('{event}/voting/screen/hide', [ModeratorVotingController::class, 'hideScreen'])->name('voting.screen.hide');
 
     Route::get('{event}/membership', [ModeratorMembershipController::class, 'index'])->name('membership.index');
     Route::delete('{event}/membership/{member}', [ModeratorMembershipController::class, 'destroy'])->name('membership.destroy');

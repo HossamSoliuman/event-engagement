@@ -102,6 +102,18 @@ class VidiwallController extends Controller
     }
 
     /**
+     * Vote show feed: live results, the winner reveal or the podium, timed
+     * from the moment of the request so the screen can run it on its own clock.
+     */
+    public function votingFeed(string $slug): JsonResponse
+    {
+        $event = Event::where('slug', $slug)->firstOrFail();
+        $screen = $event->votingScreen?->setRelation('event', $event);
+
+        return response()->json($screen ? $screen->screenFeed() : ['revision' => 0, 'show' => null]);
+    }
+
+    /**
      * Fan Clash rope feed. Reads the two round counters (O(1)), finalizes the
      * round lazily on expiry, and keeps a freshly finished round visible for a
      * short window so the big screen can hold the winner reveal.

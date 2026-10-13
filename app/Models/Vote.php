@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Vote extends Model
 {
+    use HasFactory;
+
     protected $fillable = ['event_id', 'visitor_id', 'candidate_name', 'candidate_slug', 'voter_session', 'voter_ip'];
 
     public function event()

@@ -218,6 +218,70 @@ class Event extends Model
         return $this->hasMany(Vote::class);
     }
 
+    public function votingScreen(): HasOne
+    {
+        return $this->hasOne(VotingScreen::class);
+    }
+
+    /**
+     * The vote's vidiwall settings and show, created with the defaults the
+     * first time they are needed.
+     */
+    public function votingShow(): VotingScreen
+    {
+        $screen = $this->votingScreen ?? $this->votingScreen()->createOrFirst([]);
+        $screen->setRelation('event', $this);
+        $this->setRelation('votingScreen', $screen);
+
+        return $screen;
+    }
+
+    /**
+     * Every athlete in the vote with their votes, most votes first: the
+     * athletes set up for the vote, with or without votes, plus any other name
+     * still holding votes. Athletes level on votes share a rank and keep the
+     * order they were set up in.
+     *
+     * @return list<array{key: string, name: string, position: string|null, votes: int, percent: int, rank: int}>
+     */
+    public function voteStandings(): array
+    {
+        $totals = $this->votes()->toBase()
+            ->selectRaw('candidate_name, COUNT(*) as total')
+            ->groupBy('candidate_name')
+            ->pluck('total', 'candidate_name')
+            ->map(fn (mixed $total) => (int) $total);
+
+        $athletes = collect($this->voting_options ?? [])
+            ->filter(fn (mixed $option) => is_array($option) && trim((string) ($option['name'] ?? '')) !== '')
+            ->map(fn (array $option) => [
+                'name' => trim($option['name']),
+                'position' => trim((string) ($option['position'] ?? '')) ?: null,
+            ])
+            ->unique('name')
+            ->values();
+
+        $athletes = $athletes
+            ->concat($totals->keys()->map(fn (mixed $name) => (string) $name)->diff($athletes->pluck('name'))->map(fn (string $name) => ['name' => $name, 'position' => null]))
+            ->values();
+
+        $votesCast = $totals->sum();
+
+        $ranked = $athletes
+            ->map(fn (array $athlete, int $order) => [...$athlete, 'votes' => $totals[$athlete['name']] ?? 0, 'order' => $order])
+            ->sortBy([['votes', 'desc'], ['order', 'asc']])
+            ->values();
+
+        return $ranked->map(fn (array $athlete) => [
+            'key' => substr(md5($athlete['name']), 0, 12),
+            'name' => $athlete['name'],
+            'position' => $athlete['position'],
+            'votes' => $athlete['votes'],
+            'percent' => $votesCast > 0 ? (int) round($athlete['votes'] / $votesCast * 100) : 0,
+            'rank' => 1 + $ranked->where('votes', '>', $athlete['votes'])->count(),
+        ])->all();
+    }
+
     public function memberships()
     {
         return $this->hasMany(Membership::class);

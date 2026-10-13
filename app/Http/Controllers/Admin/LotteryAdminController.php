@@ -23,6 +23,8 @@ class LotteryAdminController extends Controller
 {
     private const DRAW_RUNNING = 'A draw is still running on the vidiwall. Reveal it or hide it first.';
 
+    private const VOTE_REVEALING = 'The vote winner is still being revealed on the vidiwall. Wait for it or hide it first.';
+
     public function index(Event $event, Request $request): View
     {
         $search = $request->get('search');
@@ -65,8 +67,8 @@ class LotteryAdminController extends Controller
         $screen = $event->lotteryShow();
         $onScreen = $this->wantsScreen($request, $event);
 
-        if ($onScreen && $screen->isRevealPending()) {
-            return $this->backToLottery($event)->withInput()->with('error', self::DRAW_RUNNING);
+        if ($onScreen && ($busy = $this->screenBusy($event))) {
+            return $this->backToLottery($event)->withInput()->with('error', $busy);
         }
 
         $nextRank = $request->filled('next_rank') ? $request->integer('next_rank') : null;
@@ -106,8 +108,8 @@ class LotteryAdminController extends Controller
         $screen = $event->lotteryShow();
         $onScreen = $this->wantsScreen($request, $event);
 
-        if ($onScreen && $screen->isRevealPending()) {
-            return $this->backToLottery($event)->with('error', self::DRAW_RUNNING);
+        if ($onScreen && ($busy = $this->screenBusy($event))) {
+            return $this->backToLottery($event)->with('error', $busy);
         }
 
         $replacement = $event->redrawLotteryWinner($lotteryEntry);
@@ -181,8 +183,8 @@ class LotteryAdminController extends Controller
 
         $screen = $event->lotteryShow();
 
-        if ($screen->isRevealPending()) {
-            return $this->screenResponse($request, $event, self::DRAW_RUNNING, 409);
+        if ($busy = $this->screenBusy($event)) {
+            return $this->screenResponse($request, $event, $busy, 409);
         }
 
         $screen->showWinner($lotteryEntry);
@@ -198,8 +200,8 @@ class LotteryAdminController extends Controller
 
         $screen = $event->lotteryShow();
 
-        if ($screen->isRevealPending()) {
-            return $this->screenResponse($request, $event, self::DRAW_RUNNING, 409);
+        if ($busy = $this->screenBusy($event)) {
+            return $this->screenResponse($request, $event, $busy, 409);
         }
 
         $screen->showBoard();
@@ -306,6 +308,19 @@ class LotteryAdminController extends Controller
         }
 
         return $request->boolean('on_screen');
+    }
+
+    /**
+     * Why nothing new may take the screen right now: a winner still on the
+     * way, from the lottery or the vote.
+     */
+    private function screenBusy(Event $event): ?string
+    {
+        return match (true) {
+            $event->lotteryShow()->isRevealPending() => self::DRAW_RUNNING,
+            (bool) $event->votingScreen?->setRelation('event', $event)->isRevealPending() => self::VOTE_REVEALING,
+            default => null,
+        };
     }
 
     private function backToLottery(Event $event): RedirectResponse

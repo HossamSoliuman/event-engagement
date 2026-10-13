@@ -1052,6 +1052,815 @@
             pointer-events: none;
             z-index: 4
         }
+
+        /* ── Vote show ─────────────────────────────────────────────── */
+        .vot {
+            position: absolute;
+            inset: 0;
+            z-index: 21;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+            padding: clamp(18px, 4vh, 56px) clamp(20px, 4vw, 72px);
+            background: var(--bg);
+            background: radial-gradient(120% 90% at 50% 30%, color-mix(in srgb, var(--p) 22%, var(--bg)) 0%, var(--bg) 66%);
+            color: var(--on-bg);
+            animation: votIn .6s cubic-bezier(.22, 1, .36, 1)
+        }
+
+        .vot[hidden] {
+            display: none
+        }
+
+        .vot.is-leaving {
+            animation: votOut .5s ease forwards
+        }
+
+        @keyframes votIn {
+            from {
+                opacity: 0;
+                transform: scale(1.04)
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1)
+            }
+        }
+
+        @keyframes votOut {
+            to {
+                opacity: 0;
+                transform: scale(.98)
+            }
+        }
+
+        .vot-head {
+            position: relative;
+            z-index: 2;
+            flex: 0 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: clamp(6px, 1.3vh, 16px);
+            max-width: 100%;
+            text-align: center
+        }
+
+        .vot-headline {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: clamp(18px, 3vw, 52px);
+            letter-spacing: .24em;
+            text-transform: uppercase;
+            color: var(--acc);
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap
+        }
+
+        .vot-status {
+            display: inline-flex;
+            align-items: center;
+            gap: .6em;
+            padding: .35em 1.1em;
+            border-radius: 999px;
+            background: color-mix(in srgb, var(--on-bg) 10%, transparent);
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: clamp(12px, 1.5vw, 24px);
+            letter-spacing: .2em;
+            text-transform: uppercase
+        }
+
+        .vot-status[hidden] {
+            display: none
+        }
+
+        .vot-status-dot {
+            width: .6em;
+            height: .6em;
+            border-radius: 50%;
+            background: #ef4444;
+            animation: votPulse 1.6s infinite
+        }
+
+        .vot-status.is-final .vot-status-dot {
+            background: var(--acc);
+            animation: none
+        }
+
+        @keyframes votPulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, .7)
+            }
+
+            80%,
+            100% {
+                box-shadow: 0 0 0 .7em rgba(239, 68, 68, 0)
+            }
+        }
+
+        .vot-body {
+            position: relative;
+            z-index: 2;
+            flex: 1 1 auto;
+            width: 100%;
+            min-height: 0;
+            margin-top: clamp(10px, 2.4vh, 32px)
+        }
+
+        .vot-scene {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center
+        }
+
+        .vot-scene[hidden] {
+            display: none
+        }
+
+        .vot-live {
+            flex-direction: row;
+            align-items: stretch;
+            gap: clamp(16px, 3vw, 64px)
+        }
+
+        .vot-chart {
+            --row: 80px;
+            position: relative;
+            flex: 1 1 auto;
+            min-width: 0;
+            max-width: 1500px
+        }
+
+        .vot-row {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--row);
+            display: grid;
+            grid-template-columns: calc(var(--row) * .74) minmax(0, 1fr);
+            column-gap: calc(var(--row) * .24);
+            align-items: center;
+            transition: transform .9s cubic-bezier(.22, 1, .36, 1);
+            will-change: transform
+        }
+
+        .vot-row.is-entering {
+            transition: none
+        }
+
+        .vot-row.is-entering>* {
+            animation: votSlide .7s var(--d, 0s) cubic-bezier(.22, 1, .36, 1) both
+        }
+
+        @keyframes votSlide {
+            from {
+                opacity: 0;
+                transform: translateX(-4%)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0)
+            }
+        }
+
+        .vot-rank {
+            justify-self: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: calc(var(--row) * .64);
+            height: calc(var(--row) * .64);
+            border-radius: 50%;
+            background: color-mix(in srgb, var(--on-bg) 12%, transparent);
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: calc(var(--row) * .28);
+            font-variant-numeric: tabular-nums
+        }
+
+        .vot-row.is-r1 .vot-rank {
+            background: linear-gradient(135deg, #FFE066, #E6B800);
+            color: #1a1400
+        }
+
+        .vot-row.is-r2 .vot-rank {
+            background: linear-gradient(135deg, #E5E7EB, #9CA3AF);
+            color: #111827
+        }
+
+        .vot-row.is-r3 .vot-rank {
+            background: linear-gradient(135deg, #F0B27A, #B8732E);
+            color: #1f1206
+        }
+
+        .vot-main {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: calc(var(--row) * .07)
+        }
+
+        .vot-line {
+            display: flex;
+            align-items: baseline;
+            gap: calc(var(--row) * .16);
+            min-width: 0
+        }
+
+        .vot-name {
+            flex: 0 1 auto;
+            min-width: 0;
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: calc(var(--row) * .32);
+            line-height: 1.12;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis
+        }
+
+        .vot-pos {
+            flex: 0 1 auto;
+            min-width: 0;
+            font-size: calc(var(--row) * .19);
+            font-weight: 600;
+            opacity: .6;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis
+        }
+
+        .vot-pos[hidden],
+        .vot-value[hidden] {
+            display: none
+        }
+
+        .vot-value {
+            flex: 0 0 auto;
+            margin-left: auto;
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: calc(var(--row) * .3);
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap
+        }
+
+        .vot-value small {
+            margin-left: .4em;
+            font-size: .66em;
+            opacity: .65
+        }
+
+        .vot-row.is-r1 .vot-value {
+            color: var(--acc)
+        }
+
+        .vot-row.is-bump .vot-value {
+            animation: votBump .6s cubic-bezier(.22, 1, .36, 1)
+        }
+
+        @keyframes votBump {
+            40% {
+                transform: scale(1.12)
+            }
+        }
+
+        .vot-track {
+            height: calc(var(--row) * .2);
+            border-radius: 999px;
+            background: color-mix(in srgb, var(--on-bg) 9%, transparent);
+            overflow: hidden
+        }
+
+        .vot-fill {
+            height: 100%;
+            width: 0;
+            border-radius: inherit;
+            background: linear-gradient(90deg, color-mix(in srgb, var(--p) 60%, var(--bg)), var(--p));
+            transition: width 1.1s cubic-bezier(.22, 1, .36, 1)
+        }
+
+        .vot-row.is-r1 .vot-fill {
+            background: linear-gradient(90deg, color-mix(in srgb, var(--acc) 60%, var(--bg)), var(--acc));
+            box-shadow: 0 0 calc(var(--row) * .3) color-mix(in srgb, var(--acc) 45%, transparent)
+        }
+
+        .vot-qr {
+            flex: 0 0 auto;
+            align-self: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: clamp(8px, 1.8vh, 22px);
+            width: clamp(140px, min(22vw, 46vh), 440px)
+        }
+
+        .vot-qr[hidden] {
+            display: none
+        }
+
+        .vot-qr-card {
+            width: 100%;
+            aspect-ratio: 1;
+            padding: clamp(8px, 1.2vw, 20px);
+            border-radius: clamp(12px, 1.6vw, 24px);
+            background: #fff;
+            box-shadow: 0 0 0 5px var(--acc), 0 24px 60px rgba(0, 0, 0, .5)
+        }
+
+        .vot-qr-card img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain
+        }
+
+        .vot-qr-url {
+            font-size: clamp(14px, 1.6vw, 26px);
+            font-weight: 600;
+            color: var(--acc);
+            text-align: center;
+            word-break: break-all
+        }
+
+        .vot-qr-text {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: clamp(16px, 2.2vw, 40px);
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            text-align: center;
+            color: var(--acc)
+        }
+
+        .vot-trophy {
+            width: clamp(90px, 22vh, 260px);
+            height: clamp(90px, 22vh, 260px);
+            color: var(--acc);
+            animation: votFloat 1.6s ease-in-out infinite
+        }
+
+        .vot-trophy svg {
+            width: 100%;
+            height: 100%
+        }
+
+        @keyframes votFloat {
+
+            0%,
+            100% {
+                transform: translateY(0) scale(1)
+            }
+
+            50% {
+                transform: translateY(-4%) scale(1.04)
+            }
+        }
+
+        .vot-intro-text {
+            margin-top: clamp(10px, 2.4vh, 30px);
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: clamp(26px, 5vw, 90px);
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            text-align: center
+        }
+
+        .vot-count {
+            --ring: min(62vh, 52vw)
+        }
+
+        .vot-ring {
+            position: absolute;
+            width: var(--ring);
+            height: var(--ring);
+            transform: rotate(-90deg)
+        }
+
+        .vot-ring circle {
+            fill: none;
+            stroke-width: 5
+        }
+
+        .vot-ring-track {
+            stroke: color-mix(in srgb, var(--on-bg) 12%, transparent)
+        }
+
+        .vot-ring-fill {
+            stroke: var(--acc);
+            stroke-linecap: round;
+            stroke-dasharray: 339.292
+        }
+
+        .vot-count-num {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: calc(var(--ring) * .5);
+            line-height: 1;
+            font-variant-numeric: tabular-nums
+        }
+
+        .vot-count-num.is-tick {
+            animation: votTick .9s cubic-bezier(.22, 1, .36, 1)
+        }
+
+        @keyframes votTick {
+            from {
+                opacity: .2;
+                transform: scale(1.35)
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1)
+            }
+        }
+
+        .vot-rays {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 160vmax;
+            height: 160vmax;
+            margin: -80vmax 0 0 -80vmax;
+            background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--acc) 16%, transparent) 0deg 7deg, transparent 7deg 22deg);
+            -webkit-mask-image: radial-gradient(circle, #000 0%, transparent 42%);
+            mask-image: radial-gradient(circle, #000 0%, transparent 42%);
+            animation: votSpin 40s linear infinite;
+            pointer-events: none
+        }
+
+        @keyframes votSpin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        .vot-result>*:not(.vot-rays) {
+            position: relative
+        }
+
+        .vot-eyebrow {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: clamp(16px, 2.6vw, 46px);
+            letter-spacing: .34em;
+            text-transform: uppercase;
+            color: var(--acc)
+        }
+
+        .vot-winners {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: clamp(10px, 2.4vh, 32px);
+            margin-top: clamp(6px, 1.6vh, 20px)
+        }
+
+        .vot-winner {
+            width: 100%;
+            text-align: center
+        }
+
+        .vot-winner-name {
+            width: 100%;
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: clamp(48px, 11vw, 220px);
+            line-height: 1;
+            white-space: nowrap;
+            text-shadow: 0 0 60px color-mix(in srgb, var(--acc) 55%, transparent)
+        }
+
+        .vot-winners.is-tie .vot-winner-name {
+            font-size: clamp(32px, 6.4vw, 140px)
+        }
+
+        .vot-winner-name.is-wrapped {
+            white-space: normal;
+            overflow-wrap: anywhere
+        }
+
+        .vot-winner-detail {
+            margin-top: clamp(8px, 1.6vh, 20px);
+            font-size: clamp(16px, 2.2vw, 38px);
+            font-weight: 600;
+            letter-spacing: .1em;
+            opacity: .75
+        }
+
+        .vot-winner-detail:empty {
+            display: none
+        }
+
+        .vot-result.is-revealed .vot-eyebrow {
+            animation: votUp .7s .05s cubic-bezier(.22, 1, .36, 1) both
+        }
+
+        .vot-result.is-revealed .vot-winner-name {
+            animation: votPop .9s .15s cubic-bezier(.34, 1.56, .64, 1) both
+        }
+
+        .vot-result.is-revealed .vot-winner-detail {
+            animation: votUp .7s .5s cubic-bezier(.22, 1, .36, 1) both
+        }
+
+        @keyframes votPop {
+            from {
+                opacity: 0;
+                transform: scale(.6)
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1)
+            }
+        }
+
+        @keyframes votUp {
+            from {
+                opacity: 0;
+                transform: translateY(24px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        .vot-podium {
+            position: relative;
+            width: min(100%, 1700px);
+            height: 100%;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1.18fr) minmax(0, 1fr);
+            gap: clamp(12px, 1.6vw, 32px);
+            align-items: end;
+            container-type: size
+        }
+
+        .vot-podium::after {
+            content: '';
+            position: absolute;
+            left: -6%;
+            right: -6%;
+            bottom: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--on-bg) 40%, transparent) 20%, color-mix(in srgb, var(--acc) 80%, transparent) 50%, color-mix(in srgb, var(--on-bg) 40%, transparent) 80%, transparent);
+            box-shadow: 0 0 24px color-mix(in srgb, var(--acc) 50%, transparent)
+        }
+
+        .vot-beam {
+            position: absolute;
+            left: 50%;
+            bottom: 0;
+            width: 64%;
+            height: 135%;
+            transform: translateX(-50%);
+            clip-path: polygon(40% 0, 60% 0, 100% 100%, 0 100%);
+            background: linear-gradient(180deg, color-mix(in srgb, var(--acc) 30%, transparent), color-mix(in srgb, var(--acc) 10%, transparent) 60%, transparent);
+            -webkit-mask-image: linear-gradient(180deg, transparent, #000 30%);
+            mask-image: linear-gradient(180deg, transparent, #000 30%);
+            filter: blur(10px);
+            pointer-events: none;
+            animation: votBreathe 4.5s ease-in-out infinite
+        }
+
+        @keyframes votBreathe {
+
+            0%,
+            100% {
+                opacity: .65
+            }
+
+            50% {
+                opacity: 1
+            }
+        }
+
+        .vot-place {
+            position: relative;
+            z-index: 1;
+            min-width: 0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            text-align: center
+        }
+
+        .vot-place.is-empty {
+            visibility: hidden
+        }
+
+        .vot-place[data-place="3"] {
+            --d: 0s
+        }
+
+        .vot-place[data-place="2"] {
+            --d: .3s
+        }
+
+        .vot-place[data-place="1"] {
+            --d: .6s
+        }
+
+        .vot-place-names {
+            flex: 0 0 auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: calc(clamp(4px, 1.2cqh, 14px) * var(--k, 1));
+            margin-bottom: calc(clamp(8px, 3cqh, 30px) * var(--k, 1))
+        }
+
+        .vot-place-name {
+            width: 100%;
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: calc(clamp(22px, min(5vw, 13cqh), 140px) * var(--k, 1));
+            line-height: 1.04;
+            text-wrap: balance
+        }
+
+        .vot-place-name span {
+            display: inline-block
+        }
+
+        .vot-pillar {
+            position: relative;
+            flex: 0 0 auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            container-type: size;
+            border-radius: clamp(10px, 1.2vw, 22px) clamp(10px, 1.2vw, 22px) 0 0;
+            box-shadow: inset 0 clamp(4px, .7vh, 9px) 0 rgba(255, 255, 255, .45);
+            transform-origin: bottom
+        }
+
+        .vot-pillar::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0) 4%, rgba(255, 255, 255, .26) 16%, rgba(255, 255, 255, 0) 34%, rgba(0, 0, 0, 0) 70%, rgba(0, 0, 0, .14));
+            pointer-events: none
+        }
+
+        .vot-pillar-value {
+            position: relative;
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: min(58cqh, 25cqw);
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+            text-shadow: 0 .03em 0 rgba(255, 255, 255, .45)
+        }
+
+        .vot-pillar-unit {
+            position: relative;
+            margin-top: .2em;
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: min(12cqh, 6cqw);
+            letter-spacing: .2em;
+            text-transform: uppercase;
+            opacity: .7
+        }
+
+        .vot-pillar-unit[hidden] {
+            display: none
+        }
+
+        .vot-place[data-place="1"] .vot-pillar {
+            height: 62%;
+            background: linear-gradient(180deg, #FFE27A, #C99A00);
+            color: #1a1400;
+            box-shadow: inset 0 clamp(4px, .7vh, 9px) 0 rgba(255, 255, 255, .55), 0 0 clamp(30px, 5vw, 110px) rgba(255, 204, 0, .3)
+        }
+
+        .vot-place[data-place="1"] .vot-pillar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: -60%;
+            width: 40%;
+            background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .5), transparent);
+            transform: skewX(-18deg);
+            animation: votShine 5s 2.2s ease-in-out infinite;
+            pointer-events: none
+        }
+
+        @keyframes votShine {
+            0% {
+                left: -60%
+            }
+
+            30%,
+            100% {
+                left: 130%
+            }
+        }
+
+        .vot-place[data-place="2"] .vot-pillar {
+            height: 47%;
+            background: linear-gradient(180deg, #EEF0F3, #8C939E);
+            color: #111827
+        }
+
+        .vot-place[data-place="3"] .vot-pillar {
+            height: 34%;
+            background: linear-gradient(180deg, #F5BC88, #A86425);
+            color: #1f1206
+        }
+
+        .vot-podium.is-rising .vot-pillar {
+            animation: votGrow .9s var(--d) cubic-bezier(.22, 1, .36, 1) both
+        }
+
+        .vot-podium.is-rising .vot-place-names {
+            animation: votUp .7s calc(var(--d) + .45s) cubic-bezier(.22, 1, .36, 1) both
+        }
+
+        .vot-podium.is-rising .vot-beam {
+            animation: votBeamIn 1.2s 1s ease both, votBreathe 4.5s 2.2s ease-in-out infinite
+        }
+
+        @keyframes votBeamIn {
+            from {
+                opacity: 0
+            }
+
+            to {
+                opacity: .65
+            }
+        }
+
+        @keyframes votGrow {
+            from {
+                transform: scaleY(0)
+            }
+
+            to {
+                transform: scaleY(1)
+            }
+        }
+
+        .vot-foot {
+            position: relative;
+            z-index: 2;
+            flex: 0 0 auto;
+            margin-top: clamp(8px, 1.8vh, 24px);
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: clamp(13px, 1.6vw, 26px);
+            letter-spacing: .22em;
+            text-transform: uppercase;
+            opacity: .6
+        }
+
+        .vot-foot[hidden] {
+            display: none
+        }
+
+        .vot-progress {
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            height: 4px;
+            width: 0;
+            background: var(--acc);
+            z-index: 3
+        }
+
+        .vot-confetti {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 4
+        }
     </style>
 </head>
 
@@ -1188,6 +1997,74 @@
                     <canvas class="lot-confetti" id="lotConfetti"></canvas>
                 </div>
             @endif
+
+            @if ($event->module_voting)
+                <div class="vot" id="votOverlay" hidden>
+                    <div class="vot-head">
+                        <div class="vot-headline" id="votHeadline"></div>
+                        <div class="vot-status" id="votStatus" hidden>
+                            <span class="vot-status-dot"></span>
+                            <span id="votStatusText"></span>
+                        </div>
+                    </div>
+
+                    <div class="vot-body">
+                        <div class="vot-scene vot-live" data-scene="live" hidden>
+                            <div class="vot-chart" id="votChart"></div>
+                            <div class="vot-qr" id="votQr" hidden>
+                                @if ($event->qr_code_path)
+                                    <div class="vot-qr-card">
+                                        <img src="{{ $event->qr_code_url }}" alt="QR code">
+                                    </div>
+                                @else
+                                    <div class="vot-qr-url">{{ $event->getGuestUrl() }}</div>
+                                @endif
+                                <div class="vot-qr-text">Scan to vote</div>
+                            </div>
+                        </div>
+
+                        <div class="vot-scene" data-scene="intro" hidden>
+                            <div class="vot-trophy">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+                            </div>
+                            <div class="vot-intro-text">And the winner is…</div>
+                        </div>
+
+                        <div class="vot-scene vot-count" data-scene="countdown" hidden>
+                            <svg class="vot-ring" viewBox="0 0 120 120" aria-hidden="true">
+                                <circle class="vot-ring-track" cx="60" cy="60" r="54" />
+                                <circle class="vot-ring-fill" id="votRingFill" cx="60" cy="60" r="54" />
+                            </svg>
+                            <div class="vot-count-num" id="votCountNum"></div>
+                        </div>
+
+                        <div class="vot-scene vot-result" data-scene="result" id="votResult" hidden>
+                            <div class="vot-rays"></div>
+                            <div class="vot-eyebrow" id="votEyebrow">Winner</div>
+                            <div class="vot-winners" id="votWinners"></div>
+                        </div>
+
+                        <div class="vot-scene" data-scene="podium" hidden>
+                            <div class="vot-podium" id="votPodium">
+                                <div class="vot-beam"></div>
+                                @foreach ([2, 1, 3] as $place)
+                                    <div class="vot-place" data-place="{{ $place }}">
+                                        <div class="vot-place-names"></div>
+                                        <div class="vot-pillar">
+                                            <span class="vot-pillar-value"></span>
+                                            <span class="vot-pillar-unit" hidden>votes</span>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="vot-foot" id="votFoot" hidden></div>
+                    <div class="vot-progress" id="votProgress"></div>
+                    <canvas class="vot-confetti" id="votConfetti"></canvas>
+                </div>
+            @endif
         </div>
 
         <div class="fr-rail fr-right">
@@ -1215,6 +2092,7 @@
         const SHOW_NAME = {{ $event->vidiwall_show_uploader ? 'true' : 'false' }};
         const HAS_FANCLASH = {{ $event->module_fanclash ? 'true' : 'false' }};
         const HAS_LOTTERY = {{ $event->module_lottery ? 'true' : 'false' }};
+        const HAS_VOTING = {{ $event->module_voting ? 'true' : 'false' }};
 
         let clashActive = false;
         let lastFotoId = null;
@@ -1667,6 +2545,65 @@
             tick();
         })();
 
+        /* ── Confetti bursting up from the lower middle of a show, in the
+              event's colours. ── */
+        function makeConfetti(canvas, host) {
+            let frame = null;
+
+            function stop() {
+                cancelAnimationFrame(frame);
+                canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+            }
+
+            function burst() {
+                stop();
+                const w = canvas.width = host.clientWidth;
+                const h = canvas.height = host.clientHeight;
+                const ctx = canvas.getContext('2d');
+                const colors = [getComputedStyle(host).getPropertyValue('--acc').trim() || '#FFD700',
+                    getComputedStyle(host).getPropertyValue('--p').trim() || '#FF3D00', '#ffffff', '#FFD700', '#22C55E', '#3B82F6'];
+                const pieces = Array.from({ length: 220 }, () => {
+                    const angle = -Math.PI / 2 + (Math.random() - .5) * Math.PI * .9;
+                    const speed = (Math.random() * .55 + .45) * h * .028;
+                    return {
+                        x: w / 2 + (Math.random() - .5) * w * .3,
+                        y: h * .62,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed,
+                        size: Math.random() * 10 + 6,
+                        spin: Math.random() * Math.PI,
+                        spinSpeed: (Math.random() - .5) * .3,
+                        color: colors[Math.floor(Math.random() * colors.length)],
+                    };
+                });
+                const started = performance.now();
+
+                function draw(now) {
+                    ctx.clearRect(0, 0, w, h);
+                    const age = now - started;
+                    pieces.forEach(p => {
+                        p.vy += h * .0006;
+                        p.vx *= .992;
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        p.spin += p.spinSpeed;
+                        ctx.save();
+                        ctx.globalAlpha = Math.max(0, 1 - age / 6000);
+                        ctx.translate(p.x, p.y);
+                        ctx.rotate(p.spin);
+                        ctx.fillStyle = p.color;
+                        ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+                        ctx.restore();
+                    });
+                    if (age < 6000) frame = requestAnimationFrame(draw);
+                    else ctx.clearRect(0, 0, w, h);
+                }
+                frame = requestAnimationFrame(draw);
+            }
+
+            return { burst, stop };
+        }
+
         /* ── Lottery show: the server says which show is on and how far into it
               the room is; the screen runs the phases on its own clock from
               there (intro, countdown, the reel landing on the winner, result),
@@ -1685,6 +2622,7 @@
                 boardGrid = el('lotBoardGrid'), foot = el('lotFoot'), progress = el('lotProgress'), confettiCanvas = el('lotConfetti');
             const scenes = overlay.querySelectorAll('[data-scene]');
             const RING = 339.292;
+            const confetti = makeConfetti(confettiCanvas, overlay);
 
             let show = null;
             let revision = null;
@@ -1697,7 +2635,6 @@
             let reelItems = [];
             let leaveTimer = null;
             let pollTimer = null;
-            let confettiFrame = null;
 
             function phaseOf(s, elapsed) {
                 const revealAt = s.countdown_ms + s.drawing_ms;
@@ -1731,7 +2668,7 @@
                 leaveTimer = setTimeout(() => {
                     overlay.hidden = true;
                     overlay.classList.remove('is-leaving');
-                    stopConfetti();
+                    confetti.stop();
                 }, 500);
             }
 
@@ -1862,7 +2799,7 @@
                 result.classList.remove('is-revealed');
                 result.offsetHeight;
                 result.classList.add('is-revealed');
-                if (show.confetti) burstConfetti();
+                if (show.confetti) confetti.burst();
             }
 
             function render(now) {
@@ -1965,62 +2902,526 @@
                 }
             }
 
-            /* ── Confetti burst on the reveal ── */
-            function stopConfetti() {
-                cancelAnimationFrame(confettiFrame);
-                const ctx = confettiCanvas.getContext('2d');
-                ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
-            }
-
-            function burstConfetti() {
-                stopConfetti();
-                const w = confettiCanvas.width = overlay.clientWidth;
-                const h = confettiCanvas.height = overlay.clientHeight;
-                const ctx = confettiCanvas.getContext('2d');
-                const colors = [getComputedStyle(overlay).getPropertyValue('--acc').trim() || '#FFD700',
-                    getComputedStyle(overlay).getPropertyValue('--p').trim() || '#FF3D00', '#ffffff', '#FFD700', '#22C55E', '#3B82F6'];
-                const pieces = Array.from({ length: 220 }, () => {
-                    const angle = -Math.PI / 2 + (Math.random() - .5) * Math.PI * .9;
-                    const speed = (Math.random() * .55 + .45) * h * .028;
-                    return {
-                        x: w / 2 + (Math.random() - .5) * w * .3,
-                        y: h * .62,
-                        vx: Math.cos(angle) * speed,
-                        vy: Math.sin(angle) * speed,
-                        size: Math.random() * 10 + 6,
-                        spin: Math.random() * Math.PI,
-                        spinSpeed: (Math.random() - .5) * .3,
-                        color: colors[Math.floor(Math.random() * colors.length)],
-                    };
-                });
-                const started = performance.now();
-
-                function draw(now) {
-                    ctx.clearRect(0, 0, w, h);
-                    const age = now - started;
-                    pieces.forEach(p => {
-                        p.vy += h * .0006;
-                        p.vx *= .992;
-                        p.x += p.vx;
-                        p.y += p.vy;
-                        p.spin += p.spinSpeed;
-                        ctx.save();
-                        ctx.globalAlpha = Math.max(0, 1 - age / 6000);
-                        ctx.translate(p.x, p.y);
-                        ctx.rotate(p.spin);
-                        ctx.fillStyle = p.color;
-                        ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
-                        ctx.restore();
-                    });
-                    if (age < 6000) confettiFrame = requestAnimationFrame(draw);
-                    else ctx.clearRect(0, 0, w, h);
-                }
-                confettiFrame = requestAnimationFrame(draw);
-            }
-
             window.addEventListener('resize', () => {
                 if (scene === 'result') fitName();
                 if (scene === 'board') fitBoard();
+            });
+
+            requestAnimationFrame(frame);
+            tick();
+        })();
+
+        /* ── Vote show: live results that move with every vote, the podium,
+              and the winner reveal, which the screen runs on its own clock
+              (intro, countdown, winner) from how far into it the room is and
+              re-syncs on every poll. ── */
+        (function () {
+            if (!HAS_VOTING) return;
+
+            const overlay = document.getElementById('votOverlay');
+            if (!overlay) return;
+
+            const el = id => document.getElementById(id);
+            const headline = el('votHeadline'), statusChip = el('votStatus'), statusText = el('votStatusText'),
+                chart = el('votChart'), qr = el('votQr'),
+                countNum = el('votCountNum'), ringFill = el('votRingFill'),
+                result = el('votResult'), eyebrow = el('votEyebrow'), winnersBox = el('votWinners'),
+                podium = el('votPodium'), foot = el('votFoot'), progress = el('votProgress');
+            const scenes = overlay.querySelectorAll('[data-scene]');
+            const confetti = makeConfetti(el('votConfetti'), overlay);
+            const RING = 339.292;
+            const rows = new Map();
+
+            let show = null;
+            let revision = null;
+            let origin = 0;
+            let scene = null;
+            let lastCount = null;
+            let revealedRevision = null;
+            let closedRevision = null;
+            let podiumOrder = null;
+            let podiumFinal = false;
+            let podiumTimer = null;
+            let leaveTimer = null;
+            let pollTimer = null;
+
+            function phaseOf(s, elapsed) {
+                if (elapsed < 0) return 'intro';
+                if (elapsed < s.countdown_ms) return 'countdown';
+                if (s.result_ms === 0 || elapsed < s.countdown_ms + s.result_ms) return 'result';
+                return null;
+            }
+
+            function votesText(votes) {
+                return `${votes.toLocaleString()} ${votes === 1 ? 'vote' : 'votes'}`;
+            }
+
+            function scoreText(athlete) {
+                return [
+                    athlete.votes !== null ? votesText(athlete.votes) : null,
+                    athlete.percent !== null ? athlete.percent + '%' : null,
+                ].filter(Boolean).join(' · ');
+            }
+
+            function fitText(node, min) {
+                node.classList.remove('is-wrapped');
+                node.style.fontSize = '';
+                const available = node.clientWidth;
+                const needed = node.scrollWidth;
+                if (needed > available && available > 0) {
+                    const size = parseFloat(getComputedStyle(node).fontSize) * available / needed * .96;
+                    if (size < min) {
+                        node.style.fontSize = min + 'px';
+                        node.classList.add('is-wrapped');
+                    } else {
+                        node.style.fontSize = Math.floor(size) + 'px';
+                    }
+                }
+            }
+
+            function setScene(name) {
+                if (scene === name) return;
+                scene = name;
+                scenes.forEach(node => node.hidden = node.dataset.scene !== name);
+                if (name === 'live') {
+                    layoutChart();
+                    requestAnimationFrame(() => requestAnimationFrame(paintBars));
+                }
+                if (name === 'result') winnersBox.querySelectorAll('.vot-winner-name').forEach(n => fitText(n, 40));
+                if (name === 'podium') fitPodium();
+            }
+
+            function open() {
+                clearTimeout(leaveTimer);
+                overlay.classList.remove('is-leaving');
+                overlay.hidden = false;
+            }
+
+            function close() {
+                closedRevision = revision;
+                show = null;
+                scene = null;
+                overlay.classList.add('is-leaving');
+                clearTimeout(leaveTimer);
+                leaveTimer = setTimeout(() => {
+                    overlay.hidden = true;
+                    overlay.classList.remove('is-leaving');
+                    confetti.stop();
+                }, 500);
+            }
+
+            function renderHead() {
+                headline.textContent = show.headline;
+                const final = !show.open;
+                statusChip.hidden = show.type === 'reveal';
+                statusChip.classList.toggle('is-final', final);
+                statusText.textContent = show.type === 'podium'
+                    ? (final ? 'Final podium' : 'Top 3 so far')
+                    : (final ? 'Final results' : 'Voting open');
+                foot.textContent = show.total !== null ? votesText(show.total) : '';
+                qr.hidden = !show.qr;
+            }
+
+            /* ── Live results: one row per athlete, moved into place when the
+                  order changes, with the counts rolling up to each new total. ── */
+            function createRow() {
+                const row = document.createElement('div');
+                row.className = 'vot-row';
+                row.innerHTML = '<div class="vot-rank"></div><div class="vot-main"><div class="vot-line">'
+                    + '<span class="vot-name"></span><span class="vot-pos"></span>'
+                    + '<span class="vot-value"><span class="vot-votes"></span><small class="vot-pct"></small></span>'
+                    + '</div><div class="vot-track"><div class="vot-fill"></div></div></div>';
+                const q = selector => row.querySelector(selector);
+
+                return {
+                    el: row, rank: q('.vot-rank'), name: q('.vot-name'), pos: q('.vot-pos'),
+                    value: q('.vot-value'), votes: q('.vot-votes'), pct: q('.vot-pct'), fill: q('.vot-fill'),
+                    share: 0, shown: 0, target: null, tween: null, settling: null,
+                };
+            }
+
+            function rollVotes(row, target) {
+                if (row.target === target) return;
+                const from = row.shown;
+                const started = performance.now();
+                if (row.target !== null && target > row.target) {
+                    row.el.classList.remove('is-bump');
+                    row.el.offsetHeight;
+                    row.el.classList.add('is-bump');
+                }
+                row.target = target;
+                cancelAnimationFrame(row.tween);
+                const step = now => {
+                    const t = Math.min(1, (now - started) / 800);
+                    row.shown = Math.round(from + (target - from) * (1 - Math.pow(1 - t, 3)));
+                    row.votes.textContent = row.shown.toLocaleString();
+                    if (t < 1) row.tween = requestAnimationFrame(step);
+                };
+                row.tween = requestAnimationFrame(step);
+            }
+
+            function setScore(row, athlete) {
+                row.value.hidden = athlete.votes === null && athlete.percent === null;
+                if (athlete.votes !== null) {
+                    rollVotes(row, athlete.votes);
+                    row.pct.textContent = athlete.percent !== null ? athlete.percent + '%' : '';
+                    return;
+                }
+                cancelAnimationFrame(row.tween);
+                row.target = null;
+                row.shown = 0;
+                row.votes.textContent = athlete.percent !== null ? athlete.percent + '%' : '';
+                row.pct.textContent = '';
+            }
+
+            function clearRows() {
+                rows.forEach(row => {
+                    cancelAnimationFrame(row.tween);
+                    clearTimeout(row.settling);
+                    row.el.remove();
+                });
+                rows.clear();
+            }
+
+            function renderChart() {
+                const list = show.standings;
+                const keys = new Set(list.map(athlete => athlete.key));
+                rows.forEach((row, key) => {
+                    if (!keys.has(key)) {
+                        cancelAnimationFrame(row.tween);
+                        row.el.remove();
+                        rows.delete(key);
+                    }
+                });
+
+                list.forEach((athlete, index) => {
+                    let row = rows.get(athlete.key);
+                    if (!row) {
+                        row = createRow();
+                        rows.set(athlete.key, row);
+                        row.el.classList.add('is-entering');
+                        row.el.style.setProperty('--d', (index * .07).toFixed(2) + 's');
+                        chart.appendChild(row.el);
+                    }
+                    const medal = athlete.share > 0 && athlete.rank <= 3 ? athlete.rank : 0;
+                    [1, 2, 3].forEach(place => row.el.classList.toggle('is-r' + place, medal === place));
+                    row.rank.textContent = athlete.rank;
+                    row.name.textContent = athlete.name;
+                    row.pos.textContent = athlete.position || '';
+                    row.pos.hidden = !athlete.position;
+                    row.share = athlete.share;
+                    row.index = index;
+                    setScore(row, athlete);
+                });
+
+                layoutChart();
+                if (scene === 'live') paintBars();
+            }
+
+            function paintBars() {
+                rows.forEach(row => row.fill.style.width = (row.share * 100).toFixed(2) + '%');
+            }
+
+            /* Rows share the stage height, up to a fifth of it each, and sit
+               centred as a block when there are only a few. */
+            function layoutChart() {
+                const height = chart.clientHeight;
+                if (!height || !rows.size) return;
+                const rowHeight = Math.min(height / rows.size, height * .2);
+                const offset = Math.max(0, (height - rowHeight * rows.size) / 2);
+                chart.style.setProperty('--row', rowHeight.toFixed(1) + 'px');
+                rows.forEach(row => {
+                    row.el.style.transform = `translate3d(0, ${(offset + row.index * rowHeight).toFixed(1)}px, 0)`;
+                    if (row.el.classList.contains('is-entering') && !row.settling) {
+                        row.settling = setTimeout(() => row.el.classList.remove('is-entering'), 900 + row.index * 70);
+                    }
+                });
+            }
+
+            /* ── Winner reveal ── */
+            function buildResult() {
+                const winners = show.winners || [];
+                eyebrow.textContent = winners.length > 1 ? "It's a tie" : 'Winner';
+                winnersBox.classList.toggle('is-tie', winners.length > 1);
+                winnersBox.replaceChildren(...winners.map(winner => {
+                    const box = document.createElement('div');
+                    box.className = 'vot-winner';
+                    const name = document.createElement('div');
+                    name.className = 'vot-winner-name';
+                    name.textContent = winner.name;
+                    const detail = document.createElement('div');
+                    detail.className = 'vot-winner-detail';
+                    detail.textContent = [winner.position, scoreText(winner)].filter(Boolean).join(' · ');
+                    box.append(name, detail);
+                    return box;
+                }));
+            }
+
+            function reveal() {
+                result.classList.remove('is-revealed');
+                result.offsetHeight;
+                result.classList.add('is-revealed');
+                if (show.confetti) confetti.burst();
+            }
+
+            /* ── Podium: the top three places, ties sharing a step, each step
+                  showing its share of the votes (or the count when shares are
+                  hidden) rolling up as the step rises. ── */
+            const pillars = new Map();
+
+            function pillarOf(place) {
+                if (!pillars.has(place)) {
+                    pillars.set(place, {
+                        value: place.querySelector('.vot-pillar-value'),
+                        unit: place.querySelector('.vot-pillar-unit'),
+                        key: null, shown: 0, frame: null, timer: null,
+                    });
+                }
+                return pillars.get(place);
+            }
+
+            function setPillar(place, athlete, rising) {
+                const pillar = pillarOf(place);
+                const rank = Number(place.dataset.place);
+                const target = !athlete ? null
+                    : athlete.percent !== null ? { n: athlete.percent, suffix: '%', roll: true }
+                    : athlete.votes !== null ? { n: athlete.votes, suffix: '', roll: true }
+                    : { n: rank, suffix: '', roll: false };
+                const key = target ? `${target.n}${target.suffix}` : null;
+                if (!rising && pillar.key === key) return;
+
+                pillar.key = key;
+                clearTimeout(pillar.timer);
+                cancelAnimationFrame(pillar.frame);
+                pillar.unit.hidden = !athlete || athlete.percent !== null || athlete.votes === null;
+                pillar.unit.textContent = athlete && athlete.votes === 1 ? 'vote' : 'votes';
+                if (!target || !target.roll) {
+                    pillar.shown = 0;
+                    pillar.value.textContent = target ? target.n : '';
+                    return;
+                }
+
+                const from = rising ? 0 : pillar.shown;
+                const paint = n => {
+                    pillar.shown = n;
+                    pillar.value.textContent = n.toLocaleString() + target.suffix;
+                };
+                const roll = () => {
+                    const started = performance.now();
+                    const step = now => {
+                        const t = Math.min(1, (now - started) / 1200);
+                        paint(Math.round(from + (target.n - from) * (1 - Math.pow(1 - t, 3))));
+                        if (t < 1) pillar.frame = requestAnimationFrame(step);
+                    };
+                    pillar.frame = requestAnimationFrame(step);
+                };
+                paint(from);
+                if (rising) pillar.timer = setTimeout(roll, { 1: 1000, 2: 700, 3: 400 }[rank]);
+                else roll();
+            }
+
+            function renderPodium() {
+                const places = { 1: [], 2: [], 3: [] };
+                show.standings.forEach(athlete => {
+                    if (places[athlete.rank]) places[athlete.rank].push(athlete);
+                });
+
+                const order = JSON.stringify([1, 2, 3].map(rank => places[rank].map(athlete => athlete.key)));
+                const rising = order !== podiumOrder;
+
+                podium.querySelectorAll('[data-place]').forEach(place => {
+                    const athletes = places[place.dataset.place];
+                    place.classList.toggle('is-empty', !athletes.length);
+                    place.querySelector('.vot-place-names').replaceChildren(...athletes.map(athlete => {
+                        const name = document.createElement('div');
+                        name.className = 'vot-place-name';
+                        name.replaceChildren(...athlete.name.split(/\s+/).flatMap((word, index) => {
+                            const span = document.createElement('span');
+                            span.textContent = word;
+                            return index ? [' ', span] : [span];
+                        }));
+                        return name;
+                    }));
+                    setPillar(place, athletes[0], rising);
+                });
+
+                if (rising) {
+                    podiumOrder = order;
+                    podium.classList.remove('is-rising');
+                    podium.offsetHeight;
+                    podium.classList.add('is-rising');
+                }
+
+                /* The final podium is celebrated once its steps have risen,
+                   and again only if it changes. */
+                const final = !show.open;
+                if (final && show.confetti && (rising || !podiumFinal)) {
+                    clearTimeout(podiumTimer);
+                    podiumTimer = setTimeout(() => {
+                        if (show && show.type === 'podium') confetti.burst();
+                    }, rising ? 1500 : 0);
+                }
+                podiumFinal = final;
+                if (scene === 'podium') fitPodium();
+            }
+
+            /* The names scale down until every place fits above its step on
+               short screens. */
+            function fitPodium() {
+                let scale = 1;
+                podium.style.setProperty('--k', scale);
+                sizePodiumNames();
+                while (scale > .5 && podiumOverflows()) {
+                    scale -= .06;
+                    podium.style.setProperty('--k', scale.toFixed(2));
+                    sizePodiumNames();
+                }
+            }
+
+            function podiumOverflows() {
+                return Array.from(podium.querySelectorAll('.vot-place:not(.is-empty) .vot-place-names'))
+                    .some(names => names.offsetTop < -1);
+            }
+
+            /* Names break between words, sized so the longest word fits its
+               step; all take the smallest size, with first place a touch
+               larger when its step has the room. */
+            function sizePodiumNames() {
+                const names = Array.from(podium.querySelectorAll('.vot-place-name'));
+                if (!names.length) return;
+                const fitted = names.map(name => {
+                    name.style.fontSize = '';
+                    const size = parseFloat(getComputedStyle(name).fontSize);
+                    const widest = Math.max(...Array.from(name.children, word => word.offsetWidth));
+                    const available = name.clientWidth;
+                    return widest > available && available > 0 ? Math.max(18, size * available / widest * .96) : size;
+                });
+                const size = Math.min(...fitted);
+                names.forEach((name, index) => {
+                    const first = name.closest('[data-place="1"]') !== null;
+                    name.style.fontSize = Math.floor(first ? Math.min(fitted[index], size * 1.15) : size) + 'px';
+                });
+            }
+
+            function build() {
+                scene = null;
+                lastCount = null;
+                podiumOrder = null;
+                podiumFinal = false;
+                clearTimeout(podiumTimer);
+                clearRows();
+                renderHead();
+                if (show.type === 'live') renderChart();
+                else if (show.type === 'podium') renderPodium();
+                else buildResult();
+            }
+
+            function render(now) {
+                const elapsed = now - origin;
+                const phase = phaseOf(show, elapsed);
+                if (!phase) {
+                    close();
+                    return;
+                }
+
+                foot.hidden = !foot.textContent || phase !== 'result';
+
+                if (show.type === 'live') {
+                    setScene('live');
+                } else if (show.type === 'podium') {
+                    setScene('podium');
+                } else if (phase === 'intro') {
+                    setScene('intro');
+                } else if (phase === 'countdown') {
+                    setScene('countdown');
+                    const left = show.countdown_ms - elapsed;
+                    const count = Math.max(1, Math.ceil(left / 1000));
+                    if (count !== lastCount) {
+                        lastCount = count;
+                        countNum.textContent = count;
+                        countNum.classList.remove('is-tick');
+                        countNum.offsetHeight;
+                        countNum.classList.add('is-tick');
+                    }
+                    ringFill.style.strokeDashoffset = (RING * (1 - left / show.countdown_ms)).toFixed(2);
+                } else {
+                    setScene('result');
+                    if (revealedRevision !== revision) {
+                        revealedRevision = revision;
+                        reveal();
+                    }
+                }
+
+                if (show.type === 'reveal' && phase === 'result' && show.result_ms > 0) {
+                    const shown = elapsed - show.countdown_ms;
+                    progress.style.width = Math.max(0, 100 - shown / show.result_ms * 100) + '%';
+                } else {
+                    progress.style.width = '0';
+                }
+            }
+
+            function frame(now) {
+                if (show) render(now);
+                requestAnimationFrame(frame);
+            }
+
+            function apply(d) {
+                if (!d.show) {
+                    if (show) close();
+                    revision = d.revision;
+                    return;
+                }
+
+                /* A show this screen has already timed out is not brought back
+                   by a poll that reached the server a moment before it did. */
+                if (!show && d.revision === closedRevision) return;
+
+                const nextOrigin = performance.now() - d.show.elapsed_ms;
+
+                if (!show || d.revision !== revision) {
+                    const wasRevealed = show && revealedRevision === revision && show.type === 'reveal' && d.show.type === 'reveal'
+                        && JSON.stringify(d.show.winners) === JSON.stringify(show.winners);
+                    revision = d.revision;
+                    show = d.show;
+                    origin = nextOrigin;
+                    if (wasRevealed) revealedRevision = revision;
+                    open();
+                    build();
+                    return;
+                }
+
+                if (Math.abs(nextOrigin - origin) > 350) origin = nextOrigin;
+
+                const winnersBefore = JSON.stringify(show.winners);
+                show = d.show;
+                renderHead();
+                if (show.type === 'live') renderChart();
+                if (show.type === 'podium') renderPodium();
+                if (show.type === 'reveal' && JSON.stringify(show.winners) !== winnersBefore) {
+                    buildResult();
+                    if (scene === 'result') winnersBox.querySelectorAll('.vot-winner-name').forEach(n => fitText(n, 40));
+                }
+            }
+
+            function schedule(ms) {
+                clearTimeout(pollTimer);
+                pollTimer = setTimeout(tick, ms);
+            }
+
+            async function tick() {
+                try {
+                    const res = await fetch(`/screen/${SLUG}/voting/feed`, { cache: 'no-store' });
+                    apply(await res.json());
+                    schedule(show ? 700 : 1000);
+                } catch (e) {
+                    schedule(2000);
+                }
+            }
+
+            window.addEventListener('resize', () => {
+                if (scene === 'live') layoutChart();
+                if (scene === 'result') winnersBox.querySelectorAll('.vot-winner-name').forEach(n => fitText(n, 40));
+                if (scene === 'podium') fitPodium();
             });
 
             requestAnimationFrame(frame);

@@ -212,6 +212,20 @@ class LotteryScreen extends Model
     }
 
     /**
+     * Clears the show for another one taking the screen, leaving the playlist
+     * paused for it. True when this show was holding the playlist paused.
+     */
+    public function yieldScreen(): bool
+    {
+        return $this->mutate(function (self $screen): bool {
+            $heldPlayer = $screen->show_type !== null && $screen->resume_player;
+            $screen->clearShow(resumePlayer: false);
+
+            return $heldPlayer;
+        });
+    }
+
+    /**
      * Ends a show whose result has had its time, or whose winner was removed.
      */
     public function settle(): void
@@ -309,7 +323,8 @@ class LotteryScreen extends Model
     protected function begin(string $type, ?LotteryEntry $winner, ?Closure $timing = null): void
     {
         $this->mutate(function (self $screen) use ($type, $winner, $timing): void {
-            $resumePlayer = $screen->pausePlayer() || ($screen->show_type && $screen->resume_player);
+            $voteHeldPlayer = $screen->takeScreenFromVoting();
+            $resumePlayer = $screen->pausePlayer() || $voteHeldPlayer || ($screen->show_type && $screen->resume_player);
 
             $screen->forceFill([
                 'show_type' => $type,
@@ -334,13 +349,13 @@ class LotteryScreen extends Model
         return $this->show_type !== self::SHOW_BOARD && ! $this->entry()->where('is_winner', true)->exists();
     }
 
-    protected function clearShow(): void
+    protected function clearShow(bool $resumePlayer = true): void
     {
         if (! $this->show_type) {
             return;
         }
 
-        if ($this->resume_player) {
+        if ($resumePlayer && $this->resume_player) {
             $player = $this->event->vidiwallPlayer;
 
             if ($player?->isPaused()) {
@@ -358,6 +373,18 @@ class LotteryScreen extends Model
             'show_reel' => null,
             'resume_player' => false,
         ]);
+    }
+
+    /**
+     * Takes the screen from a vote show, so only one show is ever up. True when
+     * the vote was holding the playlist paused, which this show then holds
+     * instead.
+     */
+    protected function takeScreenFromVoting(): bool
+    {
+        $voting = $this->event->votingScreen;
+
+        return $voting ? $voting->setRelation('event', $this->event)->yieldScreen() : false;
     }
 
     /**
