@@ -262,6 +262,22 @@ class VidiwallPlayer extends Model
     }
 
     /**
+     * Changes how long each photo holds the screen. The revision moves on so a
+     * screen in the middle of a photo re-times it with the new length.
+     */
+    public function setPhotoSeconds(int $seconds): void
+    {
+        if ((int) $this->event->vidiwall_photo_seconds === $seconds) {
+            return;
+        }
+
+        $this->mutate(function (self $player) use ($seconds): void {
+            $player->event->update(['vidiwall_photo_seconds' => $seconds]);
+            $player->revision++;
+        });
+    }
+
+    /**
      * Moves the playhead on once the current item is done. The screen reports
      * the item (and the revision it was showing) when it finishes, which is what
      * normally advances the playlist; the item's slot is the fallback for when
@@ -406,7 +422,7 @@ class VidiwallPlayer extends Model
             $result = $change($fresh);
 
             if ($fresh->isDirty()) {
-                $fresh->revision = $fresh->revision + 1;
+                $fresh->revision = (int) $fresh->getOriginal('revision') + 1;
                 $fresh->save();
             }
 

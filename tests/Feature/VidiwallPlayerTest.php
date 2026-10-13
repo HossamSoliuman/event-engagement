@@ -225,6 +225,108 @@ class VidiwallPlayerTest extends TestCase
             ->assertJsonPath('message', 'Choose whether the playlist should loop.');
     }
 
+    public function test_photo_seconds_change_re_times_the_photo_on_screen(): void
+    {
+        $this->event->update(['vidiwall_photo_seconds' => 4]);
+        $photo = $this->upload();
+
+        Carbon::setTestNow('2026-10-12 20:00:00');
+        $this->event->player()->playFrom($photo);
+        $revision = $this->event->player()->revision;
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.photo-seconds', $this->event), ['seconds' => 10])
+            ->assertOk()
+            ->assertJsonPath('player.photo_seconds', 10)
+            ->assertJsonPath('player.revision', $revision + 1)
+            ->assertJsonPath('now_playing.slot_ms', 10000);
+
+        $this->assertSame(10, $this->event->fresh()->vidiwall_photo_seconds);
+        $this->assertDatabaseHas('activity_log', ['event_id' => $this->event->id, 'action' => 'vidiwall.photo_seconds_changed']);
+
+        Carbon::setTestNow('2026-10-12 20:00:06');
+        $this->getJson(route('vidiwall.feed', $this->event->slug))
+            ->assertJsonPath('foto.id', $photo->id)
+            ->assertJsonPath('foto.slot_ms', 10000);
+    }
+
+    public function test_shortening_photo_seconds_moves_on_from_a_photo_past_the_new_length(): void
+    {
+        $this->event->update(['vidiwall_photo_seconds' => 10]);
+        $first = $this->upload();
+        $second = $this->upload();
+
+        Carbon::setTestNow('2026-10-12 20:00:00');
+        $this->event->player()->playFrom($first);
+
+        Carbon::setTestNow('2026-10-12 20:00:05');
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.photo-seconds', $this->event), ['seconds' => 3])
+            ->assertOk()
+            ->assertJsonPath('now_playing.id', $second->id);
+    }
+
+    public function test_photo_seconds_unchanged_leaves_the_revision_alone(): void
+    {
+        $this->event->update(['vidiwall_photo_seconds' => 4]);
+        $this->event->player()->playFrom($this->upload());
+        $revision = $this->event->player()->revision;
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.photo-seconds', $this->event), ['seconds' => 4])
+            ->assertOk()
+            ->assertJsonPath('player.revision', $revision);
+    }
+
+    public function test_photo_seconds_change_refreshes_the_playlist_version(): void
+    {
+        $this->upload();
+        $version = $this->actingAs($this->admin)->getJson(route('admin.player.status', $this->event))->json('version');
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.photo-seconds', $this->event), ['seconds' => 7, 'v' => $version])
+            ->assertOk()
+            ->assertJsonPath('items.0.slot_ms', 7000);
+    }
+
+    public function test_photo_seconds_must_be_a_whole_number_between_1_and_60(): void
+    {
+        $this->event->update(['vidiwall_photo_seconds' => 4]);
+
+        foreach ([
+            [[], 'Enter how many seconds each photo stays on screen.'],
+            [['seconds' => 2.5], 'Photo seconds must be a whole number.'],
+            [['seconds' => 0], 'Photos need at least 1 second on screen.'],
+            [['seconds' => 61], 'Photos can stay on screen for 60 seconds at most.'],
+        ] as [$payload, $message]) {
+            $this->actingAs($this->admin)
+                ->postJson(route('admin.player.photo-seconds', $this->event), $payload)
+                ->assertUnprocessable()
+                ->assertJsonPath('message', $message);
+        }
+
+        $this->assertSame(4, $this->event->fresh()->vidiwall_photo_seconds);
+    }
+
+    public function test_assigned_moderators_can_change_photo_seconds_but_others_cannot(): void
+    {
+        $moderator = User::factory()->create(['role' => 'moderator']);
+        $this->event->moderators()->attach($moderator);
+
+        $this->actingAs($moderator)
+            ->postJson(route('moderator.player.photo-seconds', $this->event), ['seconds' => 12])
+            ->assertOk()
+            ->assertJsonPath('player.photo_seconds', 12);
+
+        $outsider = User::factory()->create(['role' => 'moderator']);
+
+        $this->actingAs($outsider)
+            ->postJson(route('moderator.player.photo-seconds', $this->event), ['seconds' => 20])
+            ->assertForbidden();
+
+        $this->assertSame(12, $this->event->fresh()->vidiwall_photo_seconds);
+    }
+
     public function test_play_from_jumps_to_the_item_and_continues_from_there(): void
     {
         $this->upload();

@@ -314,7 +314,8 @@ class VidiwallQueueTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.player.index', $event))
             ->assertOk()
-            ->assertSee('12s per photo');
+            ->assertSee('<span id="vpSecondsSummary">12</span>s per photo', false)
+            ->assertSee('inputmode="numeric" value="12"', false);
     }
 
     public function test_autoplay_duration_is_left_unchanged_when_not_submitted(): void

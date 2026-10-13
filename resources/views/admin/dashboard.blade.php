@@ -126,6 +126,7 @@
             'vidiwall.played'      => '<i data-lucide="play" class="lucide-icon"></i>',
             'vidiwall.paused'      => '<i data-lucide="pause" class="lucide-icon"></i>',
             'vidiwall.stopped'     => '<i data-lucide="square" class="lucide-icon"></i>',
+            'vidiwall.photo_seconds_changed' => '<i data-lucide="timer" class="lucide-icon"></i>',
             'lottery.drawn'        => '<i data-lucide="ticket" class="lucide-icon"></i>',
             'lottery.entered'      => '<i data-lucide="ticket" class="lucide-icon"></i>',
             'vote.cast'            => '<i data-lucide="check-square" class="lucide-icon"></i>',

@@ -101,6 +101,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('events/{event}/player/next', [VidiwallPlayerController::class, 'next'])->name('player.next');
         Route::post('events/{event}/player/previous', [VidiwallPlayerController::class, 'previous'])->name('player.previous');
         Route::post('events/{event}/player/loop', [VidiwallPlayerController::class, 'loop'])->name('player.loop');
+        Route::post('events/{event}/player/photo-seconds', [VidiwallPlayerController::class, 'photoSeconds'])->name('player.photo-seconds');
         Route::put('events/{event}/player/order', [VidiwallPlayerController::class, 'reorder'])->name('player.reorder');
         Route::post('events/{event}/player/fotos/{fotoUpload}/play', [VidiwallPlayerController::class, 'playFrom'])->scopeBindings()->name('player.play-from');
         Route::post('events/{event}/player/fotos/{fotoUpload}/next', [VidiwallPlayerController::class, 'playNext'])->scopeBindings()->name('player.play-next');
@@ -196,6 +197,7 @@ Route::prefix('moderator')->name('moderator.')->middleware(['auth', 'event.moder
     Route::post('{event}/player/next', [ModeratorVidiwallPlayerController::class, 'next'])->name('player.next');
     Route::post('{event}/player/previous', [ModeratorVidiwallPlayerController::class, 'previous'])->name('player.previous');
     Route::post('{event}/player/loop', [ModeratorVidiwallPlayerController::class, 'loop'])->name('player.loop');
+    Route::post('{event}/player/photo-seconds', [ModeratorVidiwallPlayerController::class, 'photoSeconds'])->name('player.photo-seconds');
     Route::put('{event}/player/order', [ModeratorVidiwallPlayerController::class, 'reorder'])->name('player.reorder');
     Route::post('{event}/player/fotos/{fotoUpload}/play', [ModeratorVidiwallPlayerController::class, 'playFrom'])->scopeBindings()->name('player.play-from');
     Route::post('{event}/player/fotos/{fotoUpload}/next', [ModeratorVidiwallPlayerController::class, 'playNext'])->scopeBindings()->name('player.play-next');

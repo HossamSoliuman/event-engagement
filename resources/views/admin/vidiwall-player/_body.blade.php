@@ -42,6 +42,21 @@
         .vp-loop[aria-pressed="true"] { color: var(--text); border-color: var(--vp-accent); background: color-mix(in srgb, var(--vp-accent) 14%, var(--card2)); }
         .vp-msg { font-size: 13px; color: var(--gold); }
 
+        .vp-duration { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding-top: 16px; border-top: 1px solid var(--border); }
+        .vp-duration label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--muted); }
+        .vp-duration label .lucide-icon { width: 16px; height: 16px; }
+        .vp-stepper { display: inline-flex; align-items: center; height: 40px; border: 1px solid var(--border); border-radius: 30px; background: var(--card2); overflow: hidden; transition: border-color .15s; }
+        .vp-stepper:focus-within { border-color: var(--vp-accent); }
+        .vp-stepper button { width: 38px; height: 100%; border: none; background: none; color: var(--muted); font-size: 18px; line-height: 1; cursor: pointer; transition: color .15s, background .15s; }
+        .vp-stepper button:hover:not(:disabled) { color: var(--text); background: rgba(255, 255, 255, .05); }
+        .vp-stepper button:disabled { opacity: .3; cursor: default; }
+        .vp-stepper input { width: 44px; height: 100%; border: none; background: none; color: var(--text); font-size: 15px; font-weight: 700; text-align: center; font-variant-numeric: tabular-nums; -moz-appearance: textfield; appearance: textfield; }
+        .vp-stepper input::-webkit-outer-spin-button, .vp-stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .vp-stepper input:focus { outline: none; }
+        .vp-duration-unit { font-size: 13px; color: var(--muted); }
+        .vp-duration-saved { font-size: 12px; font-weight: 600; color: #4ade80; opacity: 0; transition: opacity .2s; }
+        .vp-duration-saved.vp-show { opacity: 1; }
+
         .vp-summary { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 12px 18px; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--muted); }
         .vp-summary strong { color: var(--text); }
         .vp-order-error { margin: 12px 18px 0; }
@@ -136,6 +151,17 @@
                 </button>
             </div>
 
+            <div class="vp-duration">
+                <label for="vpSeconds"><i data-lucide="timer" class="lucide-icon"></i> Photo duration</label>
+                <div class="vp-stepper">
+                    <button type="button" data-seconds-step="-1" aria-label="One second less">&minus;</button>
+                    <input type="number" id="vpSeconds" min="1" max="60" step="1" inputmode="numeric" value="{{ $snapshot['player']['photo_seconds'] }}">
+                    <button type="button" data-seconds-step="1" aria-label="One second more">+</button>
+                </div>
+                <span class="vp-duration-unit">seconds</span>
+                <span class="vp-duration-saved" id="vpSecondsSaved" aria-live="polite">Saved</span>
+            </div>
+
             <div class="vp-msg" id="vpMsg" hidden></div>
         </div>
     </div>
@@ -148,7 +174,7 @@
         <div class="vp-summary">
             <span><strong id="vpCountTotal">0</strong> items</span>
             <span><strong id="vpCountNew">0</strong> not played yet</span>
-            <span>{{ $event->vidiwall_photo_seconds }}s per photo, videos play through</span>
+            <span><span id="vpSecondsSummary">{{ $snapshot['player']['photo_seconds'] }}</span>s per photo, videos play through</span>
         </div>
 
         <div class="alert alert-error vp-order-error" id="vpOrderError" hidden>
@@ -176,6 +202,7 @@
                 next: @json($vpRoute('next')),
                 previous: @json($vpRoute('previous')),
                 loop: @json($vpRoute('loop')),
+                photoSeconds: @json($vpRoute('photo-seconds')),
                 reorder: @json($vpRoute('reorder')),
                 playFrom: @json($vpRoute('play-from', ['fotoUpload' => '__ID__'])),
                 playNext: @json($vpRoute('play-next', ['fotoUpload' => '__ID__'])),
@@ -291,7 +318,7 @@
                     }
                 }
 
-                if (!continuing || Math.abs(player.elapsed_ms - localElapsed) > 600) {
+                if (!continuing || now.slot_ms !== clock.slot || Math.abs(player.elapsed_ms - localElapsed) > 600) {
                     clock = { id: now.id, elapsed: player.elapsed_ms, slot: now.slot_ms, at: performance.now() };
                 }
                 paintClock();
@@ -400,6 +427,7 @@
                 }
                 renderNow(data);
                 renderCounts(data.counts);
+                renderSeconds(data.player.photo_seconds);
                 document.dispatchEvent(new CustomEvent('fotoqueue:status', { detail: { counts: data.counts, player_state: data.player.state } }));
                 if (data.items && !drag) {
                     renderList(data.items);
@@ -407,6 +435,75 @@
                     paintRows();
                 }
             }
+
+            /* ── Photo duration ──────────────────────────────────────── */
+
+            const secondsInput = $('vpSeconds');
+            let savedSeconds = Number(secondsInput.value);
+            let secondsTimer = null;
+            let secondsSaving = false;
+            let savedTimer = null;
+
+            function clampSeconds(value) {
+                return Math.min(60, Math.max(1, Math.round(value)));
+            }
+
+            function paintSeconds(seconds) {
+                $('vpSecondsSummary').textContent = seconds;
+                root.querySelector('[data-seconds-step="-1"]').disabled = seconds <= 1;
+                root.querySelector('[data-seconds-step="1"]').disabled = seconds >= 60;
+            }
+
+            /** Takes the server's value unless the operator is in the middle of changing it. */
+            function renderSeconds(seconds) {
+                savedSeconds = seconds;
+                if (document.activeElement !== secondsInput && !secondsTimer && !secondsSaving) {
+                    secondsInput.value = seconds;
+                    paintSeconds(seconds);
+                }
+            }
+
+            async function saveSeconds() {
+                clearTimeout(secondsTimer);
+                secondsTimer = null;
+                const raw = Number(secondsInput.value);
+                const seconds = secondsInput.value === '' || !Number.isFinite(raw) ? savedSeconds : clampSeconds(raw);
+                secondsInput.value = seconds;
+                paintSeconds(seconds);
+                if (seconds === savedSeconds) {
+                    return;
+                }
+                secondsSaving = true;
+                const data = await send(URLS.photoSeconds, 'POST', { seconds });
+                secondsSaving = false;
+                if (document.activeElement !== secondsInput && !secondsTimer) {
+                    secondsInput.value = savedSeconds;
+                    paintSeconds(savedSeconds);
+                }
+                if (!data) {
+                    return;
+                }
+                const saved = $('vpSecondsSaved');
+                saved.classList.add('vp-show');
+                clearTimeout(savedTimer);
+                savedTimer = setTimeout(() => saved.classList.remove('vp-show'), 1500);
+            }
+
+            root.querySelectorAll('[data-seconds-step]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const seconds = clampSeconds((Number(secondsInput.value) || savedSeconds) + Number(btn.dataset.secondsStep));
+                    secondsInput.value = seconds;
+                    paintSeconds(seconds);
+                    clearTimeout(secondsTimer);
+                    secondsTimer = setTimeout(saveSeconds, 500);
+                });
+            });
+            secondsInput.addEventListener('change', saveSeconds);
+            secondsInput.addEventListener('keydown', event => {
+                if (event.key === 'Enter') {
+                    secondsInput.blur();
+                }
+            });
 
             /* ── Server calls ────────────────────────────────────────── */
 

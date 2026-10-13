@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ReorderVidiwallPlaylistRequest;
 use App\Http\Requests\UpdateVidiwallLoopRequest;
+use App\Http\Requests\UpdateVidiwallPhotoSecondsRequest;
 use App\Models\ActivityLog;
 use App\Models\Event;
 use App\Models\FotoUpload;
@@ -83,6 +84,14 @@ class VidiwallPlayerController extends Controller
         return $this->respond($request, $event);
     }
 
+    public function photoSeconds(UpdateVidiwallPhotoSecondsRequest $request, Event $event): JsonResponse
+    {
+        $event->player()->setPhotoSeconds($request->integer('seconds'));
+        ActivityLog::record('vidiwall.photo_seconds_changed', ['seconds' => $request->integer('seconds')], $event->id);
+
+        return $this->respond($request, $event);
+    }
+
     public function playFrom(Request $request, Event $event, FotoUpload $fotoUpload): JsonResponse
     {
         if (! $fotoUpload->isApproved()) {
@@ -143,13 +152,15 @@ class VidiwallPlayerController extends Controller
         $player = $event->syncPlayer();
         $nowPlaying = $player?->screenFoto();
         $playlist = $event->playlist()->toBase()->get(['id', 'displayed_at']);
-        $version = md5($playlist->map(fn (object $row) => $row->id.':'.$row->displayed_at)->implode(','));
+        $photoSeconds = (int) ($event->vidiwall_photo_seconds ?: FotoUpload::SCREEN_SECONDS);
+        $version = md5($photoSeconds.'|'.$playlist->map(fn (object $row) => $row->id.':'.$row->displayed_at)->implode(','));
 
         $payload = [
             'message' => $message,
             'player' => [
                 'state' => $player?->state ?? VidiwallPlayer::STATE_STOPPED,
                 'loop' => (bool) $player?->loop,
+                'photo_seconds' => $photoSeconds,
                 'revision' => $player?->revision ?? 0,
                 'elapsed_ms' => $nowPlaying ? $player->elapsedMs() : 0,
             ],
