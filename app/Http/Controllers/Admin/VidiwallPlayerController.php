@@ -6,13 +6,16 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ReorderVidiwallPlaylistRequest;
 use App\Http\Requests\UpdateVidiwallLoopRequest;
 use App\Http\Requests\UpdateVidiwallPhotoSecondsRequest;
+use App\Http\Requests\UpdateVidiwallPhotosPerScreenRequest;
 use App\Models\ActivityLog;
 use App\Models\Event;
 use App\Models\FotoUpload;
 use App\Models\VidiwallPlayer;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection as BaseCollection;
 
 /**
  * The operator's remote for the vidiwall: transport controls plus the playlist
@@ -92,6 +95,14 @@ class VidiwallPlayerController extends Controller
         return $this->respond($request, $event);
     }
 
+    public function photosPerScreen(UpdateVidiwallPhotosPerScreenRequest $request, Event $event): JsonResponse
+    {
+        $event->player()->setPhotosPerScreen($request->integer('count'));
+        ActivityLog::record('vidiwall.photos_per_screen_changed', ['count' => $request->integer('count')], $event->id);
+
+        return $this->respond($request, $event);
+    }
+
     public function playFrom(Request $request, Event $event, FotoUpload $fotoUpload): JsonResponse
     {
         if (! $fotoUpload->isApproved()) {
@@ -143,17 +154,20 @@ class VidiwallPlayerController extends Controller
 
     /**
      * The player and playlist as the page renders them; the playlist is left
-     * out when it still matches `$knownVersion`.
+     * out when it still matches `$knownVersion`. `now_playing` is the first
+     * item of the page on screen, with the whole page alongside.
      *
      * @return array<string, mixed>
      */
     private function snapshot(Event $event, string $knownVersion = '', ?string $message = null): array
     {
         $player = $event->syncPlayer();
-        $nowPlaying = $player?->screenFoto();
-        $playlist = $event->playlist()->toBase()->get(['id', 'displayed_at']);
+        $page = $player ? $player->screenFotos() : new Collection;
+        $nowPlaying = $page->first();
+        $playlist = $event->playlist()->toBase()->get(['id', 'displayed_at', 'media_type', 'video_duration']);
         $photoSeconds = (int) ($event->vidiwall_photo_seconds ?: FotoUpload::SCREEN_SECONDS);
-        $version = md5($photoSeconds.'|'.$playlist->map(fn (object $row) => $row->id.':'.$row->displayed_at)->implode(','));
+        $photosPerScreen = $event->photosPerScreen();
+        $version = md5($photoSeconds.'|'.$photosPerScreen.'|'.$playlist->map(fn (object $row) => $row->id.':'.$row->displayed_at)->implode(','));
 
         $payload = [
             'message' => $message,
@@ -161,15 +175,21 @@ class VidiwallPlayerController extends Controller
                 'state' => $player?->state ?? VidiwallPlayer::STATE_STOPPED,
                 'loop' => (bool) $player?->loop,
                 'photo_seconds' => $photoSeconds,
+                'photos_per_screen' => $photosPerScreen,
                 'revision' => $player?->revision ?? 0,
                 'elapsed_ms' => $nowPlaying ? $player->elapsedMs() : 0,
             ],
-            'now_playing' => $nowPlaying ? $this->item($nowPlaying) : null,
+            'now_playing' => $nowPlaying ? [
+                ...$this->item($nowPlaying),
+                'page_ids' => $page->modelKeys(),
+                'page' => $page->map(fn (FotoUpload $foto) => $this->item($foto))->values()->all(),
+            ] : null,
             'counts' => [
                 'total' => $playlist->count(),
                 'unplayed' => $playlist->whereNull('displayed_at')->count(),
                 ...$event->fotoStatusCounts(),
             ],
+            'run_ms' => $this->runMs($playlist, $photoSeconds, $photosPerScreen),
             'version' => $version,
         ];
 
@@ -182,6 +202,32 @@ class VidiwallPlayerController extends Controller
         }
 
         return $payload;
+    }
+
+    /**
+     * Roughly how long one run through the playlist from the top takes: every
+     * screenful of photos holds for the photo slot and every video for its clip.
+     *
+     * @param  BaseCollection<int, object>  $playlist
+     */
+    private function runMs(BaseCollection $playlist, int $photoSeconds, int $photosPerScreen): int
+    {
+        $runMs = 0;
+        $photosInARow = 0;
+
+        foreach ($playlist as $row) {
+            if ($row->media_type !== 'video') {
+                $photosInARow++;
+
+                continue;
+            }
+
+            $runMs += (int) ceil($photosInARow / $photosPerScreen) * $photoSeconds * 1000;
+            $runMs += (int) round(((float) $row->video_duration ?: $photoSeconds) * 1000);
+            $photosInARow = 0;
+        }
+
+        return $runMs + (int) ceil($photosInARow / $photosPerScreen) * $photoSeconds * 1000;
     }
 
     /**

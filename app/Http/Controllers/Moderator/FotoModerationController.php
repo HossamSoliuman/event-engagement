@@ -70,7 +70,7 @@ class FotoModerationController extends Controller
     public function export(Event $event)
     {
         $fotos = $event->fotoUploads()->get();
-        $onScreenId = $event->onScreenFotoId();
+        $onScreenIds = $event->onScreenFotoIds();
         $csv = "ID,Uploader Name,Phone,Media Type,Duration (s),Status,On Screen,Uploaded At\n";
         foreach ($fotos as $f) {
             $csv .= implode(',', [
@@ -80,7 +80,7 @@ class FotoModerationController extends Controller
                 $f->media_type,
                 $f->video_duration ?? '',
                 $f->status,
-                $f->id === $onScreenId ? 'Yes' : 'No',
+                in_array($f->id, $onScreenIds, true) ? 'Yes' : 'No',
                 $f->created_at->format('Y-m-d H:i'),
             ])."\n";
         }

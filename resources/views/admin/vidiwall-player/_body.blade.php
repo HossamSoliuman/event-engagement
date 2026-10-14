@@ -16,6 +16,9 @@
         .vp-screen-tag { position: absolute; top: 12px; left: 12px; padding: 4px 11px; border-radius: 30px; font-size: 10px; font-weight: 800; letter-spacing: 1.6px; background: var(--gold); color: #0A0A18; }
         .vp[data-state="paused"] .vp-screen-tag { background: rgba(255, 255, 255, .85); }
         .vp-screen-kind { position: absolute; top: 12px; right: 12px; padding: 4px 10px; border-radius: 30px; font-size: 10px; font-weight: 700; letter-spacing: 1px; background: rgba(99, 102, 241, .9); color: #fff; }
+        .vp-screen-grid { --cols: 2; --rows: 1; --gap: 6px; position: absolute; inset: 0; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: var(--gap); padding: 10px; }
+        .vp-screen-grid.n-4 { --rows: 2; }
+        .vp-screen-grid > img { width: calc((100% - (var(--cols) - 1) * var(--gap)) / var(--cols)); height: calc((100% - (var(--rows) - 1) * var(--gap)) / var(--rows)); object-fit: cover; border-radius: 6px; }
 
         .vp-panel { display: flex; flex-direction: column; justify-content: center; gap: 16px; padding: 22px 24px; min-width: 0; }
         .vp-now-label { font-size: 10px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
@@ -42,9 +45,14 @@
         .vp-loop[aria-pressed="true"] { color: var(--text); border-color: var(--vp-accent); background: color-mix(in srgb, var(--vp-accent) 14%, var(--card2)); }
         .vp-msg { font-size: 13px; color: var(--gold); }
 
-        .vp-duration { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding-top: 16px; border-top: 1px solid var(--border); }
-        .vp-duration label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--muted); }
-        .vp-duration label .lucide-icon { width: 16px; height: 16px; }
+        .vp-settings { display: flex; flex-direction: column; gap: 12px; padding-top: 16px; border-top: 1px solid var(--border); }
+        .vp-setting { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+        .vp-setting-label { display: flex; align-items: center; gap: 8px; min-width: 140px; font-size: 13px; font-weight: 600; color: var(--muted); }
+        .vp-setting-label .lucide-icon { width: 16px; height: 16px; }
+        .vp-segments { display: inline-flex; height: 40px; padding: 3px; gap: 3px; border: 1px solid var(--border); border-radius: 30px; background: var(--card2); }
+        .vp-segments button { min-width: 44px; padding: 0 12px; border: none; border-radius: 30px; background: none; color: var(--muted); font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; cursor: pointer; transition: color .15s, background .15s, box-shadow .15s; }
+        .vp-segments button:hover:not([aria-pressed="true"]) { color: var(--text); background: rgba(255, 255, 255, .05); }
+        .vp-segments button[aria-pressed="true"] { color: var(--text); background: color-mix(in srgb, var(--vp-accent) 22%, var(--card2)); box-shadow: inset 0 0 0 1px var(--vp-accent); cursor: default; }
         .vp-stepper { display: inline-flex; align-items: center; height: 40px; border: 1px solid var(--border); border-radius: 30px; background: var(--card2); overflow: hidden; transition: border-color .15s; }
         .vp-stepper:focus-within { border-color: var(--vp-accent); }
         .vp-stepper button { width: 38px; height: 100%; border: none; background: none; color: var(--muted); font-size: 18px; line-height: 1; cursor: pointer; transition: color .15s, background .15s; }
@@ -95,6 +103,7 @@
 
         @media (max-width: 560px) {
             .vp-panel { padding: 18px 16px; }
+            .vp-setting-label { min-width: 0; width: 100%; }
             .vp-btn { width: 42px; height: 42px; }
             .vp-btn-main { width: 58px; height: 58px; }
             .vp-loop { margin-left: 0; }
@@ -116,6 +125,7 @@
             </div>
             <img id="vpNowImg" alt="" hidden>
             <video id="vpNowVideo" muted playsinline preload="metadata" hidden></video>
+            <div class="vp-screen-grid" id="vpNowGrid" hidden></div>
             <span class="vp-screen-tag" id="vpTag" hidden>LIVE</span>
             <span class="vp-screen-kind" id="vpKind" hidden>VIDEO</span>
         </div>
@@ -151,15 +161,26 @@
                 </button>
             </div>
 
-            <div class="vp-duration">
-                <label for="vpSeconds"><i data-lucide="timer" class="lucide-icon"></i> Photo duration</label>
-                <div class="vp-stepper">
-                    <button type="button" data-seconds-step="-1" aria-label="One second less">&minus;</button>
-                    <input type="number" id="vpSeconds" min="1" max="60" step="1" inputmode="numeric" value="{{ $snapshot['player']['photo_seconds'] }}">
-                    <button type="button" data-seconds-step="1" aria-label="One second more">+</button>
+            <div class="vp-settings">
+                <div class="vp-setting">
+                    <label class="vp-setting-label" for="vpSeconds"><i data-lucide="timer" class="lucide-icon"></i> Photo duration</label>
+                    <div class="vp-stepper">
+                        <button type="button" data-seconds-step="-1" aria-label="One second less">&minus;</button>
+                        <input type="number" id="vpSeconds" min="1" max="60" step="1" inputmode="numeric" value="{{ $snapshot['player']['photo_seconds'] }}">
+                        <button type="button" data-seconds-step="1" aria-label="One second more">+</button>
+                    </div>
+                    <span class="vp-duration-unit">seconds</span>
+                    <span class="vp-duration-saved" id="vpSecondsSaved" aria-live="polite">Saved</span>
                 </div>
-                <span class="vp-duration-unit">seconds</span>
-                <span class="vp-duration-saved" id="vpSecondsSaved" aria-live="polite">Saved</span>
+
+                <div class="vp-setting">
+                    <span class="vp-setting-label" id="vpPerScreenLabel"><i data-lucide="layout-grid" class="lucide-icon"></i> Photos on screen</span>
+                    <div class="vp-segments" role="group" aria-labelledby="vpPerScreenLabel">
+                        @foreach (\App\Models\VidiwallPlayer::PHOTOS_PER_SCREEN as $count)
+                            <button type="button" data-per-screen="{{ $count }}" aria-pressed="{{ $count === $snapshot['player']['photos_per_screen'] ? 'true' : 'false' }}">{{ $count }}</button>
+                        @endforeach
+                    </div>
+                </div>
             </div>
 
             <div class="vp-msg" id="vpMsg" hidden></div>
@@ -174,7 +195,9 @@
         <div class="vp-summary">
             <span><strong id="vpCountTotal">0</strong> items</span>
             <span><strong id="vpCountNew">0</strong> not played yet</span>
-            <span><span id="vpSecondsSummary">{{ $snapshot['player']['photo_seconds'] }}</span>s per photo, videos play through</span>
+            <span id="vpPerScreenSummary" @if ($snapshot['player']['photos_per_screen'] === 1) hidden @endif><strong id="vpPerScreenCount">{{ $snapshot['player']['photos_per_screen'] }}</strong> per screen</span>
+            <span><span id="vpSecondsSummary">{{ $snapshot['player']['photo_seconds'] }}</span>s per {{ $snapshot['player']['photos_per_screen'] === 1 ? 'photo' : 'page' }}, videos play through</span>
+            <span id="vpRunSummary" hidden>&asymp; <strong id="vpRunTime"></strong> per run</span>
         </div>
 
         <div class="alert alert-error vp-order-error" id="vpOrderError" hidden>
@@ -203,6 +226,7 @@
                 previous: @json($vpRoute('previous')),
                 loop: @json($vpRoute('loop')),
                 photoSeconds: @json($vpRoute('photo-seconds')),
+                photosPerScreen: @json($vpRoute('photos-per-screen')),
                 reorder: @json($vpRoute('reorder')),
                 playFrom: @json($vpRoute('play-from', ['fotoUpload' => '__ID__'])),
                 playNext: @json($vpRoute('play-next', ['fotoUpload' => '__ID__'])),
@@ -218,6 +242,7 @@
             let version = '';
             let state = 'stopped';
             let currentId = null;
+            let currentIds = new Set();
             let shownKey = null;
             let clock = { id: null, elapsed: 0, slot: 0, at: 0 };
             let seq = 0;
@@ -239,6 +264,14 @@
 
             function playedText(ms) {
                 return 'Played ' + new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            }
+
+            function runText(ms) {
+                if (ms < 60000) {
+                    return Math.max(1, Math.round(ms / 1000)) + ' s';
+                }
+                const minutes = Math.round(ms / 60000);
+                return minutes < 60 ? minutes + ' min' : Math.floor(minutes / 60) + ' h ' + String(minutes % 60).padStart(2, '0') + ' min';
             }
 
             function icons() {
@@ -265,13 +298,20 @@
                 return Math.min(clock.slot, clock.elapsed + running);
             }
 
+            /** Everything on screen with the now playing item, which is the first of its page. */
+            function pageOf(now) {
+                return now ? (now.page && now.page.length ? now.page : [now]) : [];
+            }
+
             function renderNow(data) {
                 const now = data.now_playing;
                 const player = data.player;
                 const localElapsed = elapsedNow();
                 const continuing = now && now.id === clock.id && player.state === state;
+                const page = pageOf(now);
                 state = player.state;
                 currentId = now ? now.id : null;
+                currentIds = new Set(page.map(item => item.id));
                 root.dataset.state = state;
 
                 $('vpLoop').setAttribute('aria-pressed', player.loop ? 'true' : 'false');
@@ -290,6 +330,8 @@
                     $('vpNowImg').hidden = true;
                     $('vpNowVideo').hidden = true;
                     $('vpNowVideo').removeAttribute('src');
+                    $('vpNowGrid').hidden = true;
+                    $('vpNowGrid').innerHTML = '';
                     $('vpNowName').textContent = 'Nothing on screen';
                     $('vpNowMeta').textContent = data.counts.total
                         ? 'Press play to start the playlist from the top.'
@@ -300,23 +342,38 @@
                     return;
                 }
 
-                $('vpNowName').textContent = now.uploader;
+                $('vpNowName').textContent = [...new Set(page.map(item => item.uploader))].join(', ');
                 const order = data.items && !drag ? data.items.map(item => item.id) : currentOrder();
-                const position = order.indexOf(now.id) + 1;
-                $('vpNowMeta').textContent = (now.is_video ? 'Video' : 'Photo')
-                    + (position ? ' · ' + position + ' of ' + data.counts.total : '');
+                const positions = page.map(item => order.indexOf(item.id) + 1).filter(Boolean);
+                const from = Math.min(...positions);
+                const to = Math.max(...positions);
+                $('vpNowMeta').textContent = (now.is_video ? 'Video' : page.length > 1 ? 'Photos' : 'Photo')
+                    + (positions.length ? ' · ' + (to > from ? from + '–' + to : from) + ' of ' + data.counts.total : '');
 
-                if (shownKey !== now.id) {
-                    shownKey = now.id;
+                const layout = player.photos_per_screen || 1;
+                const tiled = !now.is_video && layout > 1;
+                const key = (tiled ? 'grid' + layout + ':' : '') + page.map(item => item.id).join(',');
+                if (shownKey !== key) {
+                    shownKey = key;
+                    const grid = $('vpNowGrid');
+                    grid.hidden = !tiled;
                     if (now.is_video) {
                         $('vpNowImg').hidden = true;
+                        grid.innerHTML = '';
                         $('vpNowVideo').src = now.video_url + '#t=0.5';
                         $('vpNowVideo').hidden = false;
                     } else {
                         $('vpNowVideo').hidden = true;
                         $('vpNowVideo').removeAttribute('src');
-                        $('vpNowImg').src = now.thumb_url;
-                        $('vpNowImg').hidden = false;
+                        if (tiled) {
+                            $('vpNowImg').hidden = true;
+                            grid.className = 'vp-screen-grid n-' + layout;
+                            grid.innerHTML = page.map(item => `<img src="${esc(item.thumb_url)}" alt="">`).join('');
+                        } else {
+                            grid.innerHTML = '';
+                            $('vpNowImg').src = now.thumb_url;
+                            $('vpNowImg').hidden = false;
+                        }
                     }
                 }
 
@@ -399,7 +456,7 @@
             function paintRows() {
                 [...list.children].forEach((row, index) => {
                     const id = Number(row.dataset.id);
-                    const isCurrent = id === currentId;
+                    const isCurrent = currentIds.has(id);
                     row.classList.toggle('vp-current', isCurrent);
                     row.querySelector('.vp-num').textContent = index + 1;
                     const meta = row.querySelector('.vp-meta');
@@ -414,9 +471,11 @@
                 });
             }
 
-            function renderCounts(counts) {
+            function renderCounts(counts, runMs) {
                 $('vpCountTotal').textContent = counts.total;
                 $('vpCountNew').textContent = counts.unplayed;
+                $('vpRunSummary').hidden = !runMs;
+                $('vpRunTime').textContent = runText(runMs || 0);
             }
 
             function render(data) {
@@ -428,8 +487,9 @@
                     version = data.version;
                 }
                 renderNow(data);
-                renderCounts(data.counts);
+                renderCounts(data.counts, data.run_ms);
                 renderSeconds(data.player.photo_seconds);
+                renderPerScreen(data.player.photos_per_screen);
                 document.dispatchEvent(new CustomEvent('fotoqueue:status', { detail: { counts: data.counts, player_state: data.player.state } }));
                 if (data.items && !drag) {
                     renderList(data.items);
@@ -512,6 +572,46 @@
                 }
             });
 
+            /* ── Photos on screen ────────────────────────────────────── */
+
+            const perScreenButtons = [...root.querySelectorAll('[data-per-screen]')];
+            let savedPerScreen = {{ $snapshot['player']['photos_per_screen'] }};
+            let perScreenSaving = 0;
+
+            function paintPerScreen(count) {
+                perScreenButtons.forEach(btn => btn.setAttribute('aria-pressed', Number(btn.dataset.perScreen) === count ? 'true' : 'false'));
+                $('vpPerScreenSummary').hidden = count === 1;
+                $('vpPerScreenCount').textContent = count;
+                $('vpSecondsSummary').nextSibling.nodeValue = 's per ' + (count === 1 ? 'photo' : 'page') + ', videos play through';
+            }
+
+            /** Takes the server's value unless a change is on its way. */
+            function renderPerScreen(count) {
+                savedPerScreen = count;
+                if (!perScreenSaving) {
+                    paintPerScreen(count);
+                }
+            }
+
+            perScreenButtons.forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const count = Number(btn.dataset.perScreen);
+                    if (btn.getAttribute('aria-pressed') === 'true') {
+                        return;
+                    }
+                    paintPerScreen(count);
+                    if (last) {
+                        last = { ...last, player: { ...last.player, photos_per_screen: count } };
+                    }
+                    perScreenSaving++;
+                    const data = await send(URLS.photosPerScreen, 'POST', { count });
+                    perScreenSaving--;
+                    if (!perScreenSaving) {
+                        paintPerScreen(data ? data.player.photos_per_screen : savedPerScreen);
+                    }
+                });
+            });
+
             /* ── Server calls ────────────────────────────────────────── */
 
             /**
@@ -534,14 +634,56 @@
                 document.dispatchEvent(new CustomEvent('fotoqueue:status', { detail: { counts: data.counts, player_state: data.player.state } }));
             }
 
-            function itemAt(offset) {
-                const order = currentOrder();
-                const index = order.indexOf(currentId);
-                let id = order[index + offset];
-                if (id === undefined && last?.player.loop) {
-                    id = offset > 0 ? order[0] : order[order.length - 1];
+            /** The page that starts at `index` of the playlist, built the way the server builds it, as a now playing item. */
+            function pageAt(order, index) {
+                const first = itemsById.get(order[index]);
+                if (!first) {
+                    return null;
                 }
-                return id === undefined ? null : itemsById.get(id) || null;
+                const size = last?.player.photos_per_screen || 1;
+                const page = [first];
+                for (let i = index + 1; !first.is_video && i < order.length && page.length < size; i++) {
+                    const item = itemsById.get(order[i]);
+                    if (!item || item.is_video) {
+                        break;
+                    }
+                    page.push(item);
+                }
+                return { ...first, page_ids: page.map(item => item.id), page };
+            }
+
+            /** Where the page ending right before `index` starts: a video on its own, or else up to a screenful of photos. */
+            function startBefore(order, index) {
+                const size = last?.player.photos_per_screen || 1;
+                let start = -1;
+                for (let i = index - 1; i >= 0 && index - i <= size; i--) {
+                    if (itemsById.get(order[i])?.is_video) {
+                        return start === -1 ? i : start;
+                    }
+                    start = i;
+                }
+                return start;
+            }
+
+            /** The page next or previous would bring up, so the press shows straight away. */
+            function pageStep(offset) {
+                const order = currentOrder();
+                const loop = last?.player.loop;
+                if (offset > 0) {
+                    const ids = [...currentIds];
+                    let end = -1;
+                    for (let i = ids.length - 1; i >= 0 && end === -1; i--) {
+                        end = order.indexOf(ids[i]);
+                    }
+                    const start = end + 1 < order.length ? end + 1 : loop ? 0 : -1;
+                    return start === -1 ? null : pageAt(order, start);
+                }
+                const index = order.indexOf(currentId);
+                let start = index > 0 ? startBefore(order, index) : -1;
+                if (start === -1 && loop) {
+                    start = startBefore(order, order.length);
+                }
+                return start === -1 ? null : pageAt(order, start);
             }
 
             /**
@@ -623,7 +765,7 @@
                     return;
                 }
                 const resume = state === 'paused' && last?.now_playing;
-                preview('playing', resume ? last.now_playing : itemsById.get(currentOrder()[0]), resume ? elapsedNow() : 0);
+                preview('playing', resume ? last.now_playing : pageAt(currentOrder(), 0), resume ? elapsedNow() : 0);
                 send(URLS.play);
             });
             root.querySelectorAll('[data-action]').forEach(btn => {
@@ -632,9 +774,10 @@
                     if (action === 'stop') {
                         preview('stopped', null, 0);
                     } else if (action === 'next') {
-                        preview(state, itemAt(1), 0);
+                        preview(state, pageStep(1), 0);
                     } else if (action === 'previous') {
-                        preview(state, itemAt(-1) || last?.now_playing, 0);
+                        const order = currentOrder();
+                        preview(state, pageStep(-1) || pageAt(order, order.indexOf(currentId)) || last?.now_playing, 0);
                     }
                     send(URLS[action]);
                 });
@@ -654,7 +797,8 @@
                 }
                 const row = button.closest('.vp-row');
                 if (button.dataset.rowAction === 'playFrom') {
-                    preview('playing', itemsById.get(Number(row.dataset.id)), 0);
+                    const order = currentOrder();
+                    preview('playing', pageAt(order, order.indexOf(Number(row.dataset.id))), 0);
                 }
                 send(URLS[button.dataset.rowAction].replace('__ID__', row.dataset.id)).then(data => {
                     if (data && button.dataset.rowAction === 'playNext') {

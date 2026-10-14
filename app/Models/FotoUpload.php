@@ -29,9 +29,7 @@ class FotoUpload extends Model
 
     protected static function booted(): void
     {
-        static::deleting(function (FotoUpload $foto) {
-            VidiwallPlayer::query()->where('foto_upload_id', $foto->id)->first()?->skip($foto);
-        });
+        static::deleting(fn (FotoUpload $foto) => $foto->removeFromScreen());
     }
 
     public function event()
@@ -116,12 +114,13 @@ class FotoUpload extends Model
     }
 
     /**
-     * Where this item stands with the vidiwall: live (at the player's playhead),
-     * queued (not played yet), shown, or its moderation status when it is not approved.
+     * Where this item stands with the vidiwall: live (on the page the player is
+     * showing), queued (not played yet), shown, or its moderation status when it
+     * is not approved.
      */
     public function screenState(): string
     {
-        if ($this->isApproved() && $this->event?->onScreenFotoId() === $this->id) {
+        if ($this->isApproved() && in_array($this->id, $this->event?->onScreenFotoIds() ?? [], true)) {
             return 'live';
         }
         if ($this->isQueuedForScreen()) {
@@ -193,10 +192,14 @@ class FotoUpload extends Model
     }
 
     /**
-     * Skips the item when it is the one on the vidiwall.
+     * Takes the item off the vidiwall when it is on the page there.
      */
     public function removeFromScreen(): void
     {
-        VidiwallPlayer::query()->where('foto_upload_id', $this->id)->first()?->skip($this);
+        $player = VidiwallPlayer::query()->where('event_id', $this->event_id)->first();
+
+        if ($player && in_array($this->id, $player->pageIds(), true)) {
+            $player->skip($this);
+        }
     }
 }

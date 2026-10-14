@@ -127,6 +127,7 @@
             'vidiwall.paused'      => '<i data-lucide="pause" class="lucide-icon"></i>',
             'vidiwall.stopped'     => '<i data-lucide="square" class="lucide-icon"></i>',
             'vidiwall.photo_seconds_changed' => '<i data-lucide="timer" class="lucide-icon"></i>',
+            'vidiwall.photos_per_screen_changed' => '<i data-lucide="layout-grid" class="lucide-icon"></i>',
             'lottery.drawn'        => '<i data-lucide="ticket" class="lucide-icon"></i>',
             'lottery.redrawn'      => '<i data-lucide="refresh-cw" class="lucide-icon"></i>',
             'lottery.released'     => '<i data-lucide="undo-2" class="lucide-icon"></i>',

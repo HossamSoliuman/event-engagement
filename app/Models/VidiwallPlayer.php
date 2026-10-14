@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Closure;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,6 +15,11 @@ use Illuminate\Support\Facades\DB;
  * and nothing plays until an operator presses Play. The screen and the control
  * pages poll the same row; every playback change bumps `revision` so a poller
  * can tell a fresh command from a state it has already applied.
+ *
+ * The screen shows a page: the item at the playhead plus, when the event shows
+ * several photos at once, the photos that follow it. A video always plays on
+ * its own. The page is frozen when it is cued (`page_ids`), so approvals and
+ * reorders during its slot do not reshuffle what is on the wall.
  */
 class VidiwallPlayer extends Model
 {
@@ -25,10 +31,14 @@ class VidiwallPlayer extends Model
 
     public const STATE_PAUSED = 'paused';
 
-    protected $fillable = ['event_id', 'state', 'foto_upload_id', 'started_ms', 'paused_elapsed_ms', 'loop', 'revision'];
+    /** How many photos the screen can show at once. */
+    public const PHOTOS_PER_SCREEN = [1, 2, 4];
+
+    protected $fillable = ['event_id', 'state', 'foto_upload_id', 'page_ids', 'started_ms', 'paused_elapsed_ms', 'loop', 'revision'];
 
     protected $casts = [
         'foto_upload_id' => 'integer',
+        'page_ids' => 'array',
         'started_ms' => 'integer',
         'paused_elapsed_ms' => 'integer',
         'loop' => 'boolean',
@@ -93,8 +103,26 @@ class VidiwallPlayer extends Model
     }
 
     /**
+     * The ids of the page on screen, playhead first; empty while stopped. A
+     * player cued before pages existed has none and shows the playhead alone.
+     *
+     * @return list<int>
+     */
+    public function pageIds(): array
+    {
+        if ($this->isStopped() || ! $this->foto_upload_id) {
+            return [];
+        }
+
+        $ids = array_values(array_map('intval', (array) $this->page_ids));
+
+        return ($ids[0] ?? null) === $this->foto_upload_id ? $ids : [$this->foto_upload_id];
+    }
+
+    /**
      * The item the screen shows right now: the playhead's item while playing or
-     * paused, as long as it is still approved.
+     * paused, as long as it is still approved. With several photos on screen it
+     * is the first of the page, and it is what the screen's done report names.
      */
     public function screenFoto(): ?FotoUpload
     {
@@ -112,19 +140,61 @@ class VidiwallPlayer extends Model
     }
 
     /**
-     * The item that plays after the current one, or the top of the playlist while
-     * stopped, so the screen can load it before it is due.
+     * Every item the screen shows right now, playhead first, leaving out any
+     * that are no longer approved. Empty whenever screenFoto() is null.
+     *
+     * @return Collection<int, FotoUpload>
      */
-    public function upNext(): ?FotoUpload
+    public function screenFotos(): Collection
+    {
+        $ids = $this->pageIds();
+
+        if ($ids === []) {
+            return new Collection;
+        }
+
+        $fotos = FotoUpload::query()->whereIn('id', $ids)->where('status', 'approved')->get()->keyBy('id');
+
+        if (! $fotos->has($this->foto_upload_id)) {
+            return new Collection;
+        }
+
+        $page = new Collection;
+
+        foreach ($ids as $id) {
+            if ($fotos->has($id)) {
+                $page->push($fotos->get($id)->setRelation('event', $this->event));
+            }
+        }
+
+        return $page;
+    }
+
+    /**
+     * The page that plays after the current one, or the first page while
+     * stopped, so the screen can load it before it is due. Empty when nothing
+     * new comes next.
+     *
+     * @return Collection<int, FotoUpload>
+     */
+    public function upNextPage(): Collection
     {
         $current = $this->isStopped() ? null : $this->foto;
 
         if (! $current) {
-            return $this->playlist()->first();
+            $first = $this->playlist()->first();
+
+            return $first ? $this->buildPage($first) : new Collection;
         }
 
-        return $this->playlist()->afterInPlaylist($current)->first()
-            ?? ($this->loop ? $this->playlist()->whereKeyNot($current->id)->first() : null);
+        $next = $this->playlist()->afterInPlaylist($this->pageEnd() ?? $current)->first();
+
+        if (! $next && $this->loop) {
+            $first = $this->playlist()->first();
+            $next = $first && ! in_array($first->id, $this->pageIds(), true) ? $first : null;
+        }
+
+        return $next ? $this->buildPage($next) : new Collection;
     }
 
     /**
@@ -198,6 +268,11 @@ class VidiwallPlayer extends Model
         });
     }
 
+    /**
+     * Steps back to the page that ends right before the current one, wrapping
+     * around to the end of the playlist when looping. On the first page without
+     * loop the page starts over.
+     */
     public function previous(): void
     {
         $this->mutate(function (self $player): void {
@@ -206,10 +281,10 @@ class VidiwallPlayer extends Model
             }
 
             $current = $player->foto;
-            $previous = $current ? $player->playlist()->beforeInPlaylist($current)->first() : null;
+            $previous = $current ? $player->pageEndingBefore($current) : null;
 
             if (! $previous && $player->loop) {
-                $previous = $player->playlist()->reorder()->orderByDesc('display_order')->orderByDesc('id')->first();
+                $previous = $player->pageEndingBefore(null);
             }
 
             $previous ??= $current?->isApproved() ? $current : $player->playlist()->first();
@@ -227,7 +302,7 @@ class VidiwallPlayer extends Model
     }
 
     /**
-     * "Push Live": slots the item in right after the current one and plays it
+     * "Push Live": slots the item in right after the current page and plays it
      * straight away, so the playlist carries on from where it was afterwards.
      */
     public function playNow(FotoUpload $foto): void
@@ -242,13 +317,13 @@ class VidiwallPlayer extends Model
     }
 
     /**
-     * Moves the item to play right after the current one, or to the top of the
-     * playlist when nothing is playing.
+     * Moves the item to play right after the current page, or to the top of
+     * the playlist when nothing is playing. An item already on screen stays put.
      */
     public function playNext(FotoUpload $foto): void
     {
         $this->mutate(function (self $player) use ($foto): void {
-            if ($player->isStopped() || $player->foto_upload_id !== $foto->id) {
+            if (! in_array($foto->id, $player->pageIds(), true)) {
                 $player->moveAfterCurrent($foto);
             }
         });
@@ -294,11 +369,36 @@ class VidiwallPlayer extends Model
     }
 
     /**
-     * Moves the playhead on once the current item is done. The screen reports
-     * the item (and the revision it was showing) when it finishes, which is what
-     * normally advances the playlist; the item's slot is the fallback for when
-     * no screen is connected. Videos get a grace period on top so a screen that
-     * is still buffering one does not get cut off.
+     * Changes how many photos the screen shows at once. The page on screen is
+     * rebuilt from its playhead straight away and keeps its time.
+     */
+    public function setPhotosPerScreen(int $count): void
+    {
+        if ((int) $this->event->vidiwall_photos_per_screen === $count) {
+            return;
+        }
+
+        $this->mutate(function (self $player) use ($count): void {
+            $player->event->update(['vidiwall_photos_per_screen' => $count]);
+
+            $current = $player->screenFoto();
+
+            if ($current) {
+                $pageIds = $player->buildPage($current)->modelKeys();
+                $player->markDisplayed(array_values(array_diff($pageIds, $player->pageIds())));
+                $player->page_ids = $pageIds;
+            }
+
+            $player->revision++;
+        });
+    }
+
+    /**
+     * Moves the playhead on once the current page is done. The screen reports
+     * the playhead's item (and the revision it was showing) when it finishes,
+     * which is what normally advances the playlist; the slot is the fallback
+     * for when no screen is connected. Videos get a grace period on top so a
+     * screen that is still buffering one does not get cut off.
      */
     public function sync(?int $finishedFotoId = null, ?int $finishedRevision = null): void
     {
@@ -314,17 +414,34 @@ class VidiwallPlayer extends Model
     }
 
     /**
-     * Moves past the item when it is the one at the playhead, used when it is
-     * skipped, rejected or deleted.
+     * Takes the item off the screen when it is on the page there; used when it
+     * is skipped, rejected or deleted. The rest of the page stays up and keeps
+     * its time (the next item takes over the playhead when the playhead goes),
+     * and the next page comes up once nothing is left.
      */
     public function skip(FotoUpload $foto): void
     {
         $this->mutate(function (self $player) use ($foto): void {
-            if ($player->foto_upload_id !== $foto->id) {
+            $pageIds = $player->pageIds();
+
+            if (! in_array($foto->id, $pageIds, true)) {
+                if ($player->foto_upload_id === $foto->id) {
+                    $player->resetToStopped();
+                }
+
                 return;
             }
 
-            $player->isStopped() ? $player->resetToStopped() : $player->advance($foto);
+            $approved = $player->playlist()->whereIn('id', array_values(array_diff($pageIds, [$foto->id])))->pluck('id')->map(fn ($id) => (int) $id)->all();
+            $remaining = array_values(array_intersect($pageIds, $approved));
+
+            if ($remaining === []) {
+                $player->advance($foto);
+
+                return;
+            }
+
+            $player->forceFill(['foto_upload_id' => $remaining[0], 'page_ids' => $remaining])->unsetRelation('foto');
         });
     }
 
@@ -346,34 +463,133 @@ class VidiwallPlayer extends Model
     }
 
     /**
-     * Steps to the item after the current one, wrapping around at the end when
+     * Steps to the page after the current one, wrapping around at the end when
      * looping and stopping otherwise. `$leaving` is left out of the playlist
      * because it is about to disappear from it.
      */
     protected function advance(?FotoUpload $leaving = null): void
     {
-        $current = $this->foto;
+        $anchor = $this->pageEnd($leaving) ?? $this->foto;
         $playlist = fn () => $this->playlist()->when($leaving, fn (Builder $query) => $query->whereKeyNot($leaving->id));
 
-        $next = $current ? $playlist()->afterInPlaylist($current)->first() : null;
+        $next = $anchor ? $playlist()->afterInPlaylist($anchor)->first() : null;
 
         if (! $next && $this->loop) {
             $next = $playlist()->first();
         }
 
-        $next ? $this->cue($next, $this->state) : $this->resetToStopped();
+        $next ? $this->cue($next, $this->state, $leaving) : $this->resetToStopped();
     }
 
-    protected function cue(FotoUpload $foto, string $state): void
+    /**
+     * The last item of a page of several that is still in the playlist, which
+     * the next page starts after. Null for a single item; the playhead stands
+     * in then.
+     */
+    protected function pageEnd(?FotoUpload $leaving = null): ?FotoUpload
     {
-        $foto->update(['displayed_at' => now()]);
+        $ids = $this->pageIds();
+
+        if (count($ids) < 2) {
+            return null;
+        }
+
+        $fotos = $this->playlist()
+            ->whereIn('id', $ids)
+            ->when($leaving, fn (Builder $query) => $query->whereKeyNot($leaving->id))
+            ->get()
+            ->keyBy('id');
+
+        foreach (array_reverse($ids) as $id) {
+            if ($fotos->has($id)) {
+                return $fotos->get($id);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * The page that starts at `$start`: the photos that follow it, up to the
+     * event's photos per screen and stopping before the next video. A video is
+     * a page on its own, and pages never wrap around the end of the playlist.
+     *
+     * @return Collection<int, FotoUpload>
+     */
+    protected function buildPage(FotoUpload $start, ?FotoUpload $leaving = null): Collection
+    {
+        $page = new Collection([$start]);
+        $size = $this->event->photosPerScreen();
+
+        if ($size === 1 || $start->isVideo()) {
+            return $page;
+        }
+
+        $following = $this->playlist()
+            ->afterInPlaylist($start)
+            ->when($leaving, fn (Builder $query) => $query->whereKeyNot($leaving->id))
+            ->limit($size - 1)
+            ->get();
+
+        foreach ($following as $foto) {
+            if ($foto->isVideo()) {
+                break;
+            }
+
+            $page->push($foto);
+        }
+
+        return $page;
+    }
+
+    /**
+     * Where the page that ends right before `$anchor` starts, or the page that
+     * ends the playlist when there is no anchor: a video just before it plays
+     * on its own, otherwise up to a screenful of photos back to the last video.
+     */
+    protected function pageEndingBefore(?FotoUpload $anchor): ?FotoUpload
+    {
+        $before = $anchor
+            ? $this->playlist()->beforeInPlaylist($anchor)
+            : $this->playlist()->reorder()->orderByDesc('display_order')->orderByDesc('id');
+
+        $start = null;
+
+        foreach ($before->limit($this->event->photosPerScreen())->get() as $foto) {
+            if ($foto->isVideo()) {
+                return $start ?? $foto;
+            }
+
+            $start = $foto;
+        }
+
+        return $start;
+    }
+
+    protected function cue(FotoUpload $foto, string $state, ?FotoUpload $leaving = null): void
+    {
+        $pageIds = array_map('intval', $this->buildPage($foto, $leaving)->modelKeys());
+
+        $this->markDisplayed($pageIds);
+        $foto->forceFill(['displayed_at' => now()])->syncOriginalAttribute('displayed_at');
 
         $this->forceFill([
             'foto_upload_id' => $foto->id,
+            'page_ids' => $pageIds,
             'state' => $state,
             'started_ms' => $state === self::STATE_PLAYING ? now()->getTimestampMs() : null,
             'paused_elapsed_ms' => $state === self::STATE_PAUSED ? 0 : null,
         ])->setRelation('foto', $foto);
+    }
+
+    /**
+     * @param  list<int>  $ids
+     */
+    protected function markDisplayed(array $ids): void
+    {
+        if ($ids !== []) {
+            FotoUpload::query()->whereIn('id', $ids)->update(['displayed_at' => now()]);
+        }
     }
 
     protected function resetToStopped(): void
@@ -381,15 +597,28 @@ class VidiwallPlayer extends Model
         $this->forceFill([
             'state' => self::STATE_STOPPED,
             'foto_upload_id' => null,
+            'page_ids' => null,
             'started_ms' => null,
             'paused_elapsed_ms' => null,
         ])->setRelation('foto', null);
     }
 
+    /**
+     * Moves the item to play right after the last item of the current page
+     * that is still in the playlist, or to the top when nothing is on screen.
+     */
     protected function moveAfterCurrent(FotoUpload $foto): void
     {
         $ids = array_values(array_filter($this->playlistIds(), fn (int $id) => $id !== $foto->id));
-        $position = $this->isStopped() ? false : array_search($this->foto_upload_id, $ids, true);
+        $position = false;
+
+        foreach (array_reverse($this->pageIds()) as $pageId) {
+            $position = array_search($pageId, $ids, true);
+
+            if ($position !== false) {
+                break;
+            }
+        }
 
         array_splice($ids, $position === false ? 0 : $position + 1, 0, [$foto->id]);
 

@@ -467,6 +467,69 @@ class VidiwallQueueTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_moderation_marks_every_photo_on_the_page_as_on_screen(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $event = Event::factory()->create(['vidiwall_photos_per_screen' => 4]);
+        $onScreen = [$this->upload($event, 'approved'), $this->upload($event, 'approved'), $this->upload($event, 'approved')];
+        $video = $this->upload($event, 'approved', ['media_type' => 'video', 'video_path' => 'fotos/clip.mp4', 'video_duration' => 4]);
+
+        $event->player()->play();
+
+        $response = $this->actingAs($admin)
+            ->getJson(route('admin.fotos.status', [$event, 'ids' => implode(',', [...array_column($onScreen, 'id'), $video->id])]))
+            ->assertJsonPath('live.id', $onScreen[0]->id)
+            ->assertJsonPath('queued', 1)
+            ->assertJsonFragment(['id' => $video->id, 'state' => 'queued', 'shown_human' => null]);
+
+        foreach ($onScreen as $foto) {
+            $response->assertJsonFragment(['id' => $foto->id, 'state' => 'live']);
+        }
+
+        $csv = $this->actingAs($admin)->get(route('admin.fotos.export', $event))->assertOk()->getContent();
+        $this->assertSame(3, substr_count($csv, ',approved,Yes,'));
+        $this->assertSame(1, substr_count($csv, ',approved,No,'));
+    }
+
+    public function test_skipping_a_photo_beside_the_playhead_keeps_the_rest_of_the_page_up(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $event = Event::factory()->create(['vidiwall_photos_per_screen' => 2]);
+        $first = $this->upload($event, 'approved');
+        $second = $this->upload($event, 'approved');
+        $third = $this->upload($event, 'approved');
+
+        $event->player()->play();
+        $this->actingAs($admin)->post(route('admin.fotos.remove-from-screen', $second))->assertRedirect();
+
+        $this->getJson(route('vidiwall.feed', $event->slug))
+            ->assertJsonPath('foto.id', $first->id)
+            ->assertJsonCount(1, 'page');
+
+        $this->assertTrue($second->fresh()->isApproved());
+        $this->assertSame([$first->id, $second->id, $third->id], $event->playlist()->pluck('id')->all());
+
+        $this->actingAs($admin)->post(route('admin.fotos.remove-from-screen', $third))->assertRedirect();
+        $this->getJson(route('vidiwall.feed', $event->slug))->assertJsonPath('foto.id', $first->id)->assertJsonCount(1, 'page');
+    }
+
+    public function test_feed_preloads_the_whole_next_page_while_stopped(): void
+    {
+        $event = Event::factory()->create(['vidiwall_photos_per_screen' => 2]);
+        $first = $this->upload($event, 'approved');
+        $second = $this->upload($event, 'approved');
+        $this->upload($event, 'approved');
+
+        $this->getJson(route('vidiwall.feed', $event->slug))
+            ->assertJsonPath('state', 'stopped')
+            ->assertJsonPath('page', [])
+            ->assertJsonPath('next.id', $first->id)
+            ->assertJsonPath('next_page.1.id', $second->id)
+            ->assertJsonCount(2, 'next_page');
+
+        $this->assertNull($event->vidiwallPlayer()->first());
+    }
+
     /**
      * @param  array<string, mixed>  $overrides
      * @return array<string, mixed>

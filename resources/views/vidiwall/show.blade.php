@@ -346,6 +346,82 @@
             letter-spacing: 2px
         }
 
+        /* ── Several photos at once: tiles sized by how many the screen
+           shows, so a partial page keeps the tile size, centred ───── */
+        .photo-grid {
+            --cols: 2;
+            --rows: 1;
+            --gap: clamp(8px, 1.5vh, 20px);
+            position: relative;
+            z-index: 2;
+            box-sizing: border-box;
+            width: 100%;
+            height: 100%;
+            padding: clamp(14px, 4vh, 56px) clamp(14px, 3vw, 56px);
+            display: flex;
+            flex-wrap: wrap;
+            align-content: center;
+            justify-content: center;
+            gap: var(--gap)
+        }
+
+        .photo-grid.n-4 {
+            --rows: 2
+        }
+
+        .photo-tile {
+            flex: 0 0 auto;
+            width: calc((100% - (var(--cols) - 1) * var(--gap)) / var(--cols));
+            height: calc((100% - (var(--rows) - 1) * var(--gap)) / var(--rows));
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+
+        .tile-frame {
+            position: relative;
+            flex: 0 0 auto;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(0, 0, 0, .75), 0 0 0 3px var(--p);
+            opacity: 0
+        }
+
+        .tile-frame.is-in {
+            animation: photoIn .5s cubic-bezier(.22, 1, .36, 1) both;
+            animation-delay: calc(var(--i, 0) * 90ms)
+        }
+
+        .tile-frame.is-shown {
+            opacity: 1
+        }
+
+        .tile-frame img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover
+        }
+
+        .tile-name {
+            position: absolute;
+            left: 50%;
+            bottom: clamp(6px, 1.2vh, 14px);
+            transform: translateX(-50%);
+            max-width: calc(100% - 16px);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            background: rgba(0, 0, 0, .75);
+            border: 1px solid var(--acc);
+            border-radius: 40px;
+            padding: 4px 14px;
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(11px, 1.1vw, 16px);
+            font-weight: 700;
+            color: var(--acc)
+        }
+
         /* ── Safe area: the box live media and the idle card sit in ── */
         .safe-area {
             position: absolute;
@@ -400,6 +476,16 @@
         .screen.has-bg .video-frame video {
             max-width: calc(100vw - 2 * var(--safe-x));
             max-height: calc(100vh - 2 * var(--safe-y))
+        }
+
+        .screen.has-bg .photo-grid {
+            width: calc(100vw - 2 * var(--safe-x));
+            height: calc(100vh - 2 * var(--safe-y));
+            padding: 0
+        }
+
+        .screen.has-bg .tile-frame {
+            box-shadow: 0 24px 70px rgba(0, 0, 0, .5), 0 0 0 1px rgba(255, 255, 255, .14)
         }
 
         .screen.has-bg .slide-progress {
@@ -1980,6 +2066,8 @@
                         <video id="liveVideo" src="" muted playsinline preload="auto"></video>
                     </div>
 
+                    <div class="photo-grid" id="photoGrid" style="display:none"></div>
+
                     <div class="uploader" id="uploaderTag" style="display:none">
                         <span id="uploaderName"></span>
                     </div>
@@ -2172,6 +2260,7 @@
 
         let clashActive = false;
         let lastFotoId = null;
+        let lastPageKey = null;
         let slideIndex = 0;
         let slideTimer = null;
         let slideFotos = [];
@@ -2180,7 +2269,7 @@
         let playerRev = null;
         let playerState = null;
         let pendingDone = null;
-        let preloaded = { url: null, media: null };
+        let preloaded = { key: null, media: [] };
 
         function setBackground(url) {
             if (HAS_WALL_BG) {
@@ -2214,6 +2303,7 @@
             document.getElementById('idleState').style.display = 'none';
             document.getElementById('videoFrame').style.display = 'none';
             document.getElementById('videoBadge').style.display = 'none';
+            hideGrid();
 
             const liveVideo = document.getElementById('liveVideo');
             liveVideo.onerror = null;
@@ -2242,6 +2332,7 @@
             document.getElementById('idleState').style.display = 'none';
             document.getElementById('photoFrame').style.display = 'none';
             document.getElementById('liveBadge').style.display = 'none';
+            hideGrid();
 
             document.getElementById('videoBadge').style.display = 'block';
 
@@ -2266,6 +2357,7 @@
             if (window.fitVidiwall) { window.fitVidiwall(); }
             document.getElementById('photoFrame').style.display = 'none';
             document.getElementById('videoFrame').style.display = 'none';
+            hideGrid();
             document.getElementById('uploaderTag').style.display = 'none';
             document.getElementById('liveBadge').style.display = 'none';
             document.getElementById('videoBadge').style.display = 'none';
@@ -2273,6 +2365,7 @@
             document.getElementById('slideProgress').style.display = 'none';
             setBackground(null);
             lastFotoId = null;
+            lastPageKey = null;
             slideFotos = [];
             clearTimeout(slideTimer);
             clearTimeout(queueTimer);
@@ -2340,31 +2433,140 @@
               done (with the revision it was showing) so the next one comes up.
               The report rides along on every poll until the server has moved
               on, so a request lost on the way does not hold the item up. ── */
-        function preloadNext(item) {
-            const isVideo = !!(item && item.media_type === 'video' && item.video_url);
-            const url = item ? (isVideo ? item.video_url : item.url) : null;
-            if (url === preloaded.url) {
+        function hideGrid() {
+            const grid = document.getElementById('photoGrid');
+            grid.style.display = 'none';
+            grid.innerHTML = '';
+        }
+
+        /** Sizes a tile's frame to its photo, as large as the tile allows. */
+        function fitTile(tile) {
+            const img = tile.querySelector('img');
+            if (!img.naturalWidth || !tile.clientWidth) {
                 return;
             }
-            if (preloaded.media instanceof HTMLVideoElement) {
-                preloaded.media.removeAttribute('src');
-                preloaded.media.load();
+            const scale = Math.min(tile.clientWidth / img.naturalWidth, tile.clientHeight / img.naturalHeight);
+            tile.firstElementChild.style.width = Math.floor(img.naturalWidth * scale) + 'px';
+            tile.firstElementChild.style.height = Math.floor(img.naturalHeight * scale) + 'px';
+        }
+
+        function fitGrid() {
+            document.querySelectorAll('#photoGrid .photo-tile').forEach(fitTile);
+        }
+
+        window.addEventListener('resize', fitGrid);
+
+        function tileKey(item) {
+            return item.id + '|' + item.url;
+        }
+
+        function makeTile(item, index) {
+            const tile = document.createElement('div');
+            tile.className = 'photo-tile';
+            tile.dataset.key = tileKey(item);
+
+            const frame = document.createElement('div');
+            frame.className = 'tile-frame';
+            frame.style.setProperty('--i', index);
+            frame.addEventListener('animationend', () => frame.classList.replace('is-in', 'is-shown'), { once: true });
+
+            const img = document.createElement('img');
+            img.alt = '';
+            img.onload = () => {
+                fitTile(tile);
+                frame.classList.add('is-in');
+            };
+            img.src = item.url;
+            frame.appendChild(img);
+
+            if (SHOW_NAME && item.uploader) {
+                const name = document.createElement('div');
+                name.className = 'tile-name';
+                name.textContent = item.uploader;
+                frame.appendChild(name);
             }
-            preloaded = { url, media: null };
-            if (!url) {
+
+            tile.appendChild(frame);
+            return tile;
+        }
+
+        /* Several photos at once, each leaning towards the middle of the grid
+           so portrait and landscape shots sit together as one group. Tiles
+           that stay on the page are kept as they are, so a page that loses a
+           photo does not flash the others. */
+        function showGrid(page, layout) {
+            document.getElementById('idleState').style.display = 'none';
+            document.getElementById('photoFrame').style.display = 'none';
+            document.getElementById('videoFrame').style.display = 'none';
+            document.getElementById('videoBadge').style.display = 'none';
+            document.getElementById('uploaderTag').style.display = 'none';
+            document.getElementById('slideCounter').style.display = 'none';
+            document.getElementById('liveBadge').style.display = 'block';
+            document.getElementById('liveImg').onload = null;
+
+            const liveVideo = document.getElementById('liveVideo');
+            liveVideo.onended = null;
+            liveVideo.onerror = null;
+            liveVideo.pause();
+            liveVideo.src = '';
+
+            setBackground(null);
+
+            const grid = document.getElementById('photoGrid');
+            const keys = page.map(tileKey);
+            grid.className = 'photo-grid n-' + layout;
+            grid.style.display = 'flex';
+
+            [...grid.children].forEach(tile => {
+                if (!keys.includes(tile.dataset.key)) {
+                    tile.remove();
+                }
+            });
+            const kept = new Map([...grid.children].map(tile => [tile.dataset.key, tile]));
+            const cols = parseInt(getComputedStyle(grid).getPropertyValue('--cols'), 10) || 1;
+            const rows = Math.ceil(page.length / cols);
+            page.forEach((item, index) => {
+                const tile = kept.get(keys[index]) || makeTile(item, index);
+                const row = Math.floor(index / cols);
+                const col = index % cols;
+                const inRow = Math.min(cols, page.length - row * cols);
+                tile.style.justifyContent = inRow === 1 ? 'center' : col === 0 ? 'flex-end' : col === inRow - 1 ? 'flex-start' : 'center';
+                tile.style.alignItems = rows === 1 ? 'center' : row === 0 ? 'flex-end' : row === rows - 1 ? 'flex-start' : 'center';
+                if (grid.children[index] !== tile) {
+                    grid.insertBefore(tile, grid.children[index] || null);
+                }
+            });
+            fitGrid();
+        }
+
+        /** Loads the page due next: every photo, and at most one video. */
+        function preloadNext(items) {
+            const list = (items || []).filter(Boolean);
+            const isVideo = item => item.media_type === 'video' && !!item.video_url;
+            const key = list.map(item => isVideo(item) ? item.video_url : item.url).join('|');
+            if (key === preloaded.key) {
                 return;
             }
-            if (isVideo) {
-                const video = document.createElement('video');
-                video.muted = true;
-                video.preload = 'auto';
-                video.src = url;
-                preloaded.media = video;
-            } else {
+            preloaded.media.forEach(media => {
+                if (media instanceof HTMLVideoElement) {
+                    media.removeAttribute('src');
+                    media.load();
+                }
+            });
+            preloaded = { key, media: [] };
+            const video = list.find(isVideo);
+            if (video) {
+                const element = document.createElement('video');
+                element.muted = true;
+                element.preload = 'auto';
+                element.src = video.video_url;
+                preloaded.media.push(element);
+            }
+            list.filter(item => !isVideo(item)).forEach(item => {
                 const img = new Image();
-                img.src = url;
-                preloaded.media = img;
-            }
+                img.src = item.url;
+                preloaded.media.push(img);
+            });
         }
 
         function runQueueProgress(fromMs, slotMs) {
@@ -2379,6 +2581,7 @@
 
         function resetPlayerView() {
             lastFotoId = null;
+            lastPageKey = null;
             playerRev = null;
             playerState = null;
             pendingDone = null;
@@ -2400,19 +2603,26 @@
                 return;
             }
 
-            if (foto.id === lastFotoId && data.revision === playerRev) {
+            const layout = data.layout || 1;
+            const page = data.page && data.page.length ? data.page : [foto];
+            const tiled = layout > 1 && foto.media_type !== 'video';
+            const pageKey = (tiled ? 'grid' + layout + ':' : '') + page.map(item => item.id).join(',');
+
+            if (foto.id === lastFotoId && data.revision === playerRev && pageKey === lastPageKey) {
                 return;
             }
 
             clearTimeout(queueTimer);
 
             const isNewItem = foto.id !== lastFotoId;
+            const isNewPage = pageKey !== lastPageKey;
             const revision = data.revision;
             const elapsed = data.elapsed_ms || 0;
             const slot = foto.slot_ms || 4000;
             const playing = data.state === 'playing';
 
             lastFotoId = foto.id;
+            lastPageKey = pageKey;
             playerRev = revision;
             playerState = data.state;
 
@@ -2447,7 +2657,9 @@
                     video.pause();
                 }
             } else {
-                if (isNewItem) {
+                if (tiled && isNewPage) {
+                    showGrid(page, layout);
+                } else if (!tiled && isNewPage) {
                     showPhoto(foto.url, foto.uploader);
                 }
 
@@ -2484,7 +2696,7 @@
                 } else {
                     clearTimeout(slideTimer);
                     applyPlayer(data);
-                    preloadNext(data.next);
+                    preloadNext(data.next_page || [data.next]);
                 }
             } catch (e) {}
         }
@@ -2519,7 +2731,7 @@
             }
 
             function hideStage() {
-                ['idleState', 'photoFrame', 'videoFrame', 'uploaderTag', 'liveBadge',
+                ['idleState', 'photoFrame', 'videoFrame', 'photoGrid', 'uploaderTag', 'liveBadge',
                     'videoBadge', 'slideCounter', 'slideProgress'].forEach(id => {
                     const n = document.getElementById(id);
                     if (n) n.style.display = 'none';

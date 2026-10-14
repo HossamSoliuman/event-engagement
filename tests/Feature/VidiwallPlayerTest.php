@@ -833,6 +833,534 @@ class VidiwallPlayerTest extends TestCase
         $this->getJson(route('vidiwall.feed', $this->event->slug))->assertJsonPath('next.id', $first->id);
     }
 
+    public function test_one_photo_per_screen_is_the_default(): void
+    {
+        $first = $this->upload();
+        $this->upload();
+
+        $this->assertSame(1, $this->event->fresh()->vidiwall_photos_per_screen);
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.play', $this->event))
+            ->assertJsonPath('player.photos_per_screen', 1)
+            ->assertJsonPath('now_playing.page_ids', [$first->id]);
+
+        $this->getJson(route('vidiwall.feed', $this->event->slug))
+            ->assertJsonPath('layout', 1)
+            ->assertJsonPath('page.0.id', $first->id)
+            ->assertJsonCount(1, 'page');
+    }
+
+    public function test_photos_per_screen_accepts_1_2_and_4(): void
+    {
+        foreach ([2, 4, 1] as $count) {
+            $this->actingAs($this->admin)
+                ->postJson(route('admin.player.photos-per-screen', $this->event), ['count' => $count])
+                ->assertOk()
+                ->assertJsonPath('player.photos_per_screen', $count);
+
+            $this->assertSame($count, $this->event->fresh()->vidiwall_photos_per_screen);
+        }
+
+        $this->assertDatabaseHas('activity_log', ['event_id' => $this->event->id, 'action' => 'vidiwall.photos_per_screen_changed']);
+    }
+
+    public function test_photos_per_screen_refuses_anything_but_1_2_or_4(): void
+    {
+        $this->event->update(['vidiwall_photos_per_screen' => 2]);
+
+        foreach ([
+            [[], 'Choose how many photos show on screen at once.'],
+            [['count' => 'four'], 'Photos on screen must be a whole number.'],
+            [['count' => 2.5], 'Photos on screen must be a whole number.'],
+            [['count' => 0], 'The screen can show 1, 2 or 4 photos at once.'],
+            [['count' => 3], 'The screen can show 1, 2 or 4 photos at once.'],
+            [['count' => 5], 'The screen can show 1, 2 or 4 photos at once.'],
+        ] as [$payload, $message]) {
+            $this->actingAs($this->admin)
+                ->postJson(route('admin.player.photos-per-screen', $this->event), $payload)
+                ->assertUnprocessable()
+                ->assertJsonPath('message', $message);
+        }
+
+        $this->assertSame(2, $this->event->fresh()->vidiwall_photos_per_screen);
+    }
+
+    public function test_assigned_moderators_can_change_photos_per_screen_but_others_cannot(): void
+    {
+        $moderator = User::factory()->create(['role' => 'moderator']);
+        $this->event->moderators()->attach($moderator);
+
+        $this->actingAs($moderator)
+            ->postJson(route('moderator.player.photos-per-screen', $this->event), ['count' => 4])
+            ->assertOk()
+            ->assertJsonPath('player.photos_per_screen', 4);
+
+        $outsider = User::factory()->create(['role' => 'moderator']);
+
+        $this->actingAs($outsider)
+            ->postJson(route('moderator.player.photos-per-screen', $this->event), ['count' => 2])
+            ->assertForbidden();
+
+        $this->assertSame(4, $this->event->fresh()->vidiwall_photos_per_screen);
+    }
+
+    public function test_four_per_screen_plays_the_first_four_photos_together(): void
+    {
+        $this->event->update(['vidiwall_photos_per_screen' => 4]);
+        $photos = $this->photos(6);
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.play', $this->event))
+            ->assertJsonPath('now_playing.id', $photos[0]->id)
+            ->assertJsonPath('now_playing.page_ids', $this->ids($photos, 0, 4))
+            ->assertJsonCount(4, 'now_playing.page');
+
+        $feed = $this->getJson(route('vidiwall.feed', $this->event->slug))
+            ->assertJsonPath('layout', 4)
+            ->assertJsonPath('foto.id', $photos[0]->id)
+            ->assertJsonPath('foto.slot_ms', 4000)
+            ->assertJsonPath('page.1.uploader', 'Guest')
+            ->assertJsonPath('next.id', $photos[4]->id);
+
+        $this->assertSame($this->ids($photos, 0, 4), array_column($feed->json('page'), 'id'));
+        $this->assertSame($this->ids($photos, 4, 2), array_column($feed->json('next_page'), 'id'));
+    }
+
+    public function test_the_done_report_for_the_playhead_moves_on_to_the_next_four(): void
+    {
+        $this->event->update(['vidiwall_photos_per_screen' => 4]);
+        $photos = $this->photos(8);
+
+        $this->event->player()->play();
+        $revision = $this->getJson(route('vidiwall.feed', $this->event->slug))->json('revision');
+
+        $feed = $this->getJson(route('vidiwall.feed', ['slug' => $this->event->slug, 'done' => $photos[0]->id, 'rev' => $revision]))
+            ->assertJsonPath('foto.id', $photos[4]->id)
+            ->assertJsonPath('next', null);
+
+        $this->assertSame($this->ids($photos, 4, 4), array_column($feed->json('page'), 'id'));
+    }
+
+    public function test_the_page_holds_for_one_photo_slot_when_no_screen_reports(): void
+    {
+        $this->event->update(['vidiwall_photos_per_screen' => 2, 'vidiwall_photo_seconds' => 5]);
+        $photos = $this->photos(4);
+
+        Carbon::setTestNow('2026-10-14 20:00:00');
+        $this->event->player()->play();
+
+        Carbon::setTestNow('2026-10-14 20:00:04.900');
+        $this->getJson(route('vidiwall.feed', $this->event->slug))->assertJsonPath('foto.id', $photos[0]->id);
+
+        Carbon::setTestNow('2026-10-14 20:00:05');
+        $this->getJson(route('vidiwall.feed', $this->event->slug))
+            ->assertJsonPath('foto.id', $photos[2]->id)
+            ->assertJsonPath('page.1.id', $photos[3]->id);
+    }
+
+    public function test_a_video_ends_the_page_before_it_and_plays_alone(): void
+    {
+        $this->event->update(['vidiwall_photos_per_screen' => 4]);
+        [$a, $b] = $this->photos(2);
+        $video = $this->video();
+        $after = $this->photos(5);
+
+        $this->actingAs($this->admin)->postJson(route('admin.player.play', $this->event))
+            ->assertJsonPath('now_playing.page_ids', [$a->id, $b->id]);
+
+        $this->getJson(route('vidiwall.feed', $this->event->slug))->assertJsonPath('next_page.0.id', $video->id)->assertJsonCount(1, 'next_page');
+
+        $this->actingAs($this->admin)->postJson(route('admin.player.next', $this->event))
+            ->assertJsonPath('now_playing.page_ids', [$video->id])
+            ->assertJsonPath('now_playing.is_video', true);
+
+        $this->getJson(route('vidiwall.feed', $this->event->slug))
+            ->assertJsonPath('foto.slot_ms', 5000)
+            ->assertJsonCount(1, 'page');
+
+        $this->actingAs($this->admin)->postJson(route('admin.player.next', $this->event))
+            ->assertJsonPath('now_playing.page_ids', $this->ids($after, 0, 4));
+
+        $this->actingAs($this->admin)->postJson(route('admin.player.next', $this->event))
+            ->assertJsonPath('now_playing.page_ids', [$after[4]->id]);
+    }
+
+    public function test_the_last_page_can_be_partial_and_the_playlist_stops_after_it(): void
+    {
+        $this->event->update(['vidiwall_photos_per_screen' => 4]);
+        $photos = $this->photos(6);
+
+        $this->event->player()->play();
+
+        $this->actingAs($this->admin)->postJson(route('admin.player.next', $this->event))
+            ->assertJsonPath('now_playing.page_ids', $this->ids($photos, 4, 2));
+
+        $this->getJson(route('vidiwall.feed', $this->event->slug))->assertJsonPath('next_page', []);
+
+        $this->actingAs($this->admin)->postJson(route('admin.player.next', $this->event))
+            ->assertJsonPath('player.state', 'stopped')
+            ->assertJsonPath('now_playing', null);
+    }
+
+    public function test_looping_starts_the_next_page_at_the_top_after_a_partial_page(): void
+    {
+        $this->event->update(['vidiwall_photos_per_screen' => 4]);
+        $photos = $this->photos(6);
+        $this->event->player()->setLoop(true);
+        $this->event->player()->playFrom($photos[4]);
+
+        $this->getJson(route('vidiwall.feed', $this->event->slug))->assertJsonPath('next_page.0.id', $photos[0]->id);
+
+        $this->actingAs($this->admin)->postJson(route('admin.player.next', $this->event))
+            ->assertJsonPath('player.state', 'playing')
+            ->assertJsonPath('now_playing.page_ids', $this->ids($photos, 0, 4));
+    }
+
+    public function test_previous_goes_back_to_the_page_before(): void
+    {
+        $this->event->update(['vidiwall_photos_per_screen' => 4]);
+        $photos = $this->photos(8);
+
+        Carbon::setTestNow('2026-10-14 20:00:00');
+        $this->event->player()->playFrom($photos[4]);
+
+        $this->actingAs($this->admin)->postJson(route('admin.player.previous', $this->event))
+            ->assertJsonPath('now_playing.id', $photos[0]->id)
+            ->assertJsonPath('now_playing.page_ids', $this->ids($photos, 0, 4));
+
+        Carbon::setTestNow('2026-10-14 20:00:02');
+        $this->actingAs($this->admin)->postJson(route('admin.player.previous', $this->event))
+            ->assertJsonPath('now_playing.page_ids', $this->ids($photos, 0, 4))
+            ->assertJsonPath('player.elapsed_ms', 0);
+    }
+
+    public function test_previous_across_a_video_lands_on_the_video_alone(): void
+    {
+        $this->event->update(['vidiwall_photos_per_screen' => 4]);
+        $before = $this->photos(3);
+        $video = $this->video();
+        $after = $this->photos(2);
+
+        $this->event->player()->playFrom($after[0]);
+
+        $this->actingAs($this->admin)->postJson(route('admin.player.previous', $this->event))
+            ->assertJsonPath('now_playing.page_ids', [$video->id]);
+
+        $this->actingAs($this->admin)->postJson(route('admin.player.previous', $this->event))
+            ->assertJsonPath('now_playing.page_ids', $this->ids($before, 0, 3));
+    }
+
+    public function test_previous_on_the_first_page_wraps_to_the_last_page_when_looping(): void
+    {
+        $this->event->update(['vidiwall_photos_per_screen' => 4]);
+        $photos = $this->photos(8);
+        $this->event->player()->setLoop(true);
+        $this->event->player()->play();
+
+        $this->actingAs($this->admin)->postJson(route('admin.player.previous', $this->event))
+            ->assertJsonPath('player.state', 'playing')
+            ->assertJsonPath('now_playing.page_ids', $this->ids($photos, 4, 4));
+    }
+
+    public function test_every_photo_on_the_page_counts_as_played(): void
+    {
+        $this->event->update(['vidiwall_photos_per_screen' => 4]);
+        $photos = $this->photos(6);
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.play', $this->event))
+            ->assertJsonPath('counts.total', 6)
+            ->assertJsonPath('counts.unplayed', 2);
+
+        foreach ($photos as $index => $photo) {
+            $this->assertSame($index < 4, $photo->fresh()->displayed_at !== null);
+        }
+    }
+
+    public function test_items_approved_or_reordered_during_a_page_leave_it_alone(): void
+    {
+        $this->event->update(['vidiwall_photos_per_screen' => 4]);
+        [$first, $second] = $this->photos(2);
+        $pending = $this->upload('pending');
+
+        $this->event->player()->play();
+        $this->actingAs($this->admin)->post(route('admin.fotos.approve', $pending));
+        $this->event->player()->reorder([$pending->id, $second->id, $first->id]);
+
+        $feed = $this->getJson(route('vidiwall.feed', $this->event->slug))->assertJsonPath('foto.id', $first->id);
+        $this->assertSame([$first->id, $second->id], array_column($feed->json('page'), 'id'));
+        $this->assertNull($pending->fresh()->displayed_at);
+    }
+
+    public function test_resuming_a_paused_page_keeps_it_as_it_was(): void
+    {
+        $this->event->update(['vidiwall_photos_per_screen' => 4]);
+        [$first, $second] = $this->photos(2);
+
+        $this->event->player()->play();
+        $this->event->player()->pause();
+        $this->photos(1);
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.play', $this->event))
+            ->assertJsonPath('player.state', 'playing')
+            ->assertJsonPath('now_playing.page_ids', [$first->id, $second->id]);
+    }
+
+    public function test_rejecting_a_photo_beside_the_playhead_shrinks_the_page(): void
+    {
+        $this->event->update(['vidiwall_photos_per_screen' => 4]);
+        $photos = $this->photos(5);
+
+        Carbon::setTestNow('2026-10-14 20:00:00');
+        $this->event->player()->play();
+        $revision = $this->getJson(route('vidiwall.feed', $this->event->slug))->json('revision');
+
+        Carbon::setTestNow('2026-10-14 20:00:01.500');
+        $this->actingAs($this->admin)->postJson(route('admin.fotos.reject', $photos[2]))->assertOk();
+
+        $feed = $this->getJson(route('vidiwall.feed', $this->event->slug))
+            ->assertJsonPath('foto.id', $photos[0]->id)
+            ->assertJsonPath('revision', $revision + 1)
+            ->assertJsonPath('elapsed_ms', 1500);
+
+        $this->assertSame([$photos[0]->id, $photos[1]->id, $photos[3]->id], array_column($feed->json('page'), 'id'));
+    }
+
+    public function test_rejecting_the_playhead_hands_the_page_to_the_next_photo_on_it(): void
+    {
+        $this->event->update(['vidiwall_photos_per_screen' => 4]);
+        $photos = $this->photos(5);
+
+        Carbon::setTestNow('2026-10-14 20:00:00');
+        $this->event->player()->play();
+        $revision = $this->getJson(route('vidiwall.feed', $this->event->slug))->json('revision');
+
+        Carbon::setTestNow('2026-10-14 20:00:02');
+        $this->actingAs($this->admin)->postJson(route('admin.fotos.reject', $photos[0]))->assertOk();
+
+        $feed = $this->getJson(route('vidiwall.feed', $this->event->slug))
+            ->assertJsonPath('foto.id', $photos[1]->id)
+            ->assertJsonPath('revision', $revision + 1)
+            ->assertJsonPath('elapsed_ms', 2000);
+
+        $this->assertSame($this->ids($photos, 1, 3), array_column($feed->json('page'), 'id'));
+
+        $this->getJson(route('vidiwall.feed', ['slug' => $this->event->slug, 'done' => $photos[1]->id, 'rev' => $revision + 1]))
+            ->assertJsonPath('foto.id', $photos[4]->id);
+    }
+
+    public function test_deleting_a_photo_on_the_page_takes_it_off_the_screen(): void
+    {
+        Storage::fake('media');
+        $this->event->update(['vidiwall_photos_per_screen' => 2]);
+        $photos = $this->photos(3);
+
+        $this->event->player()->play();
+        $this->actingAs($this->admin)->delete(route('admin.fotos.destroy', $photos[1]))->assertRedirect();
+
+        $this->getJson(route('vidiwall.feed', $this->event->slug))
+            ->assertJsonPath('foto.id', $photos[0]->id)
+            ->assertJsonCount(1, 'page');
+
+        $this->actingAs($this->admin)->delete(route('admin.fotos.destroy', $photos[0]))->assertRedirect();
+
+        $this->getJson(route('vidiwall.feed', $this->event->slug))
+            ->assertJsonPath('state', 'playing')
+            ->assertJsonPath('foto.id', $photos[2]->id);
+    }
+
+    public function test_rejecting_the_last_photo_left_on_the_page_moves_on(): void
+    {
+        $this->event->update(['vidiwall_photos_per_screen' => 2]);
+        $photos = $this->photos(3);
+
+        $this->event->player()->play();
+        $this->actingAs($this->admin)->postJson(route('admin.fotos.reject', $photos[1]));
+        $this->actingAs($this->admin)->postJson(route('admin.fotos.reject', $photos[0]));
+
+        $this->getJson(route('vidiwall.feed', $this->event->slug))
+            ->assertJsonPath('state', 'playing')
+            ->assertJsonPath('foto.id', $photos[2]->id)
+            ->assertJsonCount(1, 'page');
+    }
+
+    public function test_deleting_the_last_photo_of_a_looping_playlist_does_not_bring_it_back(): void
+    {
+        Storage::fake('media');
+        $this->event->update(['vidiwall_photos_per_screen' => 4]);
+        $photos = $this->photos(4);
+        $this->event->player()->setLoop(true);
+        $this->event->player()->playFrom($photos[3]);
+
+        $this->actingAs($this->admin)->delete(route('admin.fotos.destroy', $photos[3]))->assertRedirect();
+
+        $feed = $this->getJson(route('vidiwall.feed', $this->event->slug))->assertJsonPath('foto.id', $photos[0]->id);
+        $this->assertSame($this->ids($photos, 0, 3), array_column($feed->json('page'), 'id'));
+    }
+
+    public function test_play_next_lands_after_the_last_photo_of_the_page(): void
+    {
+        $this->event->update(['vidiwall_photos_per_screen' => 4]);
+        $photos = $this->photos(6);
+
+        $this->event->player()->play();
+
+        $this->actingAs($this->admin)->postJson(route('admin.player.play-next', [$this->event, $photos[5]]))->assertOk();
+        $this->assertSame([...$this->ids($photos, 0, 4), $photos[5]->id, $photos[4]->id], $this->playlistIds());
+
+        $this->actingAs($this->admin)->postJson(route('admin.player.play-next', [$this->event, $photos[2]]))->assertOk();
+        $this->assertSame([...$this->ids($photos, 0, 4), $photos[5]->id, $photos[4]->id], $this->playlistIds());
+
+        $this->actingAs($this->admin)->postJson(route('admin.player.next', $this->event))
+            ->assertJsonPath('now_playing.page_ids', [$photos[5]->id, $photos[4]->id]);
+    }
+
+    public function test_push_live_plays_a_page_from_the_item_right_after_the_current_page(): void
+    {
+        $this->event->update(['vidiwall_photos_per_screen' => 2]);
+        $photos = $this->photos(5);
+
+        $this->event->player()->play();
+        $photos[4]->pushToScreen();
+
+        $this->assertSame([$photos[0]->id, $photos[1]->id, $photos[4]->id, $photos[2]->id, $photos[3]->id], $this->playlistIds());
+
+        $feed = $this->getJson(route('vidiwall.feed', $this->event->slug))->assertJsonPath('foto.id', $photos[4]->id);
+        $this->assertSame([$photos[4]->id, $photos[2]->id], array_column($feed->json('page'), 'id'));
+    }
+
+    public function test_switching_to_four_per_screen_while_playing_rebuilds_the_page_and_keeps_its_time(): void
+    {
+        $photos = $this->photos(5);
+
+        Carbon::setTestNow('2026-10-14 20:00:00');
+        $this->event->player()->play();
+        $revision = $this->event->player()->revision;
+
+        Carbon::setTestNow('2026-10-14 20:00:02');
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.photos-per-screen', $this->event), ['count' => 4])
+            ->assertJsonPath('player.revision', $revision + 1)
+            ->assertJsonPath('player.elapsed_ms', 2000)
+            ->assertJsonPath('now_playing.id', $photos[0]->id)
+            ->assertJsonPath('now_playing.page_ids', $this->ids($photos, 0, 4))
+            ->assertJsonPath('counts.unplayed', 1);
+
+        $this->getJson(route('vidiwall.feed', $this->event->slug))
+            ->assertJsonPath('layout', 4)
+            ->assertJsonPath('elapsed_ms', 2000)
+            ->assertJsonCount(4, 'page');
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.photos-per-screen', $this->event), ['count' => 1])
+            ->assertJsonPath('player.revision', $revision + 2)
+            ->assertJsonPath('now_playing.page_ids', [$photos[0]->id]);
+    }
+
+    public function test_photos_per_screen_unchanged_leaves_the_revision_alone(): void
+    {
+        $this->event->update(['vidiwall_photos_per_screen' => 2]);
+        $this->photos(3);
+        $this->event->player()->play();
+        $revision = $this->event->player()->revision;
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.photos-per-screen', $this->event), ['count' => 2])
+            ->assertOk()
+            ->assertJsonPath('player.revision', $revision);
+    }
+
+    public function test_photos_per_screen_change_refreshes_the_playlist_version(): void
+    {
+        $this->upload();
+        $version = $this->actingAs($this->admin)->getJson(route('admin.player.status', $this->event))->json('version');
+
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.player.photos-per-screen', $this->event), ['count' => 4, 'v' => $version])
+            ->assertOk()
+            ->assertJsonCount(1, 'items');
+
+        $this->assertNotSame($version, $this->actingAs($this->admin)->getJson(route('admin.player.status', $this->event))->json('version'));
+    }
+
+    public function test_status_estimates_how_long_one_run_takes(): void
+    {
+        $this->event->update(['vidiwall_photos_per_screen' => 4, 'vidiwall_photo_seconds' => 5]);
+        $this->photos(5);
+        $this->video(6);
+        $this->photos(4);
+
+        $this->actingAs($this->admin)
+            ->getJson(route('admin.player.status', $this->event))
+            ->assertJsonPath('run_ms', 2 * 5000 + 6000 + 5000);
+    }
+
+    public function test_a_player_cued_before_pages_existed_still_plays_and_moves_on(): void
+    {
+        $this->event->update(['vidiwall_photos_per_screen' => 4]);
+        $photos = $this->photos(6);
+
+        Carbon::setTestNow('2026-10-14 20:00:00');
+        $player = $this->event->player();
+        $player->forceFill([
+            'state' => VidiwallPlayer::STATE_PLAYING,
+            'foto_upload_id' => $photos[0]->id,
+            'page_ids' => null,
+            'started_ms' => now()->getTimestampMs(),
+            'revision' => 7,
+        ])->save();
+
+        $this->getJson(route('vidiwall.feed', $this->event->slug))
+            ->assertJsonPath('foto.id', $photos[0]->id)
+            ->assertJsonCount(1, 'page')
+            ->assertJsonPath('next_page.0.id', $photos[1]->id);
+
+        $feed = $this->getJson(route('vidiwall.feed', ['slug' => $this->event->slug, 'done' => $photos[0]->id, 'rev' => 7]))
+            ->assertJsonPath('foto.id', $photos[1]->id);
+
+        $this->assertSame($this->ids($photos, 1, 4), array_column($feed->json('page'), 'id'));
+    }
+
+    public function test_player_page_shows_the_photos_on_screen_control(): void
+    {
+        $this->event->update(['vidiwall_photos_per_screen' => 4]);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.player.index', $this->event))
+            ->assertOk()
+            ->assertSee('Photos on screen')
+            ->assertSee('data-per-screen="4" aria-pressed="true"', false)
+            ->assertSee('data-per-screen="1" aria-pressed="false"', false)
+            ->assertSee('s per page, videos play through')
+            ->assertSee(json_encode(route('admin.player.photos-per-screen', $this->event)), false);
+    }
+
+    /**
+     * Approved photos added to the end of the playlist.
+     *
+     * @return list<FotoUpload>
+     */
+    private function photos(int $count): array
+    {
+        return array_map(fn () => $this->upload(), range(1, $count));
+    }
+
+    private function video(float $seconds = 5): FotoUpload
+    {
+        return $this->upload('approved', null, ['media_type' => 'video', 'video_path' => 'fotos/clip.mp4', 'video_duration' => $seconds]);
+    }
+
+    /**
+     * @param  list<FotoUpload>  $fotos
+     * @return list<int>
+     */
+    private function ids(array $fotos, int $offset, int $length): array
+    {
+        return array_map(fn (FotoUpload $foto) => $foto->id, array_slice($fotos, $offset, $length));
+    }
+
     /**
      * @return list<int>
      */

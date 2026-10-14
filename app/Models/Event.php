@@ -71,6 +71,7 @@ class Event extends Model
         'vidiwall_slideshow_mode',
         'vidiwall_slideshow_interval',
         'vidiwall_photo_seconds',
+        'vidiwall_photos_per_screen',
         'vidiwall_overlay_text',
         'vidiwall_frame_config',
         'vidiwall_background_path',
@@ -114,6 +115,7 @@ class Event extends Model
         'vidiwall_show_uploader' => 'boolean',
         'vidiwall_slideshow_mode' => 'boolean',
         'vidiwall_photo_seconds' => 'integer',
+        'vidiwall_photos_per_screen' => 'integer',
         'starts_at' => 'datetime',
         'ends_at' => 'datetime',
         'vidiwall_frame_config' => 'array',
@@ -176,11 +178,24 @@ class Event extends Model
         return $this->vidiwallPlayer?->setRelation('event', $this)->screenFoto();
     }
 
-    public function onScreenFotoId(): ?int
+    /**
+     * Every item on the vidiwall right now: the page the player is showing.
+     *
+     * @return list<int>
+     */
+    public function onScreenFotoIds(): array
     {
-        $player = $this->vidiwallPlayer;
+        return $this->vidiwallPlayer?->pageIds() ?? [];
+    }
 
-        return $player && ! $player->isStopped() ? $player->foto_upload_id : null;
+    /**
+     * How many photos the vidiwall shows at once, one of VidiwallPlayer::PHOTOS_PER_SCREEN.
+     */
+    public function photosPerScreen(): int
+    {
+        $count = (int) $this->vidiwall_photos_per_screen;
+
+        return in_array($count, VidiwallPlayer::PHOTOS_PER_SCREEN, true) ? $count : 1;
     }
 
     public function lotteryEntries(): HasMany
