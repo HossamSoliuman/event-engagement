@@ -188,7 +188,7 @@ class EventController extends Controller
             'frame_color' => 'nullable|string|max:7',
             'frame_text_color' => 'nullable|string|max:7',
             'frame_logo' => 'nullable|image|max:2048',
-            'vidiwall_background' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:10240',
+            'vidiwall_background' => 'nullable|image|mimes:jpeg,jpg,png,webp',
             'privacy_policy_text' => 'nullable|string|max:2000',
             'privacy_policy_url' => 'nullable|url|max:500',
             'font_heading' => 'nullable|string|max:100',
