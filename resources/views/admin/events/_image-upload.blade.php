@@ -57,9 +57,9 @@
 @pushOnce('styles')
     <style>
         .up { position:relative; display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px; padding:12px;
-            border:1.5px dashed var(--border); border-radius:10px; background:var(--dark); cursor:pointer;
+            border:1.5px dashed var(--field-edge, var(--border)); border-radius:10px; background:var(--field-bg, var(--dark)); cursor:pointer;
             transition:border-color .15s, background .15s }
-        .up:hover { border-color:#3a3a62 }
+        .up:hover { border-color:var(--field-edge-hover, #3a3a62) }
         .up:has(:focus-visible) { border-color:var(--red) }
         .up.is-drag { border-color:var(--red); border-style:solid; background:rgba(255,61,0,.07) }
         .up.is-invalid { border-color:#f87171 }

@@ -29,8 +29,41 @@
         .ev-subcard { background:var(--dark); border:1px solid var(--border); border-radius:10px; padding:16px }
         .ev-subcard-title { font-weight:700; font-size:13px; margin-bottom:12px; display:flex; align-items:center; gap:6px }
 
+        /* Fields: a lifted surface with a visible edge, so empty inputs read as inputs */
+        .ev-form-wrap { --field-bg:#17172b; --field-edge:#2f2f50; --field-edge-hover:#41416a }
+        .ev-form-wrap .form-control { background:var(--field-bg); border-color:var(--field-edge); border-radius:9px;
+            padding:10px 13px; color-scheme:dark; transition:border-color .15s, box-shadow .15s }
+        .ev-form-wrap .form-control:hover { border-color:var(--field-edge-hover) }
+        .ev-form-wrap .form-control:focus { border-color:var(--red); box-shadow:0 0 0 3px rgba(255,61,0,.16) }
+        .ev-form-wrap .form-control::placeholder { color:#55557c }
+        .ev-form-wrap .form-label { color:#8d8db3 }
+        .ev-form-wrap .form-hint { line-height:1.5 }
+
+        /* Colour: swatch and hex in one field */
+        .ev-color { display:flex; align-items:center; gap:10px; height:42px; padding:0 12px 0 6px; border-radius:9px;
+            background:var(--field-bg); border:1px solid var(--field-edge); transition:border-color .15s, box-shadow .15s }
+        .ev-color:hover { border-color:var(--field-edge-hover) }
+        .ev-color:focus-within { border-color:var(--red); box-shadow:0 0 0 3px rgba(255,61,0,.16) }
+        .ev-color input[type=color] { width:30px; height:30px; flex-shrink:0; padding:0; border:none; border-radius:7px;
+            background:none; cursor:pointer }
+        .ev-color input[type=color]::-webkit-color-swatch-wrapper { padding:0 }
+        .ev-color input[type=color]::-webkit-color-swatch { border:1px solid rgba(255,255,255,.18); border-radius:7px }
+        .ev-color input[type=color]::-moz-color-swatch { border:1px solid rgba(255,255,255,.18); border-radius:7px }
+        .ev-color input[type=text] { flex:1; min-width:0; height:100%; padding:0; border:none; outline:none; background:none;
+            color:var(--text); font-family:ui-monospace,monospace; font-size:13px; letter-spacing:.3px; text-transform:uppercase }
+        .ev-color input[type=text]::placeholder { color:#55557c; font-family:'DM Sans',sans-serif; letter-spacing:0; text-transform:none }
+
+        /* Number with its unit inside the field */
+        .ev-unit { position:relative; max-width:180px }
+        .ev-unit .form-control { padding-right:70px }
+        .ev-unit span { position:absolute; right:13px; top:50%; transform:translateY(-50%); font-size:13px; color:var(--muted);
+            pointer-events:none }
+
+        .ev-grid-3 { display:grid; grid-template-columns:repeat(3, 1fr); gap:16px }
+        .ev-stack { display:flex; flex-direction:column; gap:18px }
+
         @media(max-width:768px){
-            .ev-grid-2 { grid-template-columns:1fr }
+            .ev-grid-2, .ev-grid-3 { grid-template-columns:1fr }
             .ev-tabs { top:0 }
         }
     </style>
@@ -143,14 +176,12 @@
                         <div class="form-row-3" style="margin-bottom:18px">
                             @foreach ([['primary_color', 'Primary (buttons, highlights)', '#FF3D00'], ['secondary_color', 'Background', '#0A0A18'], ['accent_color', 'Accent (gold)', '#FFD700']] as [$field, $lbl, $def])
                                 <div class="form-group mb-0">
-                                    <label class="form-label">{{ $lbl }}</label>
-                                    <div style="display:flex;gap:8px;align-items:center">
+                                    <label class="form-label" for="{{ $field }}">{{ $lbl }}</label>
+                                    <div class="ev-color">
                                         <input type="color" id="picker_{{ $field }}" data-target="{{ $field }}"
-                                            value="{{ old($field, $event->{$field} ?? $def) }}"
-                                            style="width:36px;height:36px;padding:2px;border-radius:6px;border:1px solid var(--border);background:var(--dark);cursor:pointer;flex-shrink:0">
+                                            value="{{ old($field, $event->{$field} ?? $def) }}" aria-label="{{ $lbl }}">
                                         <input type="text" name="{{ $field }}" id="{{ $field }}"
-                                            class="form-control" value="{{ old($field, $event->{$field} ?? $def) }}"
-                                            maxlength="7" style="font-family:monospace;font-size:12px">
+                                            value="{{ old($field, $event->{$field} ?? $def) }}" maxlength="7">
                                     </div>
                                 </div>
                             @endforeach
@@ -185,8 +216,6 @@
                         <h3><i data-lucide="type" class="lucide-icon"></i> Fonts &amp; Typography</h3>
                     </div>
                     <div class="card-body">
-                        <div class="form-hint mb-2" style="margin-bottom:12px">Enter any Google Fonts name. Examples: Oswald ·
-                            Bebas Neue · Raleway · Montserrat · Playfair Display · Inter</div>
                         <div class="form-row">
                             <div class="form-group mb-0">
                                 <label class="form-label">Heading Font</label>
@@ -201,6 +230,8 @@
                                 <div class="form-hint">Used for descriptions, form labels, body text</div>
                             </div>
                         </div>
+                        <div class="form-hint">Any Google Fonts name works, e.g. Oswald, Bebas Neue, Raleway, Montserrat,
+                            Playfair Display or Inter.</div>
                         <div
                             style="margin-top:14px;padding:12px 14px;background:var(--dark);border:1px solid var(--border);border-radius:8px">
                             <div id="fontPreviewHeading" style="font-size:20px;font-weight:800;margin-bottom:4px">Championship
@@ -218,98 +249,104 @@
             <div class="ev-panel" data-panel="vidiwall">
                 <div class="card mb-3">
                     <div class="card-header">
-                        <h3><i data-lucide="monitor-play" class="lucide-icon"></i> Vidiwall Settings</h3>
+                        <h3><i data-lucide="timer" class="lucide-icon"></i> Playback</h3>
                     </div>
                     <div class="card-body">
-                        <p class="form-hint" style="margin-bottom:16px">The vidiwall screen shows the sponsor frame, the
-                            event name and a large QR code. Fill in the frame text and branding below — leave a field blank
-                            to hide that piece. A wall background image replaces the frame with the sponsor's artwork.</p>
-
-                        <div class="form-group" style="margin-bottom:16px;max-width:280px">
-                            <label class="form-label" for="vidiwall_photo_seconds">Photo Autoplay Duration (seconds)</label>
-                            <input type="number" name="vidiwall_photo_seconds" id="vidiwall_photo_seconds"
-                                class="form-control" min="1" max="60" step="1" required
-                                value="{{ old('vidiwall_photo_seconds', $event->vidiwall_photo_seconds ?? \App\Models\FotoUpload::SCREEN_SECONDS) }}">
-                            <div class="form-hint">How long each approved photo stays on the vidiwall before the next one.
-                                Videos always play to the end.</div>
-                        </div>
-
-                        @php $fc = isset($event) ? $event->frameConfig() : (new \App\Models\Event)->frameConfig(); @endphp
-                        <div class="form-row" style="margin-bottom:12px">
-                            <div class="form-group mb-0">
-                                <label class="form-label">Frame Colour</label>
-                                <div style="display:flex;gap:8px;align-items:center">
-                                    <input type="color" value="{{ old('frame_color', $fc['frame_color'] ?: '#cc0000') }}"
-                                        style="width:36px;height:36px;padding:2px;border-radius:6px;border:1px solid var(--border);background:var(--dark);cursor:pointer;flex-shrink:0"
-                                        oninput="document.getElementById('frame_color').value=this.value">
-                                    <input type="text" name="frame_color" id="frame_color" class="form-control"
-                                        style="font-family:monospace;font-size:12px" maxlength="7"
-                                        value="{{ old('frame_color', $fc['frame_color'] ?? '') }}"
-                                        placeholder="Blank = event primary colour">
-                                </div>
-                            </div>
-                            <div class="form-group mb-0">
-                                <label class="form-label">Frame Text Colour</label>
-                                <div style="display:flex;gap:8px;align-items:center">
-                                    <input type="color" value="{{ old('frame_text_color', $fc['text_color'] ?: '#ffffff') }}"
-                                        style="width:36px;height:36px;padding:2px;border-radius:6px;border:1px solid var(--border);background:var(--dark);cursor:pointer;flex-shrink:0"
-                                        oninput="document.getElementById('frame_text_color').value=this.value">
-                                    <input type="text" name="frame_text_color" id="frame_text_color"
-                                        class="form-control" style="font-family:monospace;font-size:12px" maxlength="7"
-                                        value="{{ old('frame_text_color', $fc['text_color'] ?? '#ffffff') }}">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-row" style="margin-bottom:12px">
-                            <div class="form-group mb-0">
-                                <label class="form-label">Top Bar Text</label>
-                                <input type="text" name="frame_top_text" class="form-control"
-                                    value="{{ old('frame_top_text', $fc['top_text'] ?? '') }}"
-                                    placeholder="e.g. Audi Vorsprung durch Technik">
-                            </div>
-                            <div class="form-group mb-0">
-                                <label class="form-label">Bottom Bar Text</label>
-                                <input type="text" name="frame_bottom_text" class="form-control"
-                                    value="{{ old('frame_bottom_text', $fc['bottom_text'] ?? '') }}"
-                                    placeholder="Blank = same as top bar">
-                            </div>
-                        </div>
-                        <div class="form-row" style="margin-bottom:12px">
-                            <div class="form-group mb-0">
-                                <label class="form-label">Side Rail Text (vertical)</label>
-                                <input type="text" name="frame_side_text" class="form-control"
-                                    value="{{ old('frame_side_text', $fc['side_text'] ?? '') }}"
-                                    placeholder="e.g. Audi FIS Ski World Cup">
-                            </div>
-                            <div class="form-group mb-0">
-                                <label class="form-label">Frame Sponsor Logo (shown in bars)</label>
-                                @include('admin.events._image-upload', [
-                                    'name' => 'frame_logo',
-                                    'current' => !empty($fc['logo_path'])
-                                        ? \Illuminate\Support\Facades\Storage::disk('media')->url($fc['logo_path'])
-                                        : null,
-                                    'clear' => 'frame_clear_logo',
-                                    'hint' => 'PNG, JPG, WebP or SVG',
-                                    'resize' => '1200x1200',
-                                    'maxKb' => 2048,
-                                ])
-                            </div>
-                        </div>
                         <div class="form-group mb-0">
-                            <label class="form-label">Wall Background Image (1920×1080)</label>
+                            <label class="form-label" for="vidiwall_photo_seconds">Photo duration</label>
+                            <div class="ev-unit">
+                                <input type="number" name="vidiwall_photo_seconds" id="vidiwall_photo_seconds"
+                                    class="form-control" min="1" max="60" step="1" required
+                                    value="{{ old('vidiwall_photo_seconds', $event->vidiwall_photo_seconds ?? \App\Models\FotoUpload::SCREEN_SECONDS) }}">
+                                <span>seconds</span>
+                            </div>
+                            <div class="form-hint">How long each photo stays on the wall. Videos always play to the end.</div>
+                        </div>
+                    </div>
+                </div>
+
+                @php $fc = isset($event) ? $event->frameConfig() : (new \App\Models\Event)->frameConfig(); @endphp
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h3><i data-lucide="frame" class="lucide-icon"></i> Sponsor Frame</h3>
+                    </div>
+                    <div class="card-body ev-stack">
+                        <div class="ev-grid-2">
+                            <div>
+                                <label class="form-label" for="frame_color">Frame colour</label>
+                                <div class="ev-color">
+                                    <input type="color" data-target="frame_color" aria-label="Frame colour"
+                                        data-fallback="{{ $event->primary_color ?? '#FF3D00' }}"
+                                        value="{{ old('frame_color', $fc['frame_color'] ?: ($event->primary_color ?? '#FF3D00')) }}">
+                                    <input type="text" name="frame_color" id="frame_color" maxlength="7"
+                                        value="{{ old('frame_color', $fc['frame_color'] ?? '') }}"
+                                        placeholder="Event primary colour">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="form-label" for="frame_text_color">Text colour</label>
+                                <div class="ev-color">
+                                    <input type="color" data-target="frame_text_color" aria-label="Text colour"
+                                        data-fallback="#ffffff"
+                                        value="{{ old('frame_text_color', $fc['text_color'] ?: '#ffffff') }}">
+                                    <input type="text" name="frame_text_color" id="frame_text_color" maxlength="7"
+                                        value="{{ old('frame_text_color', $fc['text_color'] ?? '#ffffff') }}"
+                                        placeholder="White">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ev-grid-3">
+                            <div>
+                                <label class="form-label" for="frame_top_text">Top bar</label>
+                                <input type="text" name="frame_top_text" id="frame_top_text" class="form-control"
+                                    value="{{ old('frame_top_text', $fc['top_text'] ?? '') }}" placeholder="Optional">
+                            </div>
+                            <div>
+                                <label class="form-label" for="frame_bottom_text">Bottom bar</label>
+                                <input type="text" name="frame_bottom_text" id="frame_bottom_text" class="form-control"
+                                    value="{{ old('frame_bottom_text', $fc['bottom_text'] ?? '') }}"
+                                    placeholder="Same as top bar">
+                            </div>
+                            <div>
+                                <label class="form-label" for="frame_side_text">Side rail</label>
+                                <input type="text" name="frame_side_text" id="frame_side_text" class="form-control"
+                                    value="{{ old('frame_side_text', $fc['side_text'] ?? '') }}" placeholder="Optional">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="form-label">Logo in the bars</label>
                             @include('admin.events._image-upload', [
-                                'name' => 'vidiwall_background',
-                                'current' => isset($event) && $event->hasVidiwallBackground() ? $event->vidiwall_background_url : null,
-                                'clear' => 'clear_vidiwall_background',
-                                'accept' => 'image/jpeg,image/png,image/webp',
-                                'hint' => '1920×1080 · JPG, PNG or WebP',
-                                'resize' => '1920x1080',
-                                'mode' => 'cover',
-                                'ratio' => '16 / 9',
-                                'thumb' => 144,
-                                'cropNote' => 'Not 16:9, so the wall crops the edges to fill the screen.',
+                                'name' => 'frame_logo',
+                                'current' => !empty($fc['logo_path'])
+                                    ? \Illuminate\Support\Facades\Storage::disk('media')->url($fc['logo_path'])
+                                    : null,
+                                'clear' => 'frame_clear_logo',
+                                'hint' => 'PNG, JPG, WebP or SVG',
+                                'resize' => '1200x1200',
+                                'maxKb' => 2048,
                             ])
                         </div>
+                    </div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h3><i data-lucide="image" class="lucide-icon"></i> Wall Background</h3>
+                    </div>
+                    <div class="card-body">
+                        @include('admin.events._image-upload', [
+                            'name' => 'vidiwall_background',
+                            'current' => isset($event) && $event->hasVidiwallBackground() ? $event->vidiwall_background_url : null,
+                            'clear' => 'clear_vidiwall_background',
+                            'accept' => 'image/jpeg,image/png,image/webp',
+                            'hint' => '1920×1080 · JPG, PNG or WebP',
+                            'resize' => '1920x1080',
+                            'mode' => 'cover',
+                            'ratio' => '16 / 9',
+                            'thumb' => 144,
+                            'cropNote' => 'Not 16:9, so the wall crops the edges to fill the screen.',
+                        ])
+                        <div class="form-hint">When set, it replaces the sponsor frame on the wall.</div>
                     </div>
                 </div>
             </div>
@@ -319,7 +356,6 @@
                 <div class="card mb-3">
                     <div class="card-header">
                         <h3><i data-lucide="layout-grid" class="lucide-icon"></i> Module Content</h3>
-                        <div class="text-muted text-xs">Title &amp; description shown on each module's guest screen.</div>
                     </div>
                     <div class="card-body">
                         <div class="ev-grid-2">
@@ -388,7 +424,6 @@
                 <div class="card mb-3">
                     <div class="card-header">
                         <h3><i data-lucide="plus" class="lucide-icon"></i> Extra Form Fields</h3>
-                        <div class="text-muted text-xs">Add custom data fields to the Lottery and Membership forms</div>
                     </div>
                     <div class="card-body">
                         <div style="margin-bottom:24px">
@@ -525,6 +560,13 @@
             document.getElementById('candidates').appendChild(row);
             window.lucide?.createIcons();
         }
+
+        // An emptied colour falls back to its default, so the swatch shows what the wall will use.
+        document.querySelectorAll('.ev-color input[type=color][data-fallback]').forEach(picker => {
+            document.getElementById(picker.dataset.target)?.addEventListener('input', e => {
+                if (e.target.value.trim() === '') picker.value = picker.dataset.fallback;
+            });
+        });
 
         // Font live preview
         function updateFontPreview() {
