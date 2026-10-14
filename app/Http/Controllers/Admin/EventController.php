@@ -188,6 +188,7 @@ class EventController extends Controller
             'frame_color' => 'nullable|string|max:7',
             'frame_text_color' => 'nullable|string|max:7',
             'frame_logo' => 'nullable|image|max:2048',
+            'vidiwall_background' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:10240',
             'privacy_policy_text' => 'nullable|string|max:2000',
             'privacy_policy_url' => 'nullable|url|max:500',
             'font_heading' => 'nullable|string|max:100',
@@ -241,6 +242,14 @@ class EventController extends Controller
         }
         unset($data['frame_top_text'], $data['frame_bottom_text'], $data['frame_side_text'], $data['frame_color'], $data['frame_text_color'], $data['frame_logo']);
         $data['vidiwall_frame_config'] = $frame;
+
+        // Vidiwall sponsor background (replaces the frame on the wall)
+        if ($request->hasFile('vidiwall_background')) {
+            $data['vidiwall_background_path'] = $request->file('vidiwall_background')->store('vidiwall-backgrounds', 'media');
+        } elseif ($request->input('clear_vidiwall_background')) {
+            $data['vidiwall_background_path'] = null;
+        }
+        unset($data['vidiwall_background']);
 
         // Landing page design (sizes, spacing) — see the "Landing Design" admin tab
         unset($data['design']);

@@ -218,7 +218,7 @@
                     <div class="card-body">
                         <p class="form-hint" style="margin-bottom:16px">The vidiwall screen shows the sponsor frame, the
                             event name and a large QR code. Fill in the frame text and branding below — leave a field blank
-                            to hide that piece.</p>
+                            to hide that piece. A wall background image replaces the frame with the sponsor's artwork.</p>
 
                         <div class="form-group" style="margin-bottom:16px;max-width:280px">
                             <label class="form-label" for="vidiwall_photo_seconds">Photo Autoplay Duration (seconds)</label>
@@ -269,7 +269,7 @@
                                     placeholder="Blank = same as top bar">
                             </div>
                         </div>
-                        <div class="form-row" style="margin-bottom:0">
+                        <div class="form-row" style="margin-bottom:12px">
                             <div class="form-group mb-0">
                                 <label class="form-label">Side Rail Text (vertical)</label>
                                 <input type="text" name="frame_side_text" class="form-control"
@@ -293,6 +293,25 @@
                                     @endif
                                     <input type="file" name="frame_logo" class="form-control" accept="image/*">
                                 </div>
+                            </div>
+                        </div>
+                        <div class="form-group mb-0">
+                            <label class="form-label">Wall Background Image (1920×1080)</label>
+                            <div style="display:flex;gap:12px;align-items:center">
+                                @if (isset($event) && $event->hasVidiwallBackground())
+                                    <div style="position:relative;flex-shrink:0">
+                                        <img src="{{ $event->vidiwall_background_url }}" alt=""
+                                            style="width:160px;height:90px;object-fit:cover;border-radius:6px;border:1px solid var(--border);display:block">
+                                        <label
+                                            style="position:absolute;top:-6px;right:-6px;background:var(--red);border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer">
+                                            <input type="checkbox" name="clear_vidiwall_background" value="1" style="display:none"
+                                                onchange="this.closest('label').style.opacity=this.checked?.4:1">
+                                            <i data-lucide="x" class="lucide-icon"></i>
+                                        </label>
+                                    </div>
+                                @endif
+                                <input type="file" name="vidiwall_background" class="form-control"
+                                    accept="image/jpeg,image/png,image/webp">
                             </div>
                         </div>
                     </div>

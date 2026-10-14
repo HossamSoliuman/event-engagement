@@ -16,6 +16,9 @@
     <title>{{ $event->name }} — Vidiwall</title>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;600&display=swap"
         rel="stylesheet">
+    @if ($event->hasVidiwallBackground())
+        <link rel="preload" as="image" href="{{ $event->vidiwall_background_url }}">
+    @endif
     <style>
         :root {
             --p: {{ $event->primary_color }};
@@ -341,6 +344,73 @@
             padding: 5px 14px;
             border-radius: 40px;
             letter-spacing: 2px
+        }
+
+        /* ── Safe area: the box live media and the idle card sit in ── */
+        .safe-area {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+
+        /* Badges, name tag and progress bar sit on the stage corners, or on
+           the media itself when the sponsor background is shown. */
+        .media-box {
+            display: contents
+        }
+
+        /* ── Sponsor background: the artwork replaces the frame ────── */
+        .screen.has-bg {
+            --safe-x: 10vw;
+            --safe-y: 10vh;
+            grid-template: "fmain" 1fr / 1fr;
+            background: var(--wall-bg) center / cover no-repeat, var(--bg)
+        }
+
+        .screen.has-bg .fr-bar,
+        .screen.has-bg .fr-rail,
+        .screen.has-bg .stage-bg {
+            display: none
+        }
+
+        .screen.has-bg .stage {
+            background: transparent
+        }
+
+        .screen.has-bg .safe-area {
+            inset: var(--safe-y) var(--safe-x)
+        }
+
+        .screen.has-bg .media-box {
+            display: block;
+            position: relative
+        }
+
+        .screen.has-bg .photo-frame,
+        .screen.has-bg .video-frame {
+            max-width: none;
+            max-height: none;
+            box-shadow: 0 24px 70px rgba(0, 0, 0, .5), 0 0 0 1px rgba(255, 255, 255, .14)
+        }
+
+        .screen.has-bg .photo-frame img,
+        .screen.has-bg .video-frame video {
+            max-width: calc(100vw - 2 * var(--safe-x));
+            max-height: calc(100vh - 2 * var(--safe-y))
+        }
+
+        .screen.has-bg .slide-progress {
+            bottom: calc(-1 * clamp(8px, 1.4vh, 16px));
+            height: 4px;
+            border-radius: 4px
+        }
+
+        .screen.has-bg .event-title {
+            color: #fff;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, .45), 0 6px 36px rgba(0, 0, 0, .6)
         }
 
         /* ── Fan Clash rope ────────────────────────────────────────── */
@@ -1865,7 +1935,8 @@
 </head>
 
 <body>
-    <div class="screen">
+    <div @class(['screen', 'has-bg' => $event->hasVidiwallBackground()])
+        @if ($event->hasVidiwallBackground()) style="--wall-bg: url('{{ $event->vidiwall_background_url }}')" @endif>
 
         <div class="fr-bar fr-top">
             @if ($frameLogo)
@@ -1888,33 +1959,37 @@
         <div class="stage" id="stage">
             <div class="stage-bg" id="stageBg"></div>
 
-            <div class="idle" id="idleState">
-                <div class="event-title">{{ $event->name }}</div>
-                @if ($event->qr_code_path)
-                    <div class="qr-card">
-                        <img src="{{ $event->qr_code_url }}" alt="QR code">
+            <div class="safe-area" id="safeArea">
+                <div class="idle" id="idleState">
+                    <div class="event-title">{{ $event->name }}</div>
+                    @if ($event->qr_code_path)
+                        <div class="qr-card">
+                            <img src="{{ $event->qr_code_url }}" alt="QR code">
+                        </div>
+                    @else
+                        <div class="qr-fallback">{{ $event->getGuestUrl() }}</div>
+                    @endif
+                </div>
+
+                <div class="media-box" id="mediaBox">
+                    <div class="photo-frame" id="photoFrame" style="display:none">
+                        <img id="liveImg" src="" alt="">
                     </div>
-                @else
-                    <div class="qr-fallback">{{ $event->getGuestUrl() }}</div>
-                @endif
-            </div>
 
-            <div class="photo-frame" id="photoFrame" style="display:none">
-                <img id="liveImg" src="" alt="">
-            </div>
+                    <div class="video-frame" id="videoFrame" style="display:none">
+                        <video id="liveVideo" src="" muted playsinline preload="auto"></video>
+                    </div>
 
-            <div class="video-frame" id="videoFrame" style="display:none">
-                <video id="liveVideo" src="" muted playsinline preload="auto"></video>
-            </div>
+                    <div class="uploader" id="uploaderTag" style="display:none">
+                        <span id="uploaderName"></span>
+                    </div>
 
-            <div class="uploader" id="uploaderTag" style="display:none">
-                <span id="uploaderName"></span>
+                    <div class="live-badge" id="liveBadge" style="display:none">&#9679; LIVE</div>
+                    <div class="video-badge" id="videoBadge" style="display:none">&#9654; VIDEO</div>
+                    <div class="slide-counter" id="slideCounter" style="display:none"></div>
+                    <div class="slide-progress" id="slideProgress" style="width:0;display:none"></div>
+                </div>
             </div>
-
-            <div class="live-badge" id="liveBadge" style="display:none">&#9679; LIVE</div>
-            <div class="video-badge" id="videoBadge" style="display:none">&#9654; VIDEO</div>
-            <div class="slide-counter" id="slideCounter" style="display:none"></div>
-            <div class="slide-progress" id="slideProgress" style="width:0;display:none"></div>
 
             @if ($event->module_fanclash)
                 <div class="clash" id="clashOverlay" style="display:none">
@@ -2093,6 +2168,7 @@
         const HAS_FANCLASH = {{ $event->module_fanclash ? 'true' : 'false' }};
         const HAS_LOTTERY = {{ $event->module_lottery ? 'true' : 'false' }};
         const HAS_VOTING = {{ $event->module_voting ? 'true' : 'false' }};
+        const HAS_WALL_BG = {{ $event->hasVidiwallBackground() ? 'true' : 'false' }};
 
         let clashActive = false;
         let lastFotoId = null;
@@ -2107,6 +2183,9 @@
         let preloaded = { url: null, media: null };
 
         function setBackground(url) {
+            if (HAS_WALL_BG) {
+                return;
+            }
             document.getElementById('stageBg').style.backgroundImage = url ? `url('${url}')` : '';
         }
 
@@ -3466,8 +3545,8 @@
             function fitTitle() {
                 var title = document.querySelector('.event-title');
                 var idle = document.getElementById('idleState');
-                var stage = document.getElementById('stage');
-                if (!title || !idle || !stage) {
+                var box = document.getElementById('safeArea');
+                if (!title || !idle || !box) {
                     return;
                 }
                 title.style.fontSize = '';
@@ -3475,7 +3554,7 @@
                     return;
                 }
                 var cs = getComputedStyle(idle);
-                var avail = stage.clientWidth
+                var avail = box.clientWidth
                     - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
                 var needed = title.scrollWidth;
                 if (needed > avail && avail > 0) {

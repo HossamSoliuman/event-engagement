@@ -18,7 +18,7 @@ class Event extends Model
     use HasFactory, ReferencesMediaFiles, SoftDeletes;
 
     /** @var list<string> */
-    public const MEDIA_COLUMNS = ['qr_code_path', 'logo_path', 'sponsor_logo_path', 'background_image_path', 'quiz_end_sponsor_logo_path'];
+    public const MEDIA_COLUMNS = ['qr_code_path', 'logo_path', 'sponsor_logo_path', 'background_image_path', 'quiz_end_sponsor_logo_path', 'vidiwall_background_path'];
 
     /**
      * What a lottery entry looks like once it is no longer a winner.
@@ -73,6 +73,7 @@ class Event extends Model
         'vidiwall_photo_seconds',
         'vidiwall_overlay_text',
         'vidiwall_frame_config',
+        'vidiwall_background_path',
         'landing_style',
         'landing_wordmark',
         'landing_hero_title',
@@ -401,13 +402,15 @@ class Event extends Model
 
     /**
      * Remove every file this event owns from the media disk, then drop its
-     * upload directory so stray thumbnails don't linger.
+     * upload directory so stray thumbnails don't linger. Files a duplicated
+     * event still points at are kept.
      */
     public function deleteMedia(): void
     {
         $disk = Storage::disk('media');
+        $sharedPaths = self::allMediaPaths(self::withTrashed()->whereKeyNot($this->getKey()))->flip();
 
-        $disk->delete($this->ownedMediaPaths()->all());
+        $disk->delete($this->ownedMediaPaths()->reject(fn (string $path) => $sharedPaths->has($path))->values()->all());
         $disk->deleteDirectory("fotos/event-{$this->id}");
     }
 
@@ -439,6 +442,19 @@ class Event extends Model
     public function getBackgroundImageUrlAttribute(): ?string
     {
         return $this->background_image_path ? Storage::disk('media')->url($this->background_image_path) : null;
+    }
+
+    public function getVidiwallBackgroundUrlAttribute(): ?string
+    {
+        return $this->vidiwall_background_path ? Storage::disk('media')->url($this->vidiwall_background_path) : null;
+    }
+
+    /**
+     * The sponsor artwork replaces the frame on the vidiwall when set.
+     */
+    public function hasVidiwallBackground(): bool
+    {
+        return ! empty($this->vidiwall_background_path);
     }
 
     public function generateQrCode(): string
