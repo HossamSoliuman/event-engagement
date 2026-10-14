@@ -99,18 +99,20 @@
                 <div class="ld-sec-body">
                     <div class="ld-ctl">
                         <label class="ld-ctl-label"><span>Background image</span></label>
-                        <div class="ld-img-row">
-                            @if (!empty($event?->background_image_path))
-                                <div class="ld-thumb ld-thumb-wide">
-                                    <img src="{{ $event->background_image_url }}" alt="">
-                                    <label class="ld-thumb-x" title="Remove background image">
-                                        <input type="checkbox" name="clear_background_image" value="1" data-dbgclear>
-                                        <i data-lucide="x" class="lucide-icon"></i>
-                                    </label>
-                                </div>
-                            @endif
-                            <input type="file" name="background_image" class="form-control" accept="image/*" data-dbg>
-                        </div>
+                        @include('admin.events._image-upload', [
+                            'name' => 'background_image',
+                            'current' => !empty($event?->background_image_path) ? $event->background_image_url : null,
+                            'clear' => 'clear_background_image',
+                            'accept' => 'image/jpeg,image/png,image/webp',
+                            'hint' => 'JPG, PNG or WebP',
+                            'resize' => '1170x2532',
+                            'mode' => 'cover',
+                            'ratio' => '9 / 19.5',
+                            'thumb' => 44,
+                            'maxKb' => 6144,
+                            'inputAttrs' => 'data-dbg',
+                            'clearAttrs' => 'data-dbgclear',
+                        ])
                         <div class="ld-hint">A tall photo works best &mdash; around 1170&times;2532px (max 6&nbsp;MB).
                             Leave it empty to keep the plain colour background.</div>
                     </div>
@@ -333,21 +335,18 @@
 
                         <div class="ld-ctl">
                             <label class="ld-ctl-label"><span>Logo / image</span></label>
-                            <div class="ld-img-row">
-                                @if (!empty($tc['image_path']))
-                                    <div class="ld-thumb">
-                                        <img src="{{ \Illuminate\Support\Facades\Storage::disk('media')->url($tc['image_path']) }}"
-                                            alt="">
-                                        <label class="ld-thumb-x" title="Remove image">
-                                            <input type="checkbox" name="tile_{{ $mod }}_clear_image" value="1"
-                                                data-dclear="{{ $mod }}">
-                                            <i data-lucide="x" class="lucide-icon"></i>
-                                        </label>
-                                    </div>
-                                @endif
-                                <input type="file" name="tile_{{ $mod }}_image" class="form-control"
-                                    accept="image/*" data-dfile="{{ $mod }}">
-                            </div>
+                            @include('admin.events._image-upload', [
+                                'name' => 'tile_' . $mod . '_image',
+                                'current' => !empty($tc['image_path'])
+                                    ? \Illuminate\Support\Facades\Storage::disk('media')->url($tc['image_path'])
+                                    : null,
+                                'clear' => 'tile_' . $mod . '_clear_image',
+                                'hint' => 'PNG, JPG, WebP or SVG',
+                                'resize' => '1200x1200',
+                                'maxKb' => 3072,
+                                'inputAttrs' => 'data-dfile="' . e($mod) . '"',
+                                'clearAttrs' => 'data-dclear="' . e($mod) . '"',
+                            ])
                             <div class="ld-hint">PNG with a transparent background looks best. Around 600×600px.</div>
                         </div>
 
@@ -630,19 +629,6 @@
             border:1px solid var(--border); background:var(--dark); cursor:pointer; flex-shrink:0 }
         .ld-hex { font-family:ui-monospace,monospace; font-size:12px }
 
-        .ld-img-row { display:flex; gap:11px; align-items:center; flex-wrap:wrap }
-        .ld-img-row .form-control { flex:1; min-width:150px }
-        .ld-thumb { position:relative; width:60px; height:60px; flex-shrink:0; border-radius:9px;
-            border:1px solid var(--border); background:#fff; overflow:hidden }
-        .ld-thumb img { width:100%; height:100%; object-fit:contain }
-        .ld-thumb-wide { width:96px; height:60px; background:#0b0b0d }
-        .ld-thumb-wide img { object-fit:cover }
-        .ld-thumb-x { position:absolute; top:-6px; right:-6px; width:20px; height:20px; border-radius:50%;
-            background:var(--red); color:#fff; display:grid; place-items:center; cursor:pointer }
-        .ld-thumb-x input { display:none }
-        .ld-thumb-x .lucide-icon { width:12px; height:12px }
-        .ld-thumb-x:has(input:checked) { opacity:.45 }
-
         /* ── iPhone 16 preview ───────────────────────────────────────────── */
         /* Pinned below the topbar and above the save bar; scrolls on its own when the phone is taller than the window. */
         .ld-preview-col { position:sticky; top:72px; max-height:calc(100vh - 160px); overflow-y:auto;
@@ -696,14 +682,13 @@
             const tileImages = {};
 
             // Landing background photo: null = untouched, '' = removed, otherwise a data URL.
-            const savedBg = panel.querySelector('[data-dbgclear]')
-                ?.closest('.ld-img-row')?.querySelector('.ld-thumb img')?.src || '';
+            const savedBg = panel.querySelector('[data-dbgclear]')?.closest('[data-up]')?.dataset.current || '';
             let bgImage = null;
 
             // Remember the saved artwork so un-ticking "remove image" can put it back.
             const savedImages = {};
             panel.querySelectorAll('[data-dclear]').forEach(el => {
-                savedImages[el.dataset.dclear] = el.closest('.ld-img-row')?.querySelector('.ld-thumb img')?.src || '';
+                savedImages[el.dataset.dclear] = el.closest('[data-up]')?.dataset.current || '';
             });
 
             const HEX = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;

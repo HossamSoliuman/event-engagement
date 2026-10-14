@@ -158,18 +158,23 @@
                         <div class="form-row">
                             <div class="form-group mb-0">
                                 <label class="form-label">Event Logo</label>
-                                <input type="file" name="logo" class="form-control" accept="image/*">
-                                @if (isset($event) && $event->logo_path)
-                                    <img src="{{ $event->logo_url }}" style="height:38px;margin-top:8px;border-radius:6px">
-                                @endif
+                                @include('admin.events._image-upload', [
+                                    'name' => 'logo',
+                                    'current' => isset($event) && $event->logo_path ? $event->logo_url : null,
+                                    'hint' => 'PNG, JPG, WebP or SVG',
+                                    'resize' => '1200x1200',
+                                    'maxKb' => 2048,
+                                ])
                             </div>
                             <div class="form-group mb-0">
                                 <label class="form-label">Sponsor Logo</label>
-                                <input type="file" name="sponsor_logo" class="form-control" accept="image/*">
-                                @if (isset($event) && $event->sponsor_logo_path)
-                                    <img src="{{ $event->sponsor_logo_url }}"
-                                        style="height:38px;margin-top:8px;border-radius:6px">
-                                @endif
+                                @include('admin.events._image-upload', [
+                                    'name' => 'sponsor_logo',
+                                    'current' => isset($event) && $event->sponsor_logo_path ? $event->sponsor_logo_url : null,
+                                    'hint' => 'PNG, JPG, WebP or SVG',
+                                    'resize' => '1200x1200',
+                                    'maxKb' => 2048,
+                                ])
                             </div>
                         </div>
                     </div>
@@ -278,41 +283,32 @@
                             </div>
                             <div class="form-group mb-0">
                                 <label class="form-label">Frame Sponsor Logo (shown in bars)</label>
-                                <div style="display:flex;gap:12px;align-items:center">
-                                    @if (!empty($fc['logo_path']))
-                                        <div style="position:relative;flex-shrink:0">
-                                            <img src="{{ \Illuminate\Support\Facades\Storage::disk('media')->url($fc['logo_path']) }}"
-                                                style="height:36px;border-radius:6px;border:1px solid var(--border);background:#fff;padding:2px">
-                                            <label
-                                                style="position:absolute;top:-6px;right:-6px;background:var(--red);border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer">
-                                                <input type="checkbox" name="frame_clear_logo" value="1" style="display:none"
-                                                    onchange="this.closest('label').style.opacity=this.checked?.4:1">
-                                                <i data-lucide="x" class="lucide-icon"></i>
-                                            </label>
-                                        </div>
-                                    @endif
-                                    <input type="file" name="frame_logo" class="form-control" accept="image/*">
-                                </div>
+                                @include('admin.events._image-upload', [
+                                    'name' => 'frame_logo',
+                                    'current' => !empty($fc['logo_path'])
+                                        ? \Illuminate\Support\Facades\Storage::disk('media')->url($fc['logo_path'])
+                                        : null,
+                                    'clear' => 'frame_clear_logo',
+                                    'hint' => 'PNG, JPG, WebP or SVG',
+                                    'resize' => '1200x1200',
+                                    'maxKb' => 2048,
+                                ])
                             </div>
                         </div>
                         <div class="form-group mb-0">
                             <label class="form-label">Wall Background Image (1920×1080)</label>
-                            <div style="display:flex;gap:12px;align-items:center">
-                                @if (isset($event) && $event->hasVidiwallBackground())
-                                    <div style="position:relative;flex-shrink:0">
-                                        <img src="{{ $event->vidiwall_background_url }}" alt=""
-                                            style="width:160px;height:90px;object-fit:cover;border-radius:6px;border:1px solid var(--border);display:block">
-                                        <label
-                                            style="position:absolute;top:-6px;right:-6px;background:var(--red);border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer">
-                                            <input type="checkbox" name="clear_vidiwall_background" value="1" style="display:none"
-                                                onchange="this.closest('label').style.opacity=this.checked?.4:1">
-                                            <i data-lucide="x" class="lucide-icon"></i>
-                                        </label>
-                                    </div>
-                                @endif
-                                <input type="file" name="vidiwall_background" class="form-control"
-                                    accept="image/jpeg,image/png,image/webp">
-                            </div>
+                            @include('admin.events._image-upload', [
+                                'name' => 'vidiwall_background',
+                                'current' => isset($event) && $event->hasVidiwallBackground() ? $event->vidiwall_background_url : null,
+                                'clear' => 'clear_vidiwall_background',
+                                'accept' => 'image/jpeg,image/png,image/webp',
+                                'hint' => '1920×1080 · JPG, PNG or WebP',
+                                'resize' => '1920x1080',
+                                'mode' => 'cover',
+                                'ratio' => '16 / 9',
+                                'thumb' => 144,
+                                'cropNote' => 'Not 16:9, so the wall crops the edges to fill the screen.',
+                            ])
                         </div>
                     </div>
                 </div>
