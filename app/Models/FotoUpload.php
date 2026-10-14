@@ -20,6 +20,9 @@ class FotoUpload extends Model
     /** Extra seconds the server waits before expiring an item the screen never acknowledged. */
     public const SCREEN_GRACE_SECONDS = 5;
 
+    /** Longest guest video we accept, as shown to guests. */
+    public const MAX_VIDEO_SECONDS = 6;
+
     protected $fillable = ['event_id', 'visitor_id', 'file_path', 'thumbnail_path', 'video_path', 'media_type', 'video_duration', 'original_filename', 'file_size', 'mime_type', 'uploader_name', 'uploader_phone', 'uploader_session', 'status', 'on_screen', 'display_order', 'admin_note', 'approved_at', 'displayed_at', 'approved_by'];
 
     protected $casts = ['on_screen' => 'boolean', 'display_order' => 'integer', 'approved_at' => 'datetime', 'displayed_at' => 'datetime', 'video_duration' => 'float'];
@@ -141,6 +144,14 @@ class FotoUpload extends Model
         }
 
         return (float) ($this->event?->vidiwall_photo_seconds ?: self::SCREEN_SECONDS);
+    }
+
+    /**
+     * The duration actually enforced: phones record a "6 s" clip as 6.0x s, so allow half a second over the shown limit.
+     */
+    public static function maxVideoSecondsAccepted(): float
+    {
+        return self::MAX_VIDEO_SECONDS + 0.5;
     }
 
     public function screenSlotMs(): int

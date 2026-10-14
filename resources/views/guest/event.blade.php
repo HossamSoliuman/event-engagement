@@ -1629,7 +1629,7 @@ $fontH = $event->font_heading ?: 'Syne';
                                     video</strong><br>
                                 <span data-en="or choose from your gallery" data-de="oder aus der Galerie wählen">or
                                     choose from your gallery</span><br>
-                                <small style="color:var(--muted);font-size:11px">MP4 · MOV · WebM — max 10 sec · max
+                                <small style="color:var(--muted);font-size:11px">MP4 · MOV · WebM — max {{ \App\Models\FotoUpload::MAX_VIDEO_SECONDS }} sec · max
                                     25MB</small>
                             </p>
                         </div>
@@ -2106,7 +2106,9 @@ $fontH = $event->font_heading ?: 'Syne';
 
     <script>
         const SLUG = '{{ $event->slug }}',
-            CSRF = '{{ csrf_token() }}';
+            CSRF = '{{ csrf_token() }}',
+            MAX_VIDEO_SECONDS = @json(\App\Models\FotoUpload::MAX_VIDEO_SECONDS),
+            MAX_VIDEO_ACCEPTED = @json(\App\Models\FotoUpload::maxVideoSecondsAccepted());
         let selCandidate = null,
             selFile = null,
             selVideo = null,
@@ -2270,13 +2272,13 @@ $fontH = $event->font_heading ?: 'Syne';
                 const errEl = document.getElementById('videoDurationError');
 
                 badge.style.display = 'inline-block';
-                badge.textContent = Math.round(dur * 10) / 10 + 's / 10s max';
+                badge.textContent = `${Math.round(dur * 10) / 10}s / ${MAX_VIDEO_SECONDS}s max`;
 
-                if (dur > 10) {
+                if (dur > MAX_VIDEO_ACCEPTED) {
                     badge.classList.add('over');
                     errEl.textContent = lang === 'de' ?
-                        'Das Video ist zu lang. Maximal 10 Sekunden erlaubt.' :
-                        'Video is too long. Maximum 10 seconds allowed.';
+                        `Das Video ist zu lang. Maximal ${MAX_VIDEO_SECONDS} Sekunden erlaubt.` :
+                        `Video is too long. Maximum ${MAX_VIDEO_SECONDS} seconds allowed.`;
                     errEl.style.display = 'block';
                     document.getElementById('uploadBtn').disabled = true;
                     selVideo = null;

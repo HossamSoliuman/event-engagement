@@ -20,7 +20,7 @@ class FotoBombController extends Controller
         $request->validate([
             'photo' => 'required_without:video|image|mimes:jpeg,png,jpg,webp|max:10240',
             'video' => 'required_without:photo|mimetypes:video/mp4,video/webm,video/quicktime|max:25600',
-            'video_duration' => 'required_with:video|numeric|min:0.1|max:10',
+            'video_duration' => 'required_with:video|numeric|min:0.1|max:'.FotoUpload::maxVideoSecondsAccepted(),
             'uploader_name' => 'nullable|string|max:100',
             'uploader_phone' => 'nullable|string|max:30',
         ]);
