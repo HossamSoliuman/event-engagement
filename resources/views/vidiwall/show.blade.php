@@ -19,6 +19,9 @@
     @if ($event->hasVidiwallBackground())
         <link rel="preload" as="image" href="{{ $event->vidiwall_background_url }}">
     @endif
+    @if ($event->vidiwall_qr_background_url)
+        <link rel="preload" as="image" href="{{ $event->vidiwall_qr_background_url }}">
+    @endif
     <style>
         :root {
             --p: {{ $event->primary_color }};
@@ -497,6 +500,33 @@
         .screen.has-bg .event-title {
             color: #fff;
             text-shadow: 0 2px 6px rgba(0, 0, 0, .45), 0 6px 36px rgba(0, 0, 0, .6)
+        }
+
+        /* ── QR screen: the QR code alone, over the frame and the sponsor artwork ── */
+        .qr-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: clamp(18px, 4vh, 72px);
+            background: var(--bg) center / cover no-repeat;
+            animation: qrIn .5s ease
+        }
+
+        .qr-screen[hidden] {
+            display: none
+        }
+
+        .qr-screen .qr-card {
+            height: min(72vh, 72vw)
+        }
+
+        @keyframes qrIn {
+            from {
+                opacity: 0
+            }
         }
 
         /* ── Fan Clash rope ────────────────────────────────────────── */
@@ -2248,6 +2278,17 @@
             @endif
         </div>
 
+        <div class="qr-screen" id="qrScreen" hidden
+            @if ($event->vidiwall_qr_background_url) style="background-image: url('{{ $event->vidiwall_qr_background_url }}')" @endif>
+            @if ($event->qr_code_path)
+                <div class="qr-card">
+                    <img src="{{ $event->qr_code_url }}" alt="QR code">
+                </div>
+            @else
+                <div class="qr-fallback">{{ $event->getGuestUrl() }}</div>
+            @endif
+        </div>
+
     </div>
 
     <script>
@@ -2270,6 +2311,14 @@
         let playerState = null;
         let pendingDone = null;
         let preloaded = { key: null, media: [] };
+        let qrShown = false;
+
+        /* The operator's QR screen covers everything; the playlist is held under it. */
+        function setQrScreen(show) {
+            if (show === qrShown) return;
+            qrShown = show;
+            document.getElementById('qrScreen').hidden = !show;
+        }
 
         function setBackground(url) {
             if (HAS_WALL_BG) {
@@ -2680,9 +2729,10 @@
                 const url = `/screen/${SLUG}/feed` + (done ? `?done=${done.id}&rev=${done.rev}` : '');
                 const res = await fetch(url, { cache: 'no-store', signal: window.AbortSignal?.timeout ? AbortSignal.timeout(5000) : undefined });
                 const data = await res.json();
-                if (seq !== pollSeq) return;
+                if (seq !== pollSeq || clashActive) return;
 
                 if (data.mode === 'slideshow') {
+                    setQrScreen(false);
                     if (!data.fotos.length) {
                         showIdle();
                         return;
@@ -2695,6 +2745,7 @@
                     }
                 } else {
                     clearTimeout(slideTimer);
+                    setQrScreen(!!data.qr_screen);
                     applyPlayer(data);
                     preloadNext(data.next_page || [data.next]);
                 }
@@ -2739,6 +2790,7 @@
                 const v = document.getElementById('liveVideo');
                 if (v) { v.pause(); }
                 clearTimeout(queueTimer);
+                setQrScreen(false);
             }
 
             function paintColors(d) {

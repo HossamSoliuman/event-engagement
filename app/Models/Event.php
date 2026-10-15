@@ -18,7 +18,7 @@ class Event extends Model
     use HasFactory, ReferencesMediaFiles, SoftDeletes;
 
     /** @var list<string> */
-    public const MEDIA_COLUMNS = ['qr_code_path', 'logo_path', 'sponsor_logo_path', 'background_image_path', 'quiz_end_sponsor_logo_path', 'vidiwall_background_path'];
+    public const MEDIA_COLUMNS = ['qr_code_path', 'logo_path', 'sponsor_logo_path', 'background_image_path', 'quiz_end_sponsor_logo_path', 'vidiwall_background_path', 'vidiwall_qr_background_path'];
 
     /**
      * Guest page language modes: "switch" shows the EN/DE pill, "en" and "de" lock the page to one language.
@@ -82,6 +82,7 @@ class Event extends Model
         'vidiwall_overlay_text',
         'vidiwall_frame_config',
         'vidiwall_background_path',
+        'vidiwall_qr_background_path',
         'landing_style',
         'landing_wordmark',
         'landing_hero_title',
@@ -469,6 +470,14 @@ class Event extends Model
     public function getVidiwallBackgroundUrlAttribute(): ?string
     {
         return $this->vidiwall_background_path ? Storage::disk('media')->url($this->vidiwall_background_path) : null;
+    }
+
+    /**
+     * Shown behind the QR code on the vidiwall's QR screen; the event's background colour stands in without it.
+     */
+    public function getVidiwallQrBackgroundUrlAttribute(): ?string
+    {
+        return $this->vidiwall_qr_background_path ? Storage::disk('media')->url($this->vidiwall_qr_background_path) : null;
     }
 
     /**

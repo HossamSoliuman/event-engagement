@@ -26,7 +26,8 @@ class VidiwallController extends Controller
      * report names, and `page` is everything on screen, laid out `layout` to a
      * screen. `elapsed_ms` lets a screen that joins mid-page (or resumes after a
      * pause) pick up where the player is, and `next_page` is the page due after
-     * this one so the screen can load it in advance.
+     * this one so the screen can load it in advance. `qr_screen` covers the
+     * wall with the QR code; the playlist is held under it.
      */
     public function feed(Request $request, string $slug)
     {
@@ -69,6 +70,7 @@ class VidiwallController extends Controller
         return response()->json([
             'mode' => 'player',
             'state' => $player?->state ?? VidiwallPlayer::STATE_STOPPED,
+            'qr_screen' => (bool) $player?->qr_screen,
             'revision' => $player?->revision ?? 0,
             'elapsed_ms' => $onScreen ? $player->elapsedMs() : 0,
             'layout' => $event->photosPerScreen(),

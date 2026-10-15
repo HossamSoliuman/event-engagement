@@ -7,6 +7,7 @@ use App\Http\Requests\ReorderVidiwallPlaylistRequest;
 use App\Http\Requests\UpdateVidiwallLoopRequest;
 use App\Http\Requests\UpdateVidiwallPhotoSecondsRequest;
 use App\Http\Requests\UpdateVidiwallPhotosPerScreenRequest;
+use App\Http\Requests\UpdateVidiwallQrScreenRequest;
 use App\Models\ActivityLog;
 use App\Models\Event;
 use App\Models\FotoUpload;
@@ -83,6 +84,14 @@ class VidiwallPlayerController extends Controller
     public function loop(UpdateVidiwallLoopRequest $request, Event $event): JsonResponse
     {
         $event->player()->setLoop($request->boolean('loop'));
+
+        return $this->respond($request, $event);
+    }
+
+    public function qr(UpdateVidiwallQrScreenRequest $request, Event $event): JsonResponse
+    {
+        $event->player()->setQrScreen($request->boolean('qr'));
+        ActivityLog::record($request->boolean('qr') ? 'vidiwall.qr_shown' : 'vidiwall.qr_hidden', [], $event->id);
 
         return $this->respond($request, $event);
     }
@@ -174,6 +183,8 @@ class VidiwallPlayerController extends Controller
             'player' => [
                 'state' => $player?->state ?? VidiwallPlayer::STATE_STOPPED,
                 'loop' => (bool) $player?->loop,
+                'qr_screen' => (bool) $player?->qr_screen,
+                'resume_after_qr' => (bool) $player?->resume_after_qr,
                 'photo_seconds' => $photoSeconds,
                 'photos_per_screen' => $photosPerScreen,
                 'revision' => $player?->revision ?? 0,

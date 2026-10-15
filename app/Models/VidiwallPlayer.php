@@ -20,6 +20,10 @@ use Illuminate\Support\Facades\DB;
  * several photos at once, the photos that follow it. A video always plays on
  * its own. The page is frozen when it is cued (`page_ids`), so approvals and
  * reorders during its slot do not reshuffle what is on the wall.
+ *
+ * The QR screen covers the wall with the event QR code on its own. The
+ * playlist pauses under it and keeps its place, and it never runs while the
+ * QR screen is up.
  */
 class VidiwallPlayer extends Model
 {
@@ -34,7 +38,7 @@ class VidiwallPlayer extends Model
     /** How many photos the screen can show at once. */
     public const PHOTOS_PER_SCREEN = [1, 2, 4];
 
-    protected $fillable = ['event_id', 'state', 'foto_upload_id', 'page_ids', 'started_ms', 'paused_elapsed_ms', 'loop', 'revision'];
+    protected $fillable = ['event_id', 'state', 'foto_upload_id', 'page_ids', 'started_ms', 'paused_elapsed_ms', 'loop', 'qr_screen', 'resume_after_qr', 'revision'];
 
     protected $casts = [
         'foto_upload_id' => 'integer',
@@ -42,12 +46,16 @@ class VidiwallPlayer extends Model
         'started_ms' => 'integer',
         'paused_elapsed_ms' => 'integer',
         'loop' => 'boolean',
+        'qr_screen' => 'boolean',
+        'resume_after_qr' => 'boolean',
         'revision' => 'integer',
     ];
 
     protected $attributes = [
         'state' => self::STATE_STOPPED,
         'loop' => false,
+        'qr_screen' => false,
+        'resume_after_qr' => false,
         'revision' => 0,
     ];
 
@@ -198,8 +206,8 @@ class VidiwallPlayer extends Model
     }
 
     /**
-     * Starts from the top of the playlist when stopped and resumes when paused.
-     * Returns false when the playlist is empty.
+     * Starts from the top of the playlist when stopped and resumes when paused,
+     * taking the QR screen down. Returns false when the playlist is empty.
      */
     public function play(): bool
     {
@@ -211,11 +219,8 @@ class VidiwallPlayer extends Model
             }
 
             if ($player->isPaused() && $current) {
-                $player->forceFill([
-                    'state' => self::STATE_PLAYING,
-                    'started_ms' => now()->getTimestampMs() - (int) $player->paused_elapsed_ms,
-                    'paused_elapsed_ms' => null,
-                ]);
+                $player->leaveQrScreen();
+                $player->resume();
 
                 return true;
             }
@@ -228,6 +233,7 @@ class VidiwallPlayer extends Model
                 return false;
             }
 
+            $player->leaveQrScreen();
             $player->cue($first, self::STATE_PLAYING);
 
             return true;
@@ -236,27 +242,48 @@ class VidiwallPlayer extends Model
 
     public function pause(): void
     {
+        $this->mutate(fn (self $player) => $player->hold());
+    }
+
+    /**
+     * Clears the screen back to the idle QR code, taking the QR screen down
+     * too; the next Play starts from the top.
+     */
+    public function stop(): void
+    {
         $this->mutate(function (self $player): void {
-            if (! $player->isPlaying()) {
-                return;
-            }
-
-            $current = $player->screenFoto();
-
-            $player->forceFill([
-                'state' => self::STATE_PAUSED,
-                'started_ms' => null,
-                'paused_elapsed_ms' => $current ? min($player->elapsedMs(), $current->screenSlotMs()) : 0,
-            ]);
+            $player->leaveQrScreen();
+            $player->resetToStopped();
         });
     }
 
     /**
-     * Clears the screen back to the QR code; the next Play starts from the top.
+     * Puts the QR screen up or takes it down. A running playlist pauses under
+     * it and resumes where it left off when it comes down; a paused or stopped
+     * one stays as it was.
      */
-    public function stop(): void
+    public function setQrScreen(bool $show): void
     {
-        $this->mutate(fn (self $player) => $player->resetToStopped());
+        $this->mutate(function (self $player) use ($show): void {
+            if ($player->qr_screen === $show) {
+                return;
+            }
+
+            if ($show) {
+                $resume = $player->isPlaying();
+                $player->hold();
+                $player->forceFill(['qr_screen' => true, 'resume_after_qr' => $resume]);
+
+                return;
+            }
+
+            $resume = $player->resume_after_qr && $player->isPaused() && $player->screenFoto();
+            $player->leaveQrScreen();
+
+            if ($resume) {
+                $player->resume();
+            }
+        });
     }
 
     public function next(): void
@@ -298,7 +325,10 @@ class VidiwallPlayer extends Model
      */
     public function playFrom(FotoUpload $foto): void
     {
-        $this->mutate(fn (self $player) => $player->cue($foto, self::STATE_PLAYING));
+        $this->mutate(function (self $player) use ($foto): void {
+            $player->leaveQrScreen();
+            $player->cue($foto, self::STATE_PLAYING);
+        });
     }
 
     /**
@@ -312,6 +342,7 @@ class VidiwallPlayer extends Model
                 $player->moveAfterCurrent($foto);
             }
 
+            $player->leaveQrScreen();
             $player->cue($foto->fresh(), self::STATE_PLAYING);
         });
     }
@@ -564,6 +595,41 @@ class VidiwallPlayer extends Model
         }
 
         return $start;
+    }
+
+    /**
+     * Freezes the item on screen where it is.
+     */
+    protected function hold(): void
+    {
+        if (! $this->isPlaying()) {
+            return;
+        }
+
+        $current = $this->screenFoto();
+
+        $this->forceFill([
+            'state' => self::STATE_PAUSED,
+            'started_ms' => null,
+            'paused_elapsed_ms' => $current ? min($this->elapsedMs(), $current->screenSlotMs()) : 0,
+        ]);
+    }
+
+    /**
+     * Plays the held item on from where it was frozen.
+     */
+    protected function resume(): void
+    {
+        $this->forceFill([
+            'state' => self::STATE_PLAYING,
+            'started_ms' => now()->getTimestampMs() - (int) $this->paused_elapsed_ms,
+            'paused_elapsed_ms' => null,
+        ]);
+    }
+
+    protected function leaveQrScreen(): void
+    {
+        $this->forceFill(['qr_screen' => false, 'resume_after_qr' => false]);
     }
 
     protected function cue(FotoUpload $foto, string $state, ?FotoUpload $leaving = null): void

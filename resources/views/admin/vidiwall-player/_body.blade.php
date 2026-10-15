@@ -19,6 +19,11 @@
         .vp-screen-grid { --cols: 2; --rows: 1; --gap: 6px; position: absolute; inset: 0; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: var(--gap); padding: 10px; }
         .vp-screen-grid.n-4 { --rows: 2; }
         .vp-screen-grid > img { width: calc((100% - (var(--cols) - 1) * var(--gap)) / var(--cols)); height: calc((100% - (var(--rows) - 1) * var(--gap)) / var(--rows)); object-fit: cover; border-radius: 6px; }
+        .vp-screen-qr { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background-position: center; background-size: cover; background-repeat: no-repeat; }
+        .vp-screen .vp-screen-qr img { width: auto; height: 64%; aspect-ratio: 1; padding: 2.5%; border-radius: 8px; background: #fff; }
+        .vp-screen-qr span { max-width: 80%; font-size: 13px; font-weight: 600; text-align: center; word-break: break-all; }
+        .vp[data-qr="on"] .vp-screen-tag { background: var(--gold); }
+        .vp[data-qr="on"] .vp-now-label { color: var(--gold); }
 
         .vp-panel { display: flex; flex-direction: column; justify-content: center; gap: 16px; padding: 22px 24px; min-width: 0; }
         .vp-now-label { font-size: 10px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
@@ -40,9 +45,10 @@
         .vp-btn-main .lucide-icon { width: 26px; height: 26px; }
         .vp-btn-main:hover:not(:disabled) { border-color: var(--vp-accent); filter: brightness(1.1); }
         .vp[data-state="playing"] .vp-ic-play, .vp:not([data-state="playing"]) .vp-ic-pause { display: none; }
-        .vp-loop { margin-left: auto; width: auto; padding: 0 16px; border-radius: 30px; gap: 8px; font-size: 13px; font-weight: 600; color: var(--muted); }
-        .vp-loop .lucide-icon { width: 16px; height: 16px; }
-        .vp-loop[aria-pressed="true"] { color: var(--text); border-color: var(--vp-accent); background: color-mix(in srgb, var(--vp-accent) 14%, var(--card2)); }
+        .vp-toggle { width: auto; padding: 0 16px; border-radius: 30px; gap: 8px; font-size: 13px; font-weight: 600; color: var(--muted); }
+        .vp-toggle .lucide-icon { width: 16px; height: 16px; }
+        .vp-toggle[aria-pressed="true"] { color: var(--text); border-color: var(--vp-accent); background: color-mix(in srgb, var(--vp-accent) 14%, var(--card2)); }
+        .vp-loop { margin-left: auto; }
         .vp-msg { font-size: 13px; color: var(--gold); }
 
         .vp-settings { display: flex; flex-direction: column; gap: 12px; padding-top: 16px; border-top: 1px solid var(--border); }
@@ -126,6 +132,14 @@
             <img id="vpNowImg" alt="" hidden>
             <video id="vpNowVideo" muted playsinline preload="metadata" hidden></video>
             <div class="vp-screen-grid" id="vpNowGrid" hidden></div>
+            <div class="vp-screen-qr" id="vpQrScreen" hidden
+                style="background-color: {{ $event->secondary_color }}; @if ($event->vidiwall_qr_background_url) background-image: url('{{ $event->vidiwall_qr_background_url }}'); @endif color: {{ $event->accent_color }}">
+                @if ($event->qr_code_path)
+                    <img src="{{ $event->qr_code_url }}" alt="QR code">
+                @else
+                    <span>{{ $event->getGuestUrl() }}</span>
+                @endif
+            </div>
             <span class="vp-screen-tag" id="vpTag" hidden>LIVE</span>
             <span class="vp-screen-kind" id="vpKind" hidden>VIDEO</span>
         </div>
@@ -156,8 +170,11 @@
                 <button type="button" class="vp-btn" data-action="next" title="Next" aria-label="Next">
                     <i data-lucide="skip-forward" class="lucide-icon"></i>
                 </button>
-                <button type="button" class="vp-btn vp-loop" id="vpLoop" aria-pressed="false" title="Start over automatically after the last item">
+                <button type="button" class="vp-btn vp-toggle vp-loop" id="vpLoop" aria-pressed="false" title="Start over automatically after the last item">
                     <i data-lucide="repeat" class="lucide-icon"></i> Loop
+                </button>
+                <button type="button" class="vp-btn vp-toggle" id="vpQr" aria-pressed="false" title="Show only the QR code on the wall; the playlist waits where it is">
+                    <i data-lucide="qr-code" class="lucide-icon"></i> QR
                 </button>
             </div>
 
@@ -225,6 +242,7 @@
                 next: @json($vpRoute('next')),
                 previous: @json($vpRoute('previous')),
                 loop: @json($vpRoute('loop')),
+                qr: @json($vpRoute('qr')),
                 photoSeconds: @json($vpRoute('photo-seconds')),
                 photosPerScreen: @json($vpRoute('photos-per-screen')),
                 reorder: @json($vpRoute('reorder')),
@@ -244,6 +262,7 @@
             let currentId = null;
             let currentIds = new Set();
             let shownKey = null;
+            let positionText = '';
             let clock = { id: null, elapsed: 0, slot: 0, at: 0 };
             let seq = 0;
             let pending = 0;
@@ -304,6 +323,32 @@
             }
 
             function renderNow(data) {
+                renderPlayback(data);
+                renderQr(data);
+            }
+
+            /** While the QR screen is up the preview shows it, and the panel says where the playlist waits. */
+            function renderQr(data) {
+                const qr = !!data.player.qr_screen;
+                root.dataset.qr = qr ? 'on' : 'off';
+                $('vpQr').setAttribute('aria-pressed', qr ? 'true' : 'false');
+                $('vpQrScreen').hidden = !qr;
+                root.querySelector('[data-action="stop"]').disabled = state === 'stopped' && !qr;
+                if (!qr) {
+                    return;
+                }
+                $('vpIdle').hidden = true;
+                $('vpTag').hidden = false;
+                $('vpTag').textContent = 'LIVE';
+                $('vpKind').hidden = true;
+                $('vpNowLabel').textContent = 'QR on screen';
+                $('vpNowName').textContent = 'Event QR code';
+                $('vpNowMeta').textContent = data.now_playing
+                    ? 'Playlist paused' + (positionText ? ' at ' + positionText : '') + '. Press QR or Play to go back.'
+                    : 'Playlist stopped. Press QR to go back to the idle screen.';
+            }
+
+            function renderPlayback(data) {
                 const now = data.now_playing;
                 const player = data.player;
                 const localElapsed = elapsedNow();
@@ -337,6 +382,7 @@
                         ? 'Press play to start the playlist from the top.'
                         : 'Approve photos or videos and they will line up here.';
                     shownKey = null;
+                    positionText = '';
                     clock = { id: null, elapsed: 0, slot: 0, at: performance.now() };
                     paintClock();
                     return;
@@ -347,8 +393,9 @@
                 const positions = page.map(item => order.indexOf(item.id) + 1).filter(Boolean);
                 const from = Math.min(...positions);
                 const to = Math.max(...positions);
+                positionText = positions.length ? (to > from ? from + '–' + to : from) + ' of ' + data.counts.total : '';
                 $('vpNowMeta').textContent = (now.is_video ? 'Video' : page.length > 1 ? 'Photos' : 'Photo')
-                    + (positions.length ? ' · ' + (to > from ? from + '–' + to : from) + ' of ' + data.counts.total : '');
+                    + (positionText ? ' · ' + positionText : '');
 
                 const layout = player.photos_per_screen || 1;
                 const tiled = !now.is_video && layout > 1;
@@ -616,16 +663,25 @@
 
             /**
              * Shows the outcome of a transport press straight away; the server's
-             * answer then confirms or corrects it.
+             * answer then confirms or corrects it. The QR screen stays up only
+             * through presses that leave the playlist paused.
              */
-            function preview(nextState, item, elapsed) {
+            function preview(nextState, item, elapsed, qr = {}) {
                 if (!last) {
                     return;
                 }
+                const keepQr = nextState === 'paused';
                 const data = {
                     ...last,
                     items: undefined,
-                    player: { ...last.player, state: item ? nextState : 'stopped', elapsed_ms: elapsed },
+                    player: {
+                        ...last.player,
+                        state: item ? nextState : 'stopped',
+                        elapsed_ms: elapsed,
+                        qr_screen: keepQr && last.player.qr_screen,
+                        resume_after_qr: keepQr && last.player.resume_after_qr,
+                        ...qr,
+                    },
                     now_playing: item || null,
                 };
                 last = data;
@@ -789,6 +845,17 @@
                     last = { ...last, player: { ...last.player, loop } };
                 }
                 send(URLS.loop, 'POST', { loop });
+            });
+            $('vpQr').addEventListener('click', () => {
+                const qr = $('vpQr').getAttribute('aria-pressed') !== 'true';
+                const item = last?.now_playing;
+                if (qr) {
+                    preview(state === 'playing' ? 'paused' : state, item, elapsedNow(), { qr_screen: true, resume_after_qr: state === 'playing' });
+                } else {
+                    const resume = !!last?.player.resume_after_qr && state === 'paused' && !!item;
+                    preview(resume ? 'playing' : state, item, elapsedNow(), { qr_screen: false, resume_after_qr: false });
+                }
+                send(URLS.qr, 'POST', { qr });
             });
             list.addEventListener('click', event => {
                 const button = event.target.closest('[data-row-action]');

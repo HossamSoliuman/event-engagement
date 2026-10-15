@@ -189,6 +189,7 @@ class EventController extends Controller
             'frame_text_color' => 'nullable|string|max:7',
             'frame_logo' => 'nullable|image|max:2048',
             'vidiwall_background' => 'nullable|image|mimes:jpeg,jpg,png,webp',
+            'vidiwall_qr_background' => 'nullable|image|mimes:jpeg,jpg,png,webp',
             'privacy_policy_text' => 'nullable|string|max:2000',
             'privacy_policy_url' => 'nullable|url|max:500',
             'font_heading' => 'nullable|string|max:100',
@@ -250,6 +251,14 @@ class EventController extends Controller
             $data['vidiwall_background_path'] = null;
         }
         unset($data['vidiwall_background']);
+
+        // Vidiwall QR screen background (behind the QR code when the operator shows it)
+        if ($request->hasFile('vidiwall_qr_background')) {
+            $data['vidiwall_qr_background_path'] = $request->file('vidiwall_qr_background')->store('vidiwall-backgrounds', 'media');
+        } elseif ($request->input('clear_vidiwall_qr_background')) {
+            $data['vidiwall_qr_background_path'] = null;
+        }
+        unset($data['vidiwall_qr_background']);
 
         // Landing page design (sizes, spacing) — see the "Landing Design" admin tab
         unset($data['design']);

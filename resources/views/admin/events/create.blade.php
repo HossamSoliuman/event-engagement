@@ -26,6 +26,7 @@
 
         /* Sub-item grids */
         .ev-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px }
+        .ev-grid-2 > .card { margin:0 }
         .ev-subcard { background:var(--dark); border:1px solid var(--border); border-radius:10px; padding:16px }
         .ev-subcard-title { font-weight:700; font-size:13px; margin-bottom:12px; display:flex; align-items:center; gap:6px }
 
@@ -329,24 +330,47 @@
                     </div>
                 </div>
 
-                <div class="card mb-3">
-                    <div class="card-header">
-                        <h3><i data-lucide="image" class="lucide-icon"></i> Wall Background</h3>
+                <div class="ev-grid-2 mb-3">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i data-lucide="image" class="lucide-icon"></i> Wall Background</h3>
+                        </div>
+                        <div class="card-body">
+                            @include('admin.events._image-upload', [
+                                'name' => 'vidiwall_background',
+                                'current' => isset($event) && $event->hasVidiwallBackground() ? $event->vidiwall_background_url : null,
+                                'clear' => 'clear_vidiwall_background',
+                                'accept' => 'image/jpeg,image/png,image/webp',
+                                'hint' => '1920×1080 · JPG, PNG or WebP',
+                                'resize' => '1920x1080',
+                                'mode' => 'cover',
+                                'ratio' => '16 / 9',
+                                'thumb' => 144,
+                                'cropNote' => 'Not 16:9, so the wall crops the edges to fill the screen.',
+                            ])
+                            <div class="form-hint">When set, it replaces the sponsor frame on the wall.</div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        @include('admin.events._image-upload', [
-                            'name' => 'vidiwall_background',
-                            'current' => isset($event) && $event->hasVidiwallBackground() ? $event->vidiwall_background_url : null,
-                            'clear' => 'clear_vidiwall_background',
-                            'accept' => 'image/jpeg,image/png,image/webp',
-                            'hint' => '1920×1080 · JPG, PNG or WebP',
-                            'resize' => '1920x1080',
-                            'mode' => 'cover',
-                            'ratio' => '16 / 9',
-                            'thumb' => 144,
-                            'cropNote' => 'Not 16:9, so the wall crops the edges to fill the screen.',
-                        ])
-                        <div class="form-hint">When set, it replaces the sponsor frame on the wall.</div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i data-lucide="qr-code" class="lucide-icon"></i> QR Screen Background</h3>
+                        </div>
+                        <div class="card-body">
+                            @include('admin.events._image-upload', [
+                                'name' => 'vidiwall_qr_background',
+                                'current' => $event->vidiwall_qr_background_url ?? null,
+                                'clear' => 'clear_vidiwall_qr_background',
+                                'accept' => 'image/jpeg,image/png,image/webp',
+                                'hint' => '1920×1080 · JPG, PNG or WebP',
+                                'resize' => '1920x1080',
+                                'mode' => 'cover',
+                                'ratio' => '16 / 9',
+                                'thumb' => 144,
+                                'cropNote' => 'Not 16:9, so the wall crops the edges to fill the screen.',
+                            ])
+                            <div class="form-hint">Shown behind the QR code when the operator presses QR. Without it, the background colour is used.</div>
+                        </div>
                     </div>
                 </div>
             </div>
