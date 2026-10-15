@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ $event->lockedGuestLanguage() ?? 'en' }}">
 
 <head>
     <meta charset="UTF-8">
@@ -17,6 +17,10 @@ $fontH = $event->font_heading ?: 'Syne';
     @php
         $lightBg = $event->hasLightBackground();
         $ld = $event->landingDesign();
+
+        // A locked language is rendered server-side so the first paint is already in that language.
+        $lockedLang = $event->lockedGuestLanguage();
+        $t = fn (string $en, string $de): string => $lockedLang === 'de' ? $de : $en;
     @endphp
     <style>
         :root {
@@ -1249,10 +1253,13 @@ $fontH = $event->font_heading ?: 'Syne';
             'I agree to the Privacy Policy and consent to my data being processed for this event.');
     </script>
     @php
-        $privacyText =
-            $event->privacy_policy_text ?:
-            'I agree to the Privacy Policy and consent to my data being processed for this event.';
-        $gdprSnippet = function (string $id) use ($privacyText, $privacyUrl) {
+        $privacyTexts = $event->privacy_policy_text
+            ? ['en' => $event->privacy_policy_text, 'de' => $event->privacy_policy_text]
+            : [
+                'en' => 'I agree to the Privacy Policy and consent to my data being processed for this event.',
+                'de' => 'Ich stimme der Datenschutzerklärung zu und willige ein, dass meine Daten für dieses Event verarbeitet werden.',
+            ];
+        $gdprSnippet = function (string $id) use ($privacyTexts, $privacyUrl, $t) {
             $linkOpen =
                 $privacyUrl !== '#'
                     ? '<a href="' .
@@ -1261,16 +1268,20 @@ $fontH = $event->font_heading ?: 'Syne';
                     : '<a href="#" onclick="return false" style="color:var(--p);text-decoration:underline;text-underline-offset:2px">';
             $linkClose = '</a>';
 
-            // Wrap the words "Privacy Policy" / "Datenschutz" in the link if they appear
-            $displayText = preg_replace(
-                '/(Privacy Policy|Datenschutzerklärung|Datenschutz)/i',
-                $linkOpen . '$1' . $linkClose,
-                e($privacyText),
-            );
-            // If none matched, just append a standalone link
-            if ($displayText === e($privacyText)) {
-                $displayText = e($privacyText) . ' ' . $linkOpen . 'Privacy Policy' . $linkClose;
-            }
+            $linkify = function (string $text, string $linkLabel) use ($linkOpen, $linkClose): string {
+                // Wrap the words "Privacy Policy" / "Datenschutz" in the link if they appear
+                $html = preg_replace(
+                    '/(Privacy Policy|Datenschutzerklärung|Datenschutz)/i',
+                    $linkOpen . '$1' . $linkClose,
+                    e($text),
+                );
+
+                // If none matched, just append a standalone link
+                return $html === e($text) ? e($text) . ' ' . $linkOpen . $linkLabel . $linkClose : $html;
+            };
+            $textEn = $linkify($privacyTexts['en'], 'Privacy Policy');
+            $textDe = $linkify($privacyTexts['de'], 'Datenschutzerklärung');
+            $i18n = $textEn === $textDe ? '' : ' data-html data-en="' . e($textEn) . '" data-de="' . e($textDe) . '"';
 
             return '
 <div class="gdpr-box" id="gdpr-box-' .
@@ -1280,8 +1291,10 @@ $fontH = $event->font_heading ?: 'Syne';
         <input type="checkbox" id="gdpr-' .
                 $id .
                 '">
-        <span class="gdpr-text">' .
-                $displayText .
+        <span class="gdpr-text"' .
+                $i18n .
+                '>' .
+                $t($textEn, $textDe) .
                 '</span>
     </label>
     <div class="gdpr-error" id="gdpr-err-' .
@@ -1290,7 +1303,7 @@ $fontH = $event->font_heading ?: 'Syne';
 </div>';
         };
     @endphp
-    <div class="lang-toggle">
+    <div class="lang-toggle" {{ $lockedLang ? 'hidden' : '' }}>
         <button class="lang-btn active" onclick="setLang('en')">EN</button>
         <button class="lang-btn" onclick="setLang('de')">DE</button>
     </div>
@@ -1348,10 +1361,10 @@ $fontH = $event->font_heading ?: 'Syne';
             <div class="cl-hero" {{ $ld['hero_show'] ? '' : 'hidden' }}>
                 <div class="cl-hero-title"
                     @unless ($heroTitle) data-html data-en="Your <strong>Fan Experience</strong> starts here." data-de="Deine <strong>Fan Experience</strong> startet hier." @endunless>
-                    {!! $heroTitle ? $emphasize($heroTitle) : 'Your <strong>Fan Experience</strong> starts here.' !!}</div>
+                    {!! $heroTitle ? $emphasize($heroTitle) : $t('Your <strong>Fan Experience</strong> starts here.', 'Deine <strong>Fan Experience</strong> startet hier.') !!}</div>
                 <div class="cl-hero-sub"
                     @unless ($heroSub) data-html data-en="Be part of the show. <strong>Tap a tile</strong> to get started." data-de="Sei Teil des Erlebnisses. <strong>Tippe auf eine Kachel.</strong>" @endunless>
-                    {!! $heroSub ? $emphasize($heroSub) : 'Be part of the show. <strong>Tap a tile</strong> to get started.' !!}</div>
+                    {!! $heroSub ? $emphasize($heroSub) : $t('Be part of the show. <strong>Tap a tile</strong> to get started.', 'Sei Teil des Erlebnisses. <strong>Tippe auf eine Kachel.</strong>') !!}</div>
             </div>
 
             <div class="cl-grid" data-cols="{{ (int) $ld['card_columns'] }}">
@@ -1408,7 +1421,7 @@ $fontH = $event->font_heading ?: 'Syne';
             <div class="cl-footer">© {{ now()->year }} EventBomb
                 @if ($privacyUrl !== '#')
                     · <a href="{{ $privacyUrl }}" target="_blank" data-en="Privacy Policy"
-                        data-de="Datenschutz">Privacy Policy</a>
+                        data-de="Datenschutz">{{ $t('Privacy Policy', 'Datenschutz') }}</a>
                 @endif
             </div>
         @else
@@ -1600,7 +1613,7 @@ $fontH = $event->font_heading ?: 'Syne';
 
                     <div class="media-toggle">
                         <button class="media-toggle-btn active" id="togglePhoto" onclick="switchMedia('photo')"
-                            data-en="Photo" data-de="Foto">Photo</button>
+                            data-en="Photo" data-de="Foto">{{ $t('Photo', 'Foto') }}</button>
                         <button class="media-toggle-btn" id="toggleVideo" onclick="switchMedia('video')" data-en="Video"
                             data-de="Video">Video</button>
                     </div>
@@ -1610,10 +1623,8 @@ $fontH = $event->font_heading ?: 'Syne';
                         <div class="upload-zone" id="uploadZone">
                             <input type="file" id="photoInput" accept="image/*" capture="environment">
                             <div class="uz-icon"><i data-lucide="camera" class="lucide-icon"></i></div>
-                            <p><strong data-en="Tap to take a photo" data-de="Foto aufnehmen">Tap to take a
-                                    photo</strong><br>
-                                <span data-en="or choose from your gallery" data-de="oder aus der Galerie wählen">or
-                                    choose from your gallery</span><br>
+                            <p><strong data-en="Tap to take a photo" data-de="Foto aufnehmen">{{ $t('Tap to take a photo', 'Foto aufnehmen') }}</strong><br>
+                                <span data-en="or choose from your gallery" data-de="oder aus der Galerie wählen">{{ $t('or choose from your gallery', 'oder aus der Galerie wählen') }}</span><br>
                                 <small style="color:var(--muted);font-size:11px">JPG · PNG · WEBP — max 10MB</small>
                             </p>
                         </div>
@@ -1625,12 +1636,14 @@ $fontH = $event->font_heading ?: 'Syne';
                         <div class="upload-zone" id="uploadZoneVideo">
                             <input type="file" id="videoInput" accept="video/*" capture="environment">
                             <div class="uz-icon"><i data-lucide="video" class="lucide-icon"></i></div>
-                            <p><strong data-en="Tap to record a video" data-de="Video aufnehmen">Tap to record a
-                                    video</strong><br>
-                                <span data-en="or choose from your gallery" data-de="oder aus der Galerie wählen">or
-                                    choose from your gallery</span><br>
-                                <small style="color:var(--muted);font-size:11px">MP4 · MOV · WebM — max {{ \App\Models\FotoUpload::MAX_VIDEO_SECONDS }} sec · max
-                                    25MB</small>
+                            <p><strong data-en="Tap to record a video" data-de="Video aufnehmen">{{ $t('Tap to record a video', 'Video aufnehmen') }}</strong><br>
+                                <span data-en="or choose from your gallery" data-de="oder aus der Galerie wählen">{{ $t('or choose from your gallery', 'oder aus der Galerie wählen') }}</span><br>
+                                @php
+                                    $videoLimitEn = 'MP4 · MOV · WebM — max ' . \App\Models\FotoUpload::MAX_VIDEO_SECONDS . ' sec · max 25MB';
+                                    $videoLimitDe = 'MP4 · MOV · WebM — max ' . \App\Models\FotoUpload::MAX_VIDEO_SECONDS . ' Sek. · max 25MB';
+                                @endphp
+                                <small style="color:var(--muted);font-size:11px" data-en="{{ $videoLimitEn }}"
+                                    data-de="{{ $videoLimitDe }}">{{ $t($videoLimitEn, $videoLimitDe) }}</small>
                             </p>
                         </div>
                         <div id="videoDurationError"
@@ -1644,26 +1657,24 @@ $fontH = $event->font_heading ?: 'Syne';
 
                     <div style="margin-top:16px">
                         <div class="field-group">
-                            <label class="field-label" data-en="Your Name" data-de="Dein Name">Your Name</label>
+                            <label class="field-label" data-en="Your Name" data-de="Dein Name">{{ $t('Your Name', 'Dein Name') }}</label>
                             <input type="text" class="field" id="fotoName" data-ph-en="e.g. Ahmed from Row D"
-                                data-ph-de="z.B. Max aus Reihe D" placeholder="e.g. Ahmed from Row D"
+                                data-ph-de="z.B. Max aus Reihe D" placeholder="{{ $t('e.g. Ahmed from Row D', 'z.B. Max aus Reihe D') }}"
                                 autocomplete="name">
                         </div>
                         <button class="btn-main" id="uploadBtn" onclick="submitFoto()" disabled>
-                            <span id="uploadBtnText" data-en="Send to Vidiwall" data-de="Auf die Vidiwall">Send to
-                                Vidiwall</span>
+                            <span id="uploadBtnText" data-en="Send to Vidiwall" data-de="Auf die Vidiwall">{{ $t('Send to Vidiwall', 'Auf die Vidiwall') }}</span>
                         </button>
                         {!! $gdprSnippet('foto') !!}
                     </div>
                 </div>
                 <div class="success-state" id="fotoSuccess" style="display:none">
                     <div class="s-icon"><i data-lucide="party-popper" class="lucide-icon"></i></div>
-                    <h3 id="fotoSuccessTitle" data-en="Submitted!" data-de="Eingereicht!">Submitted!</h3>
+                    <h3 id="fotoSuccessTitle" data-en="Submitted!" data-de="Eingereicht!">{{ $t('Submitted!', 'Eingereicht!') }}</h3>
                     <p data-en="Watch the big screen — you might be up next!"
-                        data-de="Schau auf die Leinwand — vielleicht bist du als nächstes dran!">Watch the big screen —
-                        you might be up next!</p>
+                        data-de="Schau auf die Leinwand — vielleicht bist du als nächstes dran!">{{ $t('Watch the big screen — you might be up next!', 'Schau auf die Leinwand — vielleicht bist du als nächstes dran!') }}</p>
                     <button class="btn-again" onclick="resetFoto()"><span data-en="Upload Another"
-                            data-de="Weiteres hochladen">Upload Another</span></button>
+                            data-de="Weiteres hochladen">{{ $t('Upload Another', 'Weiteres hochladen') }}</span></button>
                 </div>
             </div>
         </div>
@@ -1682,17 +1693,17 @@ $fontH = $event->font_heading ?: 'Syne';
                     <p class="section-desc">{{ $event->lottery_desc }}</p>
                     <div class="glass">
                         <div class="field-group"><label class="field-label" data-en="Full Name *"
-                                data-de="Vollständiger Name *">Full Name *</label><input type="text"
+                                data-de="Vollständiger Name *">{{ $t('Full Name *', 'Vollständiger Name *') }}</label><input type="text"
                                 class="field" id="lName" data-ph-en="Your full name"
-                                data-ph-de="Dein vollständiger Name" placeholder="Your full name"
+                                data-ph-de="Dein vollständiger Name" placeholder="{{ $t('Your full name', 'Dein vollständiger Name') }}"
                                 autocomplete="name"></div>
                         <div class="field-group"><label class="field-label" data-en="Phone Number *"
-                                data-de="Telefonnummer *">Phone Number *</label><input type="tel" class="field"
+                                data-de="Telefonnummer *">{{ $t('Phone Number *', 'Telefonnummer *') }}</label><input type="tel" class="field"
                                 id="lPhone" placeholder="+43 xxx xxx xxxx" autocomplete="tel"></div>
                         <div class="field-group"><label class="field-label" data-en="Email (optional)"
-                                data-de="E-Mail (optional)">Email (optional)</label><input type="email"
+                                data-de="E-Mail (optional)">{{ $t('Email (optional)', 'E-Mail (optional)') }}</label><input type="email"
                                 class="field" id="lEmail" data-ph-en="your@email.com"
-                                data-ph-de="deine@email.com" placeholder="your@email.com" autocomplete="email"></div>
+                                data-ph-de="deine@email.com" placeholder="{{ $t('your@email.com', 'deine@email.com') }}" autocomplete="email"></div>
                         @foreach ($event->lottery_extra_fields ?? [] as $field)
                             <div class="field-group">
                                 <label
@@ -1704,17 +1715,16 @@ $fontH = $event->font_heading ?: 'Syne';
                             </div>
                         @endforeach
                         <button class="btn-main" onclick="submitLottery()">
-                            <span data-html data-en='<i data-lucide="ticket" class="lucide-icon"></i> Enter the Draw' data-de='<i data-lucide="ticket" class="lucide-icon"></i> Jetzt teilnehmen'><i data-lucide="ticket" class="lucide-icon"></i> Enter the Draw</span>
+                            <span data-html data-en='<i data-lucide="ticket" class="lucide-icon"></i> Enter the Draw' data-de='<i data-lucide="ticket" class="lucide-icon"></i> Jetzt teilnehmen'><i data-lucide="ticket" class="lucide-icon"></i> {{ $t('Enter the Draw', 'Jetzt teilnehmen') }}</span>
                         </button>
                         {!! $gdprSnippet('lottery') !!}
                     </div>
                 </div>
                 <div class="success-state" id="lotterySuccess" style="display:none">
                     <div class="s-icon"><i data-lucide="ticket-check" class="lucide-icon"></i></div>
-                    <h3 data-en="You're In!" data-de="Du bist dabei!">You're In!</h3>
+                    <h3 data-en="You're In!" data-de="Du bist dabei!">{{ $t("You're In!", 'Du bist dabei!') }}</h3>
                     <p data-en="Good luck! The winner will be announced live."
-                        data-de="Viel Glück! Der Gewinner wird live bekannt gegeben.">Good luck! The winner will be
-                        announced live.</p>
+                        data-de="Viel Glück! Der Gewinner wird live bekannt gegeben.">{{ $t('Good luck! The winner will be announced live.', 'Viel Glück! Der Gewinner wird live bekannt gegeben.') }}</p>
                 </div>
             </div>
         </div>
@@ -1735,9 +1745,9 @@ $fontH = $event->font_heading ?: 'Syne';
                         style="background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:14px;padding:28px;text-align:center">
                         <div style="font-size:40px;margin-bottom:12px"><i data-lucide="lock" class="lucide-icon"></i></div>
                         <div style="font-weight:700;font-size:16px;margin-bottom:6px" data-en="Voting is closed"
-                            data-de="Abstimmung beendet">Voting is closed</div>
+                            data-de="Abstimmung beendet">{{ $t('Voting is closed', 'Abstimmung beendet') }}</div>
                         <div style="font-size:13px;color:var(--muted)" data-en="Results will be announced shortly."
-                            data-de="Ergebnisse folgen in Kürze.">Results will be announced shortly.</div>
+                            data-de="Ergebnisse folgen in Kürze.">{{ $t('Results will be announced shortly.', 'Ergebnisse folgen in Kürze.') }}</div>
                     </div>
                 @else
                     <div class="vote-grid" id="voteGrid">
@@ -1759,15 +1769,15 @@ $fontH = $event->font_heading ?: 'Syne';
                     </div>
                     <div id="voteAction">
                         <button class="btn-main" id="voteBtn" onclick="submitVote()"> <span data-html
-                                data-en='<i data-lucide="check-square" class="lucide-icon"></i> Cast My Vote' data-de='<i data-lucide="check-square" class="lucide-icon"></i> Abstimmen'><i data-lucide="check-square" class="lucide-icon"></i> Cast My Vote</span>
+                                data-en='<i data-lucide="check-square" class="lucide-icon"></i> Cast My Vote' data-de='<i data-lucide="check-square" class="lucide-icon"></i> Abstimmen'><i data-lucide="check-square" class="lucide-icon"></i> {{ $t('Cast My Vote', 'Abstimmen') }}</span>
                         </button>
                         {!! $gdprSnippet('vote') !!}
                     </div>
                     <div class="success-state" id="voteSuccess" style="display:none">
                         <div class="s-icon"><i data-lucide="trophy" class="lucide-icon"></i></div>
-                        <h3 data-en="Vote Recorded!" data-de="Stimme gezählt!">Vote Recorded!</h3>
+                        <h3 data-en="Vote Recorded!" data-de="Stimme gezählt!">{{ $t('Vote Recorded!', 'Stimme gezählt!') }}</h3>
                         <p data-en="Live results shown on the big screen."
-                            data-de="Live-Ergebnisse auf der Leinwand.">Live results shown on the big screen.</p>
+                            data-de="Live-Ergebnisse auf der Leinwand.">{{ $t('Live results shown on the big screen.', 'Live-Ergebnisse auf der Leinwand.') }}</p>
                     </div>
                 @endif
             </div>
@@ -1787,22 +1797,22 @@ $fontH = $event->font_heading ?: 'Syne';
                     <p class="section-desc">{{ $event->membership_desc }}</p>
                     <div class="glass">
                         <div class="field-group"><label class="field-label" data-en="Full Name *"
-                                data-de="Vollständiger Name *">Full Name *</label><input type="text"
+                                data-de="Vollständiger Name *">{{ $t('Full Name *', 'Vollständiger Name *') }}</label><input type="text"
                                 class="field" id="mName" data-ph-en="Your full name"
-                                data-ph-de="Dein vollständiger Name" placeholder="Your full name"
+                                data-ph-de="Dein vollständiger Name" placeholder="{{ $t('Your full name', 'Dein vollständiger Name') }}"
                                 autocomplete="name"></div>
                         <div class="field-group"><label class="field-label" data-en="Email Address *"
-                                data-de="E-Mail-Adresse *">Email Address *</label><input type="email"
+                                data-de="E-Mail-Adresse *">{{ $t('Email Address *', 'E-Mail-Adresse *') }}</label><input type="email"
                                 class="field" id="mEmail" data-ph-en="your@email.com"
-                                data-ph-de="deine@email.com" placeholder="your@email.com" autocomplete="email"></div>
+                                data-ph-de="deine@email.com" placeholder="{{ $t('your@email.com', 'deine@email.com') }}" autocomplete="email"></div>
                         <div class="field-group"><label class="field-label" data-en="Phone (optional)"
-                                data-de="Telefon (optional)">Phone (optional)</label><input type="tel"
+                                data-de="Telefon (optional)">{{ $t('Phone (optional)', 'Telefon (optional)') }}</label><input type="tel"
                                 class="field" id="mPhone" placeholder="+43 xxx xxx xxxx" autocomplete="tel">
                         </div>
                         <div class="field-group"><label class="field-label" data-en="Favourite Team (optional)"
-                                data-de="Lieblingsmannschaft (optional)">Favourite Team</label><input type="text"
+                                data-de="Lieblingsmannschaft (optional)">{{ $t('Favourite Team (optional)', 'Lieblingsmannschaft (optional)') }}</label><input type="text"
                                 class="field" id="mTeam" data-ph-en="e.g. Al Ahly" data-ph-de="z.B. SK Rapid"
-                                placeholder="e.g. Al Ahly"></div>
+                                placeholder="{{ $t('e.g. Al Ahly', 'z.B. SK Rapid') }}"></div>
                         @foreach ($event->membership_extra_fields ?? [] as $field)
                             <div class="field-group">
                                 <label
@@ -1815,18 +1825,17 @@ $fontH = $event->font_heading ?: 'Syne';
                         @endforeach
                         <label class="check-row"><input type="checkbox" id="mNewsletter"><span
                                 data-en="Subscribe to news &amp; offers"
-                                data-de="Newsletter &amp; Angebote erhalten">Subscribe to news &amp;
-                                offers</span></label>
+                                data-de="Newsletter &amp; Angebote erhalten">{{ $t('Subscribe to news & offers', 'Newsletter & Angebote erhalten') }}</span></label>
                         <button class="btn-main" onclick="submitMembership()"> <span data-html data-en='<i data-lucide="crown" class="lucide-icon"></i> Join Now'
-                                data-de='<i data-lucide="crown" class="lucide-icon"></i> Jetzt beitreten'><i data-lucide="crown" class="lucide-icon"></i> Join Now</span></button>
+                                data-de='<i data-lucide="crown" class="lucide-icon"></i> Jetzt beitreten'><i data-lucide="crown" class="lucide-icon"></i> {{ $t('Join Now', 'Jetzt beitreten') }}</span></button>
                         {!! $gdprSnippet('member') !!}
                     </div>
                 </div>
                 <div class="success-state" id="memberSuccess" style="display:none">
                     <div class="s-icon"><i data-lucide="crown" class="lucide-icon"></i></div>
-                    <h3 data-en="Welcome to the Club!" data-de="Willkommen im Club!">Welcome to the Club!</h3>
+                    <h3 data-en="Welcome to the Club!" data-de="Willkommen im Club!">{{ $t('Welcome to the Club!', 'Willkommen im Club!') }}</h3>
                     <p data-en="Membership confirmed. Stay tuned for exclusive updates."
-                        data-de="Mitgliedschaft bestätigt. Bleib dran für exklusive Updates.">Membership confirmed.</p>
+                        data-de="Mitgliedschaft bestätigt. Bleib dran für exklusive Updates.">{{ $t('Membership confirmed. Stay tuned for exclusive updates.', 'Mitgliedschaft bestätigt. Bleib dran für exklusive Updates.') }}</p>
                 </div>
             </div>
         </div>
@@ -1872,18 +1881,22 @@ $fontH = $event->font_heading ?: 'Syne';
                     <p class="section-desc" style="margin-bottom:20px">{{ $event->quiz_desc }}</p>
                     <div class="glass">
                         <div class="field-group">
-                            <label class="field-label">Your Name</label>
-                            <input type="text" class="field" id="quizGuestName" placeholder="Enter your name" autocomplete="name">
+                            <label class="field-label" data-en="Your Name" data-de="Dein Name">{{ $t('Your Name', 'Dein Name') }}</label>
+                            <input type="text" class="field" id="quizGuestName" data-ph-en="Enter your name"
+                                data-ph-de="Gib deinen Namen ein" placeholder="{{ $t('Enter your name', 'Gib deinen Namen ein') }}" autocomplete="name">
                         </div>
-                        <button class="btn-main" id="quizStartBtn" onclick="quizEnter()">Start Quiz</button>
+                        <button class="btn-main" id="quizStartBtn" onclick="quizEnter()" data-en="Start Quiz"
+                            data-de="Quiz starten">{{ $t('Start Quiz', 'Quiz starten') }}</button>
                     </div>
                 </div>
 
                 <div id="quizWaitingScreen" style="display:none">
                     <div class="quiz-waiting">
                         <div class="quiz-waiting-pulse"></div>
-                        <p class="section-title" style="margin-bottom:8px">Waiting for Quiz...</p>
-                        <p style="color:rgba(255,255,255,.5);font-size:14px">The quiz will start soon. Stay on this screen.</p>
+                        <p class="section-title" style="margin-bottom:8px" data-en="Waiting for Quiz..."
+                            data-de="Warten auf das Quiz...">{{ $t('Waiting for Quiz...', 'Warten auf das Quiz...') }}</p>
+                        <p style="color:rgba(255,255,255,.5);font-size:14px" data-en="The quiz will start soon. Stay on this screen."
+                            data-de="Das Quiz startet gleich. Bleib auf dieser Seite.">{{ $t('The quiz will start soon. Stay on this screen.', 'Das Quiz startet gleich. Bleib auf dieser Seite.') }}</p>
                     </div>
                 </div>
 
@@ -1901,10 +1914,12 @@ $fontH = $event->font_heading ?: 'Syne';
 
                 <div id="quizCompleteScreen" style="display:none;padding:20px;text-align:center">
                     <div class="s-icon"><i data-lucide="check-circle" class="lucide-icon"></i></div>
-                    <h3 style="font-size:22px;font-weight:800;margin-bottom:8px">Quiz Complete!</h3>
+                    <h3 style="font-size:22px;font-weight:800;margin-bottom:8px" data-en="Quiz Complete!"
+                        data-de="Quiz beendet!">{{ $t('Quiz Complete!', 'Quiz beendet!') }}</h3>
                     <p id="quizSummaryText" style="color:rgba(255,255,255,.6);font-size:15px;margin-bottom:20px"></p>
                     <div id="quizAnswerSummary" style="text-align:left;margin-bottom:20px"></div>
-                    <p style="color:rgba(255,255,255,.4);font-size:13px">Waiting for results...</p>
+                    <p style="color:rgba(255,255,255,.4);font-size:13px" data-en="Waiting for results..."
+                        data-de="Warten auf die Ergebnisse...">{{ $t('Waiting for results...', 'Warten auf die Ergebnisse...') }}</p>
                 </div>
 
                 <div id="quizResultsScreen" style="display:none">
@@ -1913,10 +1928,10 @@ $fontH = $event->font_heading ?: 'Syne';
                             <img id="quizEndSponsor" alt="Sponsor" style="max-height:60px;width:auto;max-width:80%;background:#fff;border-radius:10px;padding:8px 12px">
                         </div>
                         <div id="quizWinnerText" style="display:none;text-align:center;font-size:15px;font-weight:600;line-height:1.5;color:#f59e0b;margin-bottom:18px"></div>
-                        <p class="section-title" style="margin-bottom:14px">Results</p>
+                        <p class="section-title" style="margin-bottom:14px" data-en="Results" data-de="Ergebnisse">{{ $t('Results', 'Ergebnisse') }}</p>
                         <div class="quiz-winner-card" id="quizWinnerCard" style="display:none">
                             <div style="font-size:28px;margin-bottom:8px;color:#f59e0b"><i data-lucide="trophy" class="lucide-icon"></i></div>
-                            <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#f59e0b;margin-bottom:4px">Winner</div>
+                            <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#f59e0b;margin-bottom:4px" data-en="Winner" data-de="Gewinner">{{ $t('Winner', 'Gewinner') }}</div>
                             <div style="font-size:20px;font-weight:800" id="quizWinnerName"></div>
                         </div>
                         <div id="quizLeaderboard"></div>
@@ -1980,28 +1995,31 @@ $fontH = $event->font_heading ?: 'Syne';
                 </style>
 
                 <div id="fcPick" class="fc-screen">
-                    <div class="fc-eyebrow" id="fcPickCat"><span class="fc-dot"></span> Live now</div>
-                    <h2 class="fc-pick-title">Who's faster?</h2>
-                    <p class="fc-pick-sub">Pick your side, then tap as fast as you can until the buzzer.</p>
+                    <div class="fc-eyebrow" id="fcPickCat"><span class="fc-dot"></span> {{ $t('Live now', 'Jetzt live') }}</div>
+                    <h2 class="fc-pick-title" data-en="Who's faster?" data-de="Wer ist schneller?">{{ $t("Who's faster?", 'Wer ist schneller?') }}</h2>
+                    <p class="fc-pick-sub" data-en="Pick your side, then tap as fast as you can until the buzzer."
+                        data-de="Wähle deine Seite und tippe so schnell du kannst, bis der Buzzer ertönt.">{{ $t('Pick your side, then tap as fast as you can until the buzzer.', 'Wähle deine Seite und tippe so schnell du kannst, bis der Buzzer ertönt.') }}</p>
                     <div class="fc-pick-btns">
-                        <button class="fc-pick-btn" id="fcPickA" onclick="fcChoose('a')">Side A</button>
+                        <button class="fc-pick-btn" id="fcPickA" onclick="fcChoose('a')">{{ $t('Side A', 'Seite A') }}</button>
                         <div class="fc-vs">VS</div>
-                        <button class="fc-pick-btn" id="fcPickB" onclick="fcChoose('b')">Side B</button>
+                        <button class="fc-pick-btn" id="fcPickB" onclick="fcChoose('b')">{{ $t('Side B', 'Seite B') }}</button>
                     </div>
                 </div>
 
                 <div id="fcWaiting" class="fc-screen" style="display:none">
                     <div class="fc-waiting">
                         <div class="fc-pulse"></div>
-                        <p class="section-title" style="margin-bottom:8px">Waiting for the clash</p>
-                        <p class="fc-muted">The next round will start soon. Stay on this screen.</p>
+                        <p class="section-title" style="margin-bottom:8px" data-en="Waiting for the clash"
+                            data-de="Warten auf das Duell">{{ $t('Waiting for the clash', 'Warten auf das Duell') }}</p>
+                        <p class="fc-muted" data-en="The next round will start soon. Stay on this screen."
+                            data-de="Die nächste Runde startet gleich. Bleib auf dieser Seite.">{{ $t('The next round will start soon. Stay on this screen.', 'Die nächste Runde startet gleich. Bleib auf dieser Seite.') }}</p>
                     </div>
                 </div>
 
                 <div id="fcTap" class="fc-screen" style="display:none">
                     <div class="fc-tap-top">
-                        <div class="fc-side-label" id="fcSideLabel">Your side</div>
-                        <div class="fc-your-taps"><b id="fcYourTaps">0</b> taps</div>
+                        <div class="fc-side-label" id="fcSideLabel">{{ $t('Your side', 'Deine Seite') }}</div>
+                        <div class="fc-your-taps"><b id="fcYourTaps">0</b> <span data-en="taps" data-de="Taps">{{ $t('taps', 'Taps') }}</span></div>
                     </div>
                     <button class="fc-tap-btn" id="fcTapBtn">
                         <div class="fc-tap-word">TAP</div>
@@ -2015,12 +2033,13 @@ $fontH = $event->font_heading ?: 'Syne';
                         <div class="fc-result-spon" id="fcResultSponWrap" style="display:none">
                             <img id="fcResultSpon" alt="Sponsor">
                         </div>
-                        <div class="fc-result-eyebrow" id="fcResultEyebrow">Winner</div>
+                        <div class="fc-result-eyebrow" id="fcResultEyebrow" data-en="Winner" data-de="Gewinner">{{ $t('Winner', 'Gewinner') }}</div>
                         <div class="fc-winner-name" id="fcWinnerName">—</div>
-                        <div class="fc-winner-tag" id="fcWinnerTag">wins</div>
+                        <div class="fc-winner-tag" id="fcWinnerTag" data-en="wins" data-de="gewinnt">{{ $t('wins', 'gewinnt') }}</div>
                         <div class="fc-score" id="fcScore"></div>
-                        <p class="fc-muted" id="fcResultNote" style="margin-top:14px">Stay for the next round.</p>
-                        <button class="btn-main fc-again" onclick="fcBackToStart()">Back to start</button>
+                        <p class="fc-muted" id="fcResultNote" style="margin-top:14px">{{ $t('Stay for the next round.', 'Bleib dran für die nächste Runde.') }}</p>
+                        <button class="btn-main fc-again" onclick="fcBackToStart()" data-en="Back to start"
+                            data-de="Zurück zum Start">{{ $t('Back to start', 'Zurück zum Start') }}</button>
                     </div>
                 </div>
             </div>
@@ -2063,7 +2082,7 @@ $fontH = $event->font_heading ?: 'Syne';
                         <div class="glass survey-q" data-qid="{{ $question->id }}" data-type="{{ $question->type }}"
                             data-multiple="{{ $question->allowsMultiple() ? '1' : '0' }}"
                             data-required="{{ $question->is_required ? '1' : '0' }}">
-                            <div class="survey-q-num" data-en="{{ $surveyNumEn }}" data-de="{{ $surveyNumDe }}">{{ $surveyNumEn }}</div>
+                            <div class="survey-q-num" data-en="{{ $surveyNumEn }}" data-de="{{ $surveyNumDe }}">{{ $t($surveyNumEn, $surveyNumDe) }}</div>
                             <p class="survey-q-text">{{ $question->question }}@if ($question->is_required)<span class="survey-req"> *</span>@endif</p>
                             @if ($question->isChoice())
                                 <div class="vote-grid survey-opts">
@@ -2077,26 +2096,26 @@ $fontH = $event->font_heading ?: 'Syne';
                                 </div>
                             @else
                                 <textarea class="field survey-text" rows="3" maxlength="{{ \App\Models\SurveyQuestion::MAX_ANSWER_LENGTH }}"
-                                    data-ph-en="Type your answer" data-ph-de="Deine Antwort" placeholder="Type your answer"></textarea>
+                                    data-ph-en="Type your answer" data-ph-de="Deine Antwort" placeholder="{{ $t('Type your answer', 'Deine Antwort') }}"></textarea>
                             @endif
                         </div>
                     @empty
                         <div class="glass" style="text-align:center;color:var(--muted)" data-en="The survey opens soon. Check back in a moment!"
-                            data-de="Die Umfrage startet gleich. Schau gleich wieder vorbei!">The survey opens soon. Check back in a moment!</div>
+                            data-de="Die Umfrage startet gleich. Schau gleich wieder vorbei!">{{ $t('The survey opens soon. Check back in a moment!', 'Die Umfrage startet gleich. Schau gleich wieder vorbei!') }}</div>
                     @endforelse
 
                     @if ($surveyQuestions->isNotEmpty())
                         <button class="btn-main" id="surveyBtn" onclick="submitSurvey()">
                             <span data-html data-en='<i data-lucide="send" class="lucide-icon"></i> Send Answers'
-                                data-de='<i data-lucide="send" class="lucide-icon"></i> Antworten senden'><i data-lucide="send" class="lucide-icon"></i> Send Answers</span>
+                                data-de='<i data-lucide="send" class="lucide-icon"></i> Antworten senden'><i data-lucide="send" class="lucide-icon"></i> {{ $t('Send Answers', 'Antworten senden') }}</span>
                         </button>
                         {!! $gdprSnippet('survey') !!}
                     @endif
                 </div>
                 <div class="success-state" id="surveySuccess" @unless ($surveyAnswered) style="display:none" @endunless>
                     <div class="s-icon"><i data-lucide="clipboard-check" class="lucide-icon"></i></div>
-                    <h3 data-en="Thank you!" data-de="Danke!">Thank you!</h3>
-                    <p data-en="Your answers have been sent." data-de="Deine Antworten wurden gesendet.">Your answers have been sent.</p>
+                    <h3 data-en="Thank you!" data-de="Danke!">{{ $t('Thank you!', 'Danke!') }}</h3>
+                    <p data-en="Your answers have been sent." data-de="Deine Antworten wurden gesendet.">{{ $t('Your answers have been sent.', 'Deine Antworten wurden gesendet.') }}</p>
                 </div>
             </div>
         </div>
@@ -2114,11 +2133,16 @@ $fontH = $event->font_heading ?: 'Syne';
             selVideo = null,
             selVideoDuration = null,
             currentMedia = 'photo';
-        let lang = localStorage.getItem('eb_lang') || 'en';
+        // A locked event ignores (and never overwrites) the language a guest picked on another event.
+        let lockedLang = @json($lockedLang);
+        let lang = lockedLang || localStorage.getItem('eb_lang') || 'en';
 
         function setLang(l) {
             lang = l;
-            localStorage.setItem('eb_lang', l);
+            document.documentElement.lang = l;
+            if (!lockedLang) {
+                localStorage.setItem('eb_lang', l);
+            }
             document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent === l
                 .toUpperCase()));
             document.querySelectorAll('[data-en]').forEach(el => {
@@ -2369,12 +2393,12 @@ $fontH = $event->font_heading ?: 'Syne';
                         document.getElementById('fotoSuccess').style.display = 'block';
                         setLang(lang);
                     } else {
-                        toast(d.message || 'Upload failed.', true);
+                        toast(d.message || (lang === 'de' ? 'Upload fehlgeschlagen.' : 'Upload failed.'), true);
                         resetFotoBtn();
                     }
                 }, 400);
             } catch {
-                toast('Network error.', true);
+                toast(lang === 'de' ? 'Netzwerkfehler.' : 'Network error.', true);
                 resetFotoBtn();
             }
         }
@@ -2483,11 +2507,12 @@ $fontH = $event->font_heading ?: 'Syne';
                     document.getElementById('surveySuccess').style.display = 'block';
                     setLang(lang);
                 } else {
-                    toast(d.message || 'Could not send your answers.', true);
+                    toast(d.message || (lang === 'de' ? 'Antworten konnten nicht gesendet werden.' :
+                        'Could not send your answers.'), true);
                     btn.disabled = false;
                 }
             } catch {
-                toast('Network error.', true);
+                toast(lang === 'de' ? 'Netzwerkfehler.' : 'Network error.', true);
                 btn.disabled = false;
             }
         }
@@ -2564,7 +2589,7 @@ $fontH = $event->font_heading ?: 'Syne';
 
         function quizEnter() {
             quizGuestName = document.getElementById('quizGuestName').value.trim();
-            if (!quizGuestName) { toast('Please enter your name.', true); return; }
+            if (!quizGuestName) { toast(lang === 'de' ? 'Bitte gib deinen Namen ein.' : 'Please enter your name.', true); return; }
             quizShow('quizWaitingScreen');
             quizState = 'waiting';
             quizStartPolling();
@@ -2604,7 +2629,9 @@ $fontH = $event->font_heading ?: 'Syne';
                 return;
             }
             const q = quizQuestions[quizCurrentIdx];
-            document.getElementById('quizQCounter').textContent = `Question ${quizCurrentIdx + 1} of ${quizQuestions.length}`;
+            document.getElementById('quizQCounter').textContent = lang === 'de' ?
+                `Frage ${quizCurrentIdx + 1} von ${quizQuestions.length}` :
+                `Question ${quizCurrentIdx + 1} of ${quizQuestions.length}`;
             const sponsorWrap = document.getElementById('quizQSponsorWrap');
             if (q.sponsor_logo_url) {
                 document.getElementById('quizQSponsor').src = q.sponsor_logo_url;
@@ -2666,7 +2693,8 @@ $fontH = $event->font_heading ?: 'Syne';
                     else if (i === idx && !d.correct) b.classList.add('wrong');
                 });
                 document.getElementById(`qopt${idx}`)?.classList.add(d.correct ? 'correct' : 'wrong');
-                fb.textContent = d.correct ? 'Correct!' : `Wrong! The answer is: ${d.correct_text}`;
+                fb.textContent = d.correct ? (lang === 'de' ? 'Richtig!' : 'Correct!') :
+                    (lang === 'de' ? `Falsch! Die richtige Antwort ist: ${d.correct_text}` : `Wrong! The answer is: ${d.correct_text}`);
                 fb.className = 'quiz-feedback ' + (d.correct ? 'ok' : 'bad');
             } catch {
                 quizResults.push({ question: q.question_text, correct: false, correctText: '' });
@@ -2685,7 +2713,8 @@ $fontH = $event->font_heading ?: 'Syne';
                 if (i === q.correct_option) b.classList.add('reveal');
             });
             const fb = document.getElementById('quizFeedback');
-            fb.textContent = 'Time\'s up! The answer was: ' + (q.options[q.correct_option] || '');
+            fb.textContent = (lang === 'de' ? 'Zeit abgelaufen! Die richtige Antwort war: ' : 'Time\'s up! The answer was: ') +
+                (q.options[q.correct_option] || '');
             fb.className = 'quiz-feedback bad';
             quizResults.push({ question: q.question_text, correct: false, correctText: q.options[q.correct_option] || '' });
             setTimeout(() => {
@@ -2698,12 +2727,14 @@ $fontH = $event->font_heading ?: 'Syne';
             quizState = 'complete';
             quizAnsweredRoundId = quizRoundId;
             const correctCount = quizResults.filter(r => r.correct).length;
-            document.getElementById('quizSummaryText').textContent = `You got ${correctCount} out of ${quizResults.length} correct!`;
+            document.getElementById('quizSummaryText').textContent = lang === 'de' ?
+                `Du hast ${correctCount} von ${quizResults.length} richtig!` :
+                `You got ${correctCount} out of ${quizResults.length} correct!`;
             const summaryEl = document.getElementById('quizAnswerSummary');
             summaryEl.innerHTML = quizResults.map((r, i) =>
                 `<div style="display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.07)">
                     <div style="font-size:16px;flex-shrink:0">${r.correct ? '' : ''}</div>
-                    <div><div style="font-size:13px;font-weight:600;margin-bottom:2px">Q${i+1}: ${r.question}</div>${!r.correct && r.correctText ? `<div style="font-size:12px;color:rgba(255,255,255,.45)">Answer: ${r.correctText}</div>` : ''}</div>
+                    <div><div style="font-size:13px;font-weight:600;margin-bottom:2px">Q${i+1}: ${r.question}</div>${!r.correct && r.correctText ? `<div style="font-size:12px;color:rgba(255,255,255,.45)">${lang === 'de' ? 'Antwort' : 'Answer'}: ${r.correctText}</div>` : ''}</div>
                 </div>`
             ).join('');
             quizShow('quizCompleteScreen');
@@ -2742,7 +2773,7 @@ $fontH = $event->font_heading ?: 'Syne';
                     `<div class="quiz-lb-row">
                         <div class="quiz-lb-rank">${row.rank}</div>
                         <div class="quiz-lb-name">${row.guest_name}</div>
-                        <div class="quiz-lb-score">${row.correct_count} correct &middot; ${(row.total_ms/1000).toFixed(1)}s</div>
+                        <div class="quiz-lb-score">${row.correct_count} ${lang === 'de' ? 'richtig' : 'correct'} &middot; ${(row.total_ms/1000).toFixed(1)}s</div>
                     </div>`
                 ).join('');
                 quizShow('quizResultsScreen');
@@ -2760,7 +2791,8 @@ $fontH = $event->font_heading ?: 'Syne';
             let side = null;              // 'a' | 'b'
             let roundId = null;
             let resultRoundId = null;
-            let colA = '#ef4444', colB = '#3B82F6', nameA = 'Side A', nameB = 'Side B';
+            let colA = '#ef4444', colB = '#3B82F6',
+                nameA = lang === 'de' ? 'Seite A' : 'Side A', nameB = lang === 'de' ? 'Seite B' : 'Side B';
             let localTaps = 0, pendingTaps = 0, stamps = [];
             let syncPerf = 0, syncRemaining = 20000;
             let rafId = null, flushId = null, pollId = null, celebrated = false;
@@ -2799,7 +2831,7 @@ $fontH = $event->font_heading ?: 'Syne';
                 const a = $('fcPickA'), b = $('fcPickB');
                 a.style.background = colA; a.style.color = ink(colA); a.textContent = nameA;
                 b.style.background = colB; b.style.color = ink(colB); b.textContent = nameB;
-                $('fcPickCat').innerHTML = '<span class="fc-dot"></span> ' + (d.category ? d.category : 'Live now');
+                $('fcPickCat').innerHTML = '<span class="fc-dot"></span> ' + (d.category ? d.category : (lang === 'de' ? 'Jetzt live' : 'Live now'));
                 syncPerf = performance.now(); syncRemaining = d.remaining_ms ?? (d.duration_seconds || 20) * 1000;
             }
 
@@ -2877,7 +2909,7 @@ $fontH = $event->font_heading ?: 'Syne';
                 const winCol = w === 'a' ? (d.side_a_color || colA) : w === 'b' ? (d.side_b_color || colB) : '#fff';
                 setVar('--fc-win', winCol);
                 if (w === 'tie') {
-                    $('fcWinnerName').textContent = "It's a tie!";
+                    $('fcWinnerName').textContent = lang === 'de' ? 'Unentschieden!' : "It's a tie!";
                     $('fcWinnerTag').style.display = 'none';
                 } else {
                     $('fcWinnerName').textContent = winName || '—';
@@ -2888,7 +2920,9 @@ $fontH = $event->font_heading ?: 'Syne';
                 if (d.sponsor_logo_url) { $('fcResultSpon').src = d.sponsor_logo_url; spon.style.display = ''; }
                 else { spon.style.display = 'none'; }
                 const won = side && w === side;
-                $('fcResultNote').textContent = won ? 'Your side won it. Stay for the next round.' : 'Stay for the next round.';
+                $('fcResultNote').textContent = lang === 'de' ?
+                    (won ? 'Deine Seite hat gewonnen. Bleib dran für die nächste Runde.' : 'Bleib dran für die nächste Runde.') :
+                    (won ? 'Your side won it. Stay for the next round.' : 'Stay for the next round.');
                 show('fcResult');
                 if (won && !celebrated) { celebrated = true; confettiBurst(winCol); }
                 clearInterval(pollId); pollId = setInterval(poll, 1500);
@@ -3008,6 +3042,7 @@ $fontH = $event->font_heading ?: 'Syne';
     <script>
         (function () {
             document.documentElement.dataset.preview = '1';
+            let previewLang = null;
 
             // Taps are disabled so the designer never navigates away from the landing page.
             document.addEventListener('click', function (e) {
@@ -3039,14 +3074,34 @@ $fontH = $event->font_heading ?: 'Syne';
                     applyVars(document.querySelector('.cl-card[data-mod="' + mod + '"]'), d.tiles[mod]);
                 }
 
+                // Guest page language: a locked language hides the pill and repaints every label.
+                if (d.lang && d.lang !== previewLang) {
+                    previewLang = d.lang;
+                    lockedLang = d.lang === 'switch' ? null : d.lang;
+                    document.querySelector('.lang-toggle').hidden = !!lockedLang;
+                    setLang(lockedLang || localStorage.getItem('eb_lang') || 'en');
+                }
+
                 for (const sel in (d.text || {})) {
                     const el = document.querySelector(sel);
                     if (el) el.textContent = d.text[sel];
                 }
 
+                // A string is the admin's own text; an {en, de} pair is the built-in fallback.
                 for (const sel in (d.html || {})) {
                     const el = document.querySelector(sel);
-                    if (el) el.innerHTML = d.html[sel];
+                    if (!el) continue;
+                    const v = d.html[sel];
+                    if (typeof v === 'string') {
+                        el.removeAttribute('data-en');
+                        el.removeAttribute('data-de');
+                        el.innerHTML = v;
+                    } else {
+                        el.setAttribute('data-html', '');
+                        el.dataset.en = v.en;
+                        el.dataset.de = v.de;
+                        el.innerHTML = v[lang] || v.en;
+                    }
                 }
 
                 for (const sel in (d.show || {})) {

@@ -389,6 +389,9 @@ class EventController extends Controller
                 : ($existing['bg_position'] ?? 'center'),
             'bg_overlay' => $number('bg_overlay', 0, 90),
             'bg_blur' => $number('bg_blur', 0, 24),
+            'guest_language' => in_array($input['guest_language'] ?? null, Event::GUEST_LANGUAGES, true)
+                ? $input['guest_language']
+                : ($existing['guest_language'] ?? 'switch'),
         ];
     }
 

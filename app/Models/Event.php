@@ -21,6 +21,13 @@ class Event extends Model
     public const MEDIA_COLUMNS = ['qr_code_path', 'logo_path', 'sponsor_logo_path', 'background_image_path', 'quiz_end_sponsor_logo_path', 'vidiwall_background_path'];
 
     /**
+     * Guest page language modes: "switch" shows the EN/DE pill, "en" and "de" lock the page to one language.
+     *
+     * @var list<string>
+     */
+    public const GUEST_LANGUAGES = ['switch', 'en', 'de'];
+
+    /**
      * What a lottery entry looks like once it is no longer a winner.
      *
      * @var array<string, mixed>
@@ -773,6 +780,7 @@ class Event extends Model
             'bg_position' => 'center',
             'bg_overlay' => 45,
             'bg_blur' => 0,
+            'guest_language' => 'switch',
         ];
     }
 
@@ -787,6 +795,16 @@ class Event extends Model
         }
 
         return array_merge(self::landingDesignDefaults(), $config);
+    }
+
+    /**
+     * The language the guest page is locked to, or null when guests can switch between EN and DE.
+     */
+    public function lockedGuestLanguage(): ?string
+    {
+        $language = $this->landingDesign()['guest_language'];
+
+        return in_array($language, ['en', 'de'], true) ? $language : null;
     }
 
     /**

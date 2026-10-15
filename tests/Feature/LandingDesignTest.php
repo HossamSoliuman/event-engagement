@@ -309,6 +309,103 @@ class LandingDesignTest extends TestCase
         $this->assertEqualsWithDelta(0, $design['bg_blur'], 0.001);
     }
 
+    public function test_admin_edit_page_renders_the_guest_language_control(): void
+    {
+        $event = Event::factory()->create();
+
+        $response = $this->actingAs($this->admin())->get(route('admin.events.edit', $event));
+
+        $response->assertStatus(200);
+        $response->assertSeeInOrder(['Guest page language', 'EN / DE switch', 'English only', 'German only', 'landing_hero_title']);
+        $response->assertSee('name="design[guest_language]" value="de"', false);
+    }
+
+    public function test_existing_events_keep_the_language_switch(): void
+    {
+        $event = Event::factory()->create(['landing_design' => ['logo_size' => 60]]);
+
+        $this->assertNull($event->lockedGuestLanguage());
+
+        $response = $this->get("/e/{$event->slug}");
+
+        $response->assertStatus(200);
+        $response->assertSee('<html lang="en">', false);
+        $response->assertDontSee('class="lang-toggle" hidden', false);
+        $response->assertSee('let lockedLang = null;', false);
+    }
+
+    public function test_guest_language_is_saved(): void
+    {
+        $event = Event::factory()->create();
+
+        $this->actingAs($this->admin())
+            ->put(route('admin.events.update', $event), $this->payload($event, [
+                'design' => array_merge(Event::landingDesignDefaults(), ['guest_language' => 'de']),
+            ]))
+            ->assertRedirect();
+
+        $fresh = $event->fresh();
+
+        $this->assertSame('de', $fresh->landingDesign()['guest_language']);
+        $this->assertSame('de', $fresh->lockedGuestLanguage());
+    }
+
+    public function test_unknown_guest_language_keeps_the_saved_value(): void
+    {
+        $event = Event::factory()->create([
+            'landing_design' => array_merge(Event::landingDesignDefaults(), ['guest_language' => 'en']),
+        ]);
+
+        $this->actingAs($this->admin())
+            ->put(route('admin.events.update', $event), $this->payload($event, [
+                'design' => array_merge(Event::landingDesignDefaults(), ['guest_language' => 'fr']),
+            ]))
+            ->assertRedirect();
+
+        $this->assertSame('en', $event->fresh()->lockedGuestLanguage());
+    }
+
+    public function test_german_only_page_renders_german_labels_without_the_pill(): void
+    {
+        $event = Event::factory()->create([
+            'module_fotobomb' => true,
+            'module_lottery' => true,
+            'privacy_policy_text' => null,
+            'landing_design' => array_merge(Event::landingDesignDefaults(), ['guest_language' => 'de']),
+        ]);
+
+        $response = $this->get("/e/{$event->slug}");
+
+        $response->assertStatus(200);
+        $response->assertSee('<html lang="de">', false);
+        $response->assertSee('class="lang-toggle" hidden', false);
+        $response->assertSee('let lockedLang = "de";', false);
+        $response->assertSee('Deine <strong>Fan Experience</strong> startet hier.</div>', false);
+        $response->assertSee('data-de="Foto">Foto</button>', false);
+        $response->assertSee('placeholder="z.B. Max aus Reihe D"', false);
+        $response->assertSee('</i> Jetzt teilnehmen</span>', false);
+        $response->assertSee('>Ich stimme der <a ', false);
+        $response->assertDontSee('>Photo</button>', false);
+        $response->assertDontSee('</i> Enter the Draw</span>', false);
+        $response->assertDontSee('>I agree to the ', false);
+    }
+
+    public function test_english_only_page_renders_english_labels_without_the_pill(): void
+    {
+        $event = Event::factory()->create([
+            'module_fotobomb' => true,
+            'landing_design' => array_merge(Event::landingDesignDefaults(), ['guest_language' => 'en']),
+        ]);
+
+        $response = $this->get("/e/{$event->slug}");
+
+        $response->assertStatus(200);
+        $response->assertSee('<html lang="en">', false);
+        $response->assertSee('class="lang-toggle" hidden', false);
+        $response->assertSee('let lockedLang = "en";', false);
+        $response->assertSee('data-de="Foto">Photo</button>', false);
+    }
+
     public function test_background_image_can_be_hidden_without_deleting_it(): void
     {
         $design = Event::landingDesignDefaults();

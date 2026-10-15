@@ -194,11 +194,25 @@
                     </label>
 
                     <div class="ld-ctl">
+                        <span class="ld-ctl-label" id="ldGuestLanguageLabel"><span>Guest page language</span></span>
+                        <div class="ld-seg" role="radiogroup" aria-labelledby="ldGuestLanguageLabel">
+                            @foreach (['switch' => 'EN / DE switch', 'en' => 'English only', 'de' => 'German only'] as $langValue => $langLabel)
+                                <label>
+                                    <input type="radio" name="design[guest_language]" value="{{ $langValue }}"
+                                        @checked(($ld['guest_language'] ?? 'switch') === $langValue) data-dlang>
+                                    <span>{{ $langLabel }}</span>
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div class="ld-ctl">
                         <label class="ld-ctl-label" for="landing_hero_title"><span>Headline</span></label>
                         <input name="landing_hero_title" id="landing_hero_title" class="form-control"
                             value="{{ old('landing_hero_title', $event->landing_hero_title ?? '') }}"
                             placeholder="Your **Fan Experience** starts here." data-dhtml=".cl-hero-title"
-                            data-dfallback="Your **Fan Experience** starts here.">
+                            data-dfallback="Your **Fan Experience** starts here."
+                            data-dfallback-de="Deine **Fan Experience** startet hier.">
                         <div class="ld-hint">Put <code>**stars**</code> around a phrase to make it bold.</div>
                     </div>
 
@@ -219,7 +233,8 @@
                             value="{{ old('landing_hero_sub', $event->landing_hero_sub ?? '') }}"
                             placeholder="Be part of the show. **Tap a tile** to get started."
                             data-dhtml=".cl-hero-sub"
-                            data-dfallback="Be part of the show. **Tap a tile** to get started.">
+                            data-dfallback="Be part of the show. **Tap a tile** to get started."
+                            data-dfallback-de="Sei Teil des Erlebnisses. **Tippe auf eine Kachel.**">
                     </div>
 
                     @include('admin.events._design-range', [
@@ -623,6 +638,16 @@
         .ld-switch { display:flex; align-items:center; gap:10px; font-size:13px; cursor:pointer; user-select:none }
         .ld-switch input { accent-color:var(--red); width:16px; height:16px; cursor:pointer; flex-shrink:0 }
 
+        .ld-seg { display:inline-flex; flex-wrap:wrap; gap:3px; padding:3px; border:1px solid var(--border);
+            border-radius:10px; background:var(--dark) }
+        .ld-seg label { cursor:pointer; position:relative }
+        .ld-seg input { position:absolute; opacity:0; pointer-events:none }
+        .ld-seg span { display:block; padding:7px 13px; border-radius:7px; font-size:12.5px; font-weight:600;
+            color:var(--muted); transition:background .15s, color .15s }
+        .ld-seg label:hover input:not(:checked) + span { color:var(--text) }
+        .ld-seg input:checked + span { background:var(--red); color:#fff }
+        .ld-seg input:focus-visible + span { outline:2px solid var(--red); outline-offset:2px }
+
         .ld-colors { display:grid; grid-template-columns:1fr 1fr; gap:12px }
         .ld-color-row { display:flex; gap:8px; align-items:center }
         .ld-color-row input[type=color] { width:34px; height:34px; padding:2px; border-radius:7px;
@@ -747,9 +772,15 @@
                     if (el.dataset.dhideEmpty) s.show[el.dataset.dtext] = !!value;
                 });
 
+                // An empty field shows the built-in text, so send both languages and let the phone pick.
                 panel.querySelectorAll('[data-dhtml]').forEach(el => {
-                    s.html[el.dataset.dhtml] = emphasize(el.value.trim() || (el.dataset.dfallback || ''));
+                    const value = el.value.trim();
+                    s.html[el.dataset.dhtml] = value || !el.dataset.dfallbackDe
+                        ? emphasize(value || (el.dataset.dfallback || ''))
+                        : { en: emphasize(el.dataset.dfallback || ''), de: emphasize(el.dataset.dfallbackDe) };
                 });
+
+                s.lang = panel.querySelector('[data-dlang]:checked')?.value || 'switch';
 
                 panel.querySelectorAll('[data-dshow]').forEach(el => {
                     el.dataset.dshow.split('|').forEach(sel => { s.show[sel] = el.checked; });
