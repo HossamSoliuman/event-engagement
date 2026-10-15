@@ -14,6 +14,9 @@ class EventController extends Controller
     /** Allowed `background-position` keywords for the landing background image. */
     private const BACKGROUND_POSITIONS = ['center', 'top', 'bottom', 'left', 'right'];
 
+    /** A #RGB or #RRGGBB colour, for values echoed into inline CSS. */
+    private const HEX_COLOR = '/^#(?:[0-9a-fA-F]{3}){1,2}$/';
+
     public function index()
     {
         $events = Event::withCount(['fotoUploads', 'lotteryEntries', 'votes', 'memberships'])->latest()->paginate(15);
@@ -190,6 +193,11 @@ class EventController extends Controller
             'frame_logo' => 'nullable|image|max:2048',
             'vidiwall_background' => 'nullable|image|mimes:jpeg,jpg,png,webp',
             'vidiwall_qr_background' => 'nullable|image|mimes:jpeg,jpg,png,webp',
+            'vidiwall_qr_headline' => 'nullable|string|max:80',
+            'vidiwall_qr_small_text' => 'nullable|string|max:140',
+            'vidiwall_qr_text_color' => 'nullable|string|regex:'.self::HEX_COLOR,
+            'vidiwall_qr_panel' => 'sometimes|required|in:'.implode(',', Event::QR_SCREEN_PANELS),
+            'vidiwall_qr_panel_color' => 'nullable|string|regex:'.self::HEX_COLOR,
             'privacy_policy_text' => 'nullable|string|max:2000',
             'privacy_policy_url' => 'nullable|url|max:500',
             'font_heading' => 'nullable|string|max:100',
@@ -207,6 +215,14 @@ class EventController extends Controller
             'tile_quiz_image' => 'nullable|image|max:3072',
             'tile_fanclash_image' => 'nullable|image|max:3072',
             'tile_survey_image' => 'nullable|image|max:3072',
+        ], [
+            'vidiwall_qr_text_color.regex' => 'The QR screen text colour must be a hex colour like #FFFFFF.',
+            'vidiwall_qr_panel_color.regex' => 'The QR screen panel colour must be a hex colour like #000000.',
+            'vidiwall_qr_panel.in' => 'Choose none, solid or glass for the QR screen panel.',
+        ], [
+            'vidiwall_qr_headline' => 'QR screen headline',
+            'vidiwall_qr_small_text' => 'QR screen small text',
+            'vidiwall_qr_panel' => 'QR screen panel',
         ]);
     }
 

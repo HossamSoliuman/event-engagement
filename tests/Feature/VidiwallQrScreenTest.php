@@ -406,10 +406,278 @@ class VidiwallQrScreenTest extends TestCase
         $this->actingAs($this->admin)
             ->get(route('admin.events.edit', $this->event))
             ->assertOk()
-            ->assertSee('QR Screen Background')
+            ->assertSee('<i data-lucide="qr-code" class="lucide-icon"></i> QR Screen</h3>', false)
             ->assertSee('name="vidiwall_qr_background"', false)
             ->assertSee('name="clear_vidiwall_qr_background"', false)
             ->assertSee($this->event->vidiwall_qr_background_url, false);
+    }
+
+    public function test_admin_saves_the_qr_screen_call_to_action(): void
+    {
+        $this->actingAs($this->admin)
+            ->put(route('admin.events.update', $this->event), $this->payload([
+                'vidiwall_qr_headline' => 'Scan the code and win a ski pass',
+                'vidiwall_qr_small_text' => 'Winners are drawn at 18:00',
+                'vidiwall_qr_text_color' => '#1A2B3C',
+                'vidiwall_qr_panel' => 'glass',
+                'vidiwall_qr_panel_color' => '#fff',
+            ]))
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('admin.events.show', $this->event));
+
+        $this->assertSame([
+            'headline' => 'Scan the code and win a ski pass',
+            'small_text' => 'Winners are drawn at 18:00',
+            'text_color' => '#1A2B3C',
+            'panel' => 'glass',
+            'panel_color' => '#fff',
+        ], $this->event->fresh()->qrScreenCallToAction());
+    }
+
+    public function test_the_qr_screen_texts_can_be_cleared_and_are_kept_when_left_out(): void
+    {
+        $this->event->update(['vidiwall_qr_headline' => 'Scan and win', 'vidiwall_qr_small_text' => 'Prizes daily', 'vidiwall_qr_panel' => 'solid']);
+
+        $this->actingAs($this->admin)
+            ->put(route('admin.events.update', $this->event), $this->payload(['name' => 'Sölden Opening']))
+            ->assertSessionHasNoErrors();
+
+        $this->event->refresh();
+        $this->assertSame('Scan and win', $this->event->vidiwall_qr_headline);
+        $this->assertSame('solid', $this->event->vidiwall_qr_panel);
+
+        $this->actingAs($this->admin)
+            ->put(route('admin.events.update', $this->event), $this->payload([
+                'vidiwall_qr_headline' => '',
+                'vidiwall_qr_small_text' => '   ',
+                'vidiwall_qr_text_color' => '',
+                'vidiwall_qr_panel' => 'none',
+            ]))
+            ->assertSessionHasNoErrors();
+
+        $this->event->refresh();
+        $this->assertNull($this->event->vidiwall_qr_headline);
+        $this->assertNull($this->event->vidiwall_qr_small_text);
+        $this->assertNull($this->event->vidiwall_qr_text_color);
+        $this->assertSame('none', $this->event->vidiwall_qr_panel);
+        $this->assertSame('#ffffff', $this->event->qrScreenCallToAction()['text_color']);
+        $this->assertFalse($this->event->hasQrScreenCallToAction());
+    }
+
+    public function test_the_qr_screen_call_to_action_is_validated(): void
+    {
+        $invalid = [
+            'vidiwall_qr_headline' => [str_repeat('a', 81), ['not', 'text']],
+            'vidiwall_qr_small_text' => [str_repeat('a', 141)],
+            'vidiwall_qr_text_color' => ['white', '#12345', '#ffffff; background: url(x)', 'ffffff'],
+            'vidiwall_qr_panel' => ['blur', '', 'Solid'],
+            'vidiwall_qr_panel_color' => ['#ggg', '#1234567', 'rgba(0,0,0,.5)'],
+        ];
+
+        foreach ($invalid as $field => $values) {
+            foreach ($values as $value) {
+                $this->actingAs($this->admin)
+                    ->put(route('admin.events.update', $this->event), $this->payload([$field => $value]))
+                    ->assertSessionHasErrors($field);
+            }
+        }
+
+        $this->assertFalse($this->event->fresh()->hasQrScreenCallToAction());
+        $this->assertNull($this->event->fresh()->vidiwall_qr_text_color);
+    }
+
+    public function test_the_qr_screen_validation_messages_name_the_fields(): void
+    {
+        $this->actingAs($this->admin)
+            ->put(route('admin.events.update', $this->event), $this->payload([
+                'vidiwall_qr_headline' => str_repeat('a', 81),
+                'vidiwall_qr_text_color' => 'white',
+                'vidiwall_qr_panel' => 'blur',
+                'vidiwall_qr_panel_color' => 'black',
+            ]))
+            ->assertSessionHasErrors([
+                'vidiwall_qr_headline' => 'The QR screen headline must not be greater than 80 characters.',
+                'vidiwall_qr_text_color' => 'The QR screen text colour must be a hex colour like #FFFFFF.',
+                'vidiwall_qr_panel' => 'Choose none, solid or glass for the QR screen panel.',
+                'vidiwall_qr_panel_color' => 'The QR screen panel colour must be a hex colour like #000000.',
+            ]);
+    }
+
+    public function test_a_new_event_saves_its_qr_screen_call_to_action(): void
+    {
+        $this->actingAs($this->admin)
+            ->post(route('admin.events.store'), [
+                'name' => 'Sölden Opening',
+                'design' => Event::landingDesignDefaults(),
+                'vidiwall_qr_headline' => 'Jetzt scannen und gewinnen!',
+                'vidiwall_qr_panel' => 'solid',
+                'vidiwall_qr_panel_color' => '#E30613',
+            ])
+            ->assertSessionHasNoErrors();
+
+        $event = Event::query()->where('name', 'Sölden Opening')->latest('id')->firstOrFail();
+        $this->assertSame('Jetzt scannen und gewinnen!', $event->vidiwall_qr_headline);
+        $this->assertSame('solid', $event->vidiwall_qr_panel);
+        $this->assertSame('#E30613', $event->vidiwall_qr_panel_color);
+    }
+
+    public function test_the_wall_shows_the_headline_qr_code_and_small_text_in_a_panel(): void
+    {
+        $this->event->update([
+            'qr_code_path' => 'qrcodes/event-'.$this->event->id.'.svg',
+            'vidiwall_qr_headline' => 'Scan the code and win…',
+            'vidiwall_qr_small_text' => 'Daily prizes for fans',
+            'vidiwall_qr_text_color' => '#111111',
+            'vidiwall_qr_panel' => 'glass',
+            'vidiwall_qr_panel_color' => '#0a1a3a',
+        ]);
+
+        $response = $this->get(route('vidiwall.show', $this->event->slug))
+            ->assertOk()
+            ->assertSee('<div class="qr-screen has-cta" id="qrScreen" hidden', false)
+            ->assertSee('<div class="qr-cta is-glass"', false)
+            ->assertSee('style="--qr-ink: #111111; --qr-panel: #0a1a3a"', false)
+            ->assertSeeInOrder([
+                '<div class="qr-cta-headline">Scan the code and win…</div>',
+                '<div class="qr-cta-code">',
+                $this->event->qr_code_url,
+                '<div class="qr-cta-text">Daily prizes for fans</div>',
+            ], false);
+
+        $this->assertSame(1, substr_count($response->getContent(), 'class="qr-cta-headline"'));
+    }
+
+    public function test_the_wall_shows_the_qr_screen_texts_exactly_as_typed(): void
+    {
+        $this->event->update([
+            'vidiwall_qr_headline' => "Scan & <b>win</b>\nJetzt gewinnen!",
+            'vidiwall_qr_small_text' => '<script>alert(1)</script>',
+            'landing_design' => array_merge(Event::landingDesignDefaults(), ['guest_language' => 'de']),
+        ]);
+
+        $content = $this->get(route('vidiwall.show', $this->event->slug))->assertOk()->getContent();
+
+        $this->assertStringContainsString("<div class=\"qr-cta-headline\">Scan &amp; &lt;b&gt;win&lt;/b&gt;\nJetzt gewinnen!</div>", $content);
+        $this->assertStringContainsString('<div class="qr-cta-text">&lt;script&gt;alert(1)&lt;/script&gt;</div>', $content);
+        $this->assertStringNotContainsString('<script>alert(1)</script>', $content);
+        $this->assertStringContainsString('white-space: pre-line', $content);
+    }
+
+    public function test_the_wall_uses_white_text_and_a_black_panel_by_default(): void
+    {
+        $this->event->update(['vidiwall_qr_headline' => 'Scan and win']);
+
+        $this->get(route('vidiwall.show', $this->event->slug))
+            ->assertOk()
+            ->assertSee('<div class="qr-cta is-none"', false)
+            ->assertSee('style="--qr-ink: #ffffff; --qr-panel: #000000"', false)
+            ->assertDontSee('class="qr-cta-text"', false);
+    }
+
+    public function test_the_wall_never_echoes_a_stored_colour_that_is_not_hex(): void
+    {
+        Event::query()->whereKey($this->event->id)->update([
+            'vidiwall_qr_headline' => 'Scan and win',
+            'vidiwall_qr_text_color' => 'red;}body{display:none',
+            'vidiwall_qr_panel' => 'neon',
+            'vidiwall_qr_panel_color' => 'url(x)',
+        ]);
+
+        $this->get(route('vidiwall.show', $this->event->slug))
+            ->assertOk()
+            ->assertSee('<div class="qr-cta is-none"', false)
+            ->assertSee('style="--qr-ink: #ffffff; --qr-panel: #000000"', false)
+            ->assertDontSee('red;}body{display:none', false)
+            ->assertDontSee('url(x)', false);
+    }
+
+    public function test_a_panel_without_texts_still_frames_the_qr_code(): void
+    {
+        $this->event->update(['qr_code_path' => 'qrcodes/event-'.$this->event->id.'.svg', 'vidiwall_qr_panel' => 'solid', 'vidiwall_qr_panel_color' => '#E30613']);
+
+        $content = $this->get(route('vidiwall.show', $this->event->slug))->assertOk()->getContent();
+        $screen = str($content)->after('id="qrScreen"')->toString();
+
+        $this->assertStringContainsString('<div class="qr-screen has-cta" id="qrScreen" hidden', $content);
+        $this->assertStringContainsString('<div class="qr-cta is-solid"', $screen);
+        $this->assertStringContainsString('--qr-panel: #E30613', $screen);
+        $this->assertStringContainsString('<div class="qr-cta-code">', $screen);
+        $this->assertStringNotContainsString('class="qr-cta-headline"', $screen);
+        $this->assertStringNotContainsString('class="qr-cta-text"', $screen);
+    }
+
+    public function test_the_call_to_action_shows_the_guest_url_without_a_qr_code(): void
+    {
+        $this->event->update(['vidiwall_qr_headline' => 'Scan and win', 'vidiwall_qr_panel' => 'solid']);
+
+        $screen = str($this->get(route('vidiwall.show', $this->event->slug))->getContent())->after('id="qrScreen"')->before('</script>')->toString();
+
+        $this->assertStringContainsString('<div class="qr-fallback">'.$this->event->getGuestUrl().'</div>', $screen);
+        $this->assertStringNotContainsString('qr-cta-code', $screen);
+        $this->assertStringNotContainsString('qr-card', $screen);
+    }
+
+    public function test_the_wall_qr_screen_is_unchanged_without_texts_or_a_panel(): void
+    {
+        $this->event->update([
+            'qr_code_path' => 'qrcodes/event-'.$this->event->id.'.svg',
+            'vidiwall_qr_text_color' => '#E30613',
+            'vidiwall_qr_panel' => 'none',
+            'vidiwall_qr_panel_color' => '#000000',
+        ]);
+
+        $content = $this->get(route('vidiwall.show', $this->event->slug))->assertOk()->getContent();
+        $screen = str($content)->after('id="qrScreen" hidden')->before('<script>')->toString();
+
+        $this->assertStringContainsString('<div class="qr-screen" id="qrScreen" hidden', $content);
+        $this->assertStringNotContainsString('qr-cta', $screen);
+        $this->assertStringNotContainsString('--qr-ink', $screen);
+        $this->assertStringContainsString('<div class="qr-card">', $screen);
+        $this->assertStringContainsString($this->event->qr_code_url, $screen);
+    }
+
+    public function test_the_edit_form_shows_the_qr_screen_call_to_action(): void
+    {
+        $this->event->update([
+            'vidiwall_qr_headline' => 'Scan & win',
+            'vidiwall_qr_small_text' => 'Daily prizes',
+            'vidiwall_qr_text_color' => '#111111',
+            'vidiwall_qr_panel' => 'glass',
+            'vidiwall_qr_panel_color' => '#0a1a3a',
+        ]);
+
+        $content = $this->actingAs($this->admin)
+            ->get(route('admin.events.edit', $this->event))
+            ->assertOk()
+            ->assertSeeInOrder([
+                'for="vidiwall_qr_headline">Headline</label>',
+                'for="vidiwall_qr_small_text">Small text</label>',
+                'id="qrPanelLabel">Panel</span>',
+                'for="vidiwall_qr_text_color">Text colour</label>',
+                'for="vidiwall_qr_panel_color">Panel colour</label>',
+                'name="vidiwall_qr_background"',
+            ], false)
+            ->getContent();
+
+        $this->assertStringContainsString('value="Scan &amp; win"', $this->tagContaining($content, 'name="vidiwall_qr_headline"'));
+        $this->assertStringContainsString('value="Daily prizes"', $this->tagContaining($content, 'name="vidiwall_qr_small_text"'));
+        $this->assertStringContainsString('value="#111111"', $this->tagContaining($content, 'name="vidiwall_qr_text_color"'));
+        $this->assertStringContainsString('value="#0a1a3a"', $this->tagContaining($content, 'name="vidiwall_qr_panel_color"'));
+        $this->assertStringContainsString(' checked', $this->tagContaining($content, 'name="vidiwall_qr_panel" value="glass"'));
+        $this->assertStringNotContainsString(' checked', $this->tagContaining($content, 'name="vidiwall_qr_panel" value="none"'));
+        $this->assertStringNotContainsString('disabled', $this->tagContaining($content, 'id="qrPanelColor"'));
+    }
+
+    public function test_the_create_form_defaults_to_white_text_and_no_panel(): void
+    {
+        $content = $this->actingAs($this->admin)->get(route('admin.events.create'))->assertOk()->getContent();
+
+        $this->assertStringContainsString('maxlength="80" value=""', $this->tagContaining($content, 'name="vidiwall_qr_headline"'));
+        $this->assertStringContainsString('maxlength="140"', $this->tagContaining($content, 'name="vidiwall_qr_small_text"'));
+        $this->assertStringContainsString('value="#ffffff"', $this->tagContaining($content, 'name="vidiwall_qr_text_color"'));
+        $this->assertStringContainsString('value="#000000"', $this->tagContaining($content, 'name="vidiwall_qr_panel_color"'));
+        $this->assertStringContainsString(' checked', $this->tagContaining($content, 'name="vidiwall_qr_panel" value="none"'));
+        $this->assertStringContainsString('disabled', $this->tagContaining($content, 'id="qrPanelColor"'));
     }
 
     public function test_deleting_the_event_removes_its_qr_screen_background(): void
@@ -423,6 +691,18 @@ class VidiwallQrScreenTest extends TestCase
             ->assertRedirect(route('admin.events.index'));
 
         Storage::disk('media')->assertMissing($path);
+    }
+
+    /**
+     * The opening tag around the first occurrence of the snippet, with its whitespace collapsed.
+     */
+    private function tagContaining(string $content, string $snippet): string
+    {
+        $this->assertStringContainsString($snippet, $content);
+
+        $tag = '<'.str($content)->before($snippet)->afterLast('<').$snippet.str($content)->after($snippet)->before('>').'>';
+
+        return preg_replace('/\s+/', ' ', $tag);
     }
 
     private function qr(bool $show): TestResponse

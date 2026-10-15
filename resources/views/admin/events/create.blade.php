@@ -60,6 +60,10 @@
         .ev-unit span { position:absolute; right:13px; top:50%; transform:translateY(-50%); font-size:13px; color:var(--muted);
             pointer-events:none }
 
+        /* Fields the form switches off together */
+        .ev-fieldset { min-width:0; margin:0; padding:0; border:0; transition:opacity .15s }
+        .ev-fieldset:disabled { opacity:.4 }
+
         .ev-grid-3 { display:grid; grid-template-columns:repeat(3, 1fr); gap:16px }
         .ev-stack { display:flex; flex-direction:column; gap:18px }
 
@@ -352,24 +356,77 @@
                         </div>
                     </div>
 
+                    @php $qrCta = isset($event) ? $event->qrScreenCallToAction() : (new \App\Models\Event)->qrScreenCallToAction(); @endphp
                     <div class="card">
                         <div class="card-header">
-                            <h3><i data-lucide="qr-code" class="lucide-icon"></i> QR Screen Background</h3>
+                            <h3><i data-lucide="qr-code" class="lucide-icon"></i> QR Screen</h3>
                         </div>
-                        <div class="card-body">
-                            @include('admin.events._image-upload', [
-                                'name' => 'vidiwall_qr_background',
-                                'current' => $event->vidiwall_qr_background_url ?? null,
-                                'clear' => 'clear_vidiwall_qr_background',
-                                'accept' => 'image/jpeg,image/png,image/webp',
-                                'hint' => '1920×1080 · JPG, PNG or WebP',
-                                'resize' => '1920x1080',
-                                'mode' => 'cover',
-                                'ratio' => '16 / 9',
-                                'thumb' => 144,
-                                'cropNote' => 'Not 16:9, so the wall crops the edges to fill the screen.',
-                            ])
-                            <div class="form-hint">Shown behind the QR code when the operator presses QR. Without it, the background colour is used.</div>
+                        <div class="card-body ev-stack">
+                            <div>
+                                <label class="form-label" for="vidiwall_qr_headline">Headline</label>
+                                <input type="text" name="vidiwall_qr_headline" id="vidiwall_qr_headline" class="form-control"
+                                    maxlength="80" value="{{ old('vidiwall_qr_headline', $qrCta['headline']) }}"
+                                    placeholder="Scan the code and win…">
+                            </div>
+                            <div>
+                                <label class="form-label" for="vidiwall_qr_small_text">Small text</label>
+                                <input type="text" name="vidiwall_qr_small_text" id="vidiwall_qr_small_text"
+                                    class="form-control" maxlength="140"
+                                    value="{{ old('vidiwall_qr_small_text', $qrCta['small_text']) }}" placeholder="Optional">
+                            </div>
+                            @php $qrPanel = old('vidiwall_qr_panel', $qrCta['panel']); @endphp
+                            <div>
+                                <span class="form-label" id="qrPanelLabel">Panel</span>
+                                <div class="ld-seg" role="radiogroup" aria-labelledby="qrPanelLabel">
+                                    @foreach (['none' => 'None', 'solid' => 'Solid', 'glass' => 'Glass'] as $panelValue => $panelLabel)
+                                        <label>
+                                            <input type="radio" name="vidiwall_qr_panel" value="{{ $panelValue }}"
+                                                @checked($qrPanel === $panelValue) data-qr-panel>
+                                            <span>{{ $panelLabel }}</span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <div class="ev-grid-2">
+                                <div>
+                                    <label class="form-label" for="vidiwall_qr_text_color">Text colour</label>
+                                    <div class="ev-color">
+                                        <input type="color" data-target="vidiwall_qr_text_color" aria-label="Text colour"
+                                            data-fallback="#ffffff"
+                                            value="{{ old('vidiwall_qr_text_color', $qrCta['text_color']) }}">
+                                        <input type="text" name="vidiwall_qr_text_color" id="vidiwall_qr_text_color"
+                                            maxlength="7" value="{{ old('vidiwall_qr_text_color', $qrCta['text_color']) }}"
+                                            placeholder="White">
+                                    </div>
+                                </div>
+                                <fieldset class="ev-fieldset" id="qrPanelColor" @disabled($qrPanel === 'none')>
+                                    <label class="form-label" for="vidiwall_qr_panel_color">Panel colour</label>
+                                    <div class="ev-color">
+                                        <input type="color" data-target="vidiwall_qr_panel_color" aria-label="Panel colour"
+                                            data-fallback="#000000"
+                                            value="{{ old('vidiwall_qr_panel_color', $qrCta['panel_color']) }}">
+                                        <input type="text" name="vidiwall_qr_panel_color" id="vidiwall_qr_panel_color"
+                                            maxlength="7" value="{{ old('vidiwall_qr_panel_color', $qrCta['panel_color']) }}"
+                                            placeholder="Black">
+                                    </div>
+                                </fieldset>
+                            </div>
+                            <div>
+                                <label class="form-label">Background</label>
+                                @include('admin.events._image-upload', [
+                                    'name' => 'vidiwall_qr_background',
+                                    'current' => $event->vidiwall_qr_background_url ?? null,
+                                    'clear' => 'clear_vidiwall_qr_background',
+                                    'accept' => 'image/jpeg,image/png,image/webp',
+                                    'hint' => '1920×1080 · JPG, PNG or WebP',
+                                    'resize' => '1920x1080',
+                                    'mode' => 'cover',
+                                    'ratio' => '16 / 9',
+                                    'thumb' => 144,
+                                    'cropNote' => 'Not 16:9, so the wall crops the edges to fill the screen.',
+                                ])
+                                <div class="form-hint">Shown behind the QR code when the operator presses QR. Without it, the background colour is used.</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -589,6 +646,13 @@
         document.querySelectorAll('.ev-color input[type=color][data-fallback]').forEach(picker => {
             document.getElementById(picker.dataset.target)?.addEventListener('input', e => {
                 if (e.target.value.trim() === '') picker.value = picker.dataset.fallback;
+            });
+        });
+
+        // The panel colour only applies to a solid or glass QR screen panel.
+        document.querySelectorAll('[data-qr-panel]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                document.getElementById('qrPanelColor').disabled = radio.value === 'none';
             });
         });
 

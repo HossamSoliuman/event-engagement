@@ -28,6 +28,14 @@ class Event extends Model
     public const GUEST_LANGUAGES = ['switch', 'en', 'de'];
 
     /**
+     * How the vidiwall QR screen frames its call to action: "none" puts the text straight on the background,
+     * "solid" and "glass" gather the headline, QR code and small text in one rounded panel.
+     *
+     * @var list<string>
+     */
+    public const QR_SCREEN_PANELS = ['none', 'solid', 'glass'];
+
+    /**
      * What a lottery entry looks like once it is no longer a winner.
      *
      * @var array<string, mixed>
@@ -83,6 +91,11 @@ class Event extends Model
         'vidiwall_frame_config',
         'vidiwall_background_path',
         'vidiwall_qr_background_path',
+        'vidiwall_qr_headline',
+        'vidiwall_qr_small_text',
+        'vidiwall_qr_text_color',
+        'vidiwall_qr_panel',
+        'vidiwall_qr_panel_color',
         'landing_style',
         'landing_wordmark',
         'landing_hero_title',
@@ -478,6 +491,33 @@ class Event extends Model
     public function getVidiwallQrBackgroundUrlAttribute(): ?string
     {
         return $this->vidiwall_qr_background_path ? Storage::disk('media')->url($this->vidiwall_qr_background_path) : null;
+    }
+
+    /**
+     * The vidiwall QR screen's call to action, with defaults filled in. Colours are only ever hex values
+     * because they are echoed into inline CSS.
+     *
+     * @return array{headline: string, small_text: string, text_color: string, panel: string, panel_color: string}
+     */
+    public function qrScreenCallToAction(): array
+    {
+        return [
+            'headline' => (string) $this->vidiwall_qr_headline,
+            'small_text' => (string) $this->vidiwall_qr_small_text,
+            'text_color' => $this->hexColorOr($this->vidiwall_qr_text_color, '#ffffff'),
+            'panel' => in_array($this->vidiwall_qr_panel, self::QR_SCREEN_PANELS, true) ? $this->vidiwall_qr_panel : 'none',
+            'panel_color' => $this->hexColorOr($this->vidiwall_qr_panel_color, '#000000'),
+        ];
+    }
+
+    /**
+     * Without a headline, small text or panel the QR screen shows the QR code alone.
+     */
+    public function hasQrScreenCallToAction(): bool
+    {
+        $cta = $this->qrScreenCallToAction();
+
+        return $cta['headline'] !== '' || $cta['small_text'] !== '' || $cta['panel'] !== 'none';
     }
 
     /**
@@ -907,6 +947,11 @@ class Event extends Model
         $b = hexdec(substr($hex, 4, 2));
 
         return ((($r * 299) + ($g * 587) + ($b * 114)) / 1000) > 150;
+    }
+
+    private function hexColorOr(?string $value, string $fallback): string
+    {
+        return preg_match('/^#(?:[0-9a-fA-F]{3}){1,2}$/', (string) $value) ? $value : $fallback;
     }
 
     public function readableInk(?string $hex, string $light = '#111827', string $dark = '#ffffff'): string

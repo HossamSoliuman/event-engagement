@@ -523,6 +523,85 @@
             height: min(72vh, 72vw)
         }
 
+        /* Call to action: the texts keep their full size and the QR code shrinks to whatever room is left */
+        .qr-screen.has-cta {
+            flex-direction: column
+        }
+
+        .qr-cta {
+            --qr-size: min(64vh, 72vw);
+            flex: 0 1 auto;
+            min-height: 0;
+            max-width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: clamp(12px, 2.8vh, 40px);
+            text-align: center;
+            color: var(--qr-ink)
+        }
+
+        .qr-cta.is-solid,
+        .qr-cta.is-glass {
+            padding: clamp(18px, 3.6vh, 56px) clamp(22px, 3.4vw, 72px);
+            border-radius: clamp(20px, 2.6vw, 44px)
+        }
+
+        .qr-cta.is-solid {
+            background: var(--qr-panel);
+            box-shadow: 0 30px 90px rgba(0, 0, 0, .45)
+        }
+
+        .qr-cta.is-glass {
+            background: color-mix(in srgb, var(--qr-panel) 40%, transparent);
+            border: 1px solid rgba(255, 255, 255, .22);
+            box-shadow: 0 30px 90px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .18);
+            -webkit-backdrop-filter: blur(22px) saturate(1.3);
+            backdrop-filter: blur(22px) saturate(1.3)
+        }
+
+        .qr-cta.is-none {
+            text-shadow: 0 2px 18px rgba(0, 0, 0, .35)
+        }
+
+        .qr-cta-headline,
+        .qr-cta-text {
+            flex: 0 0 auto;
+            white-space: pre-line;
+            overflow-wrap: anywhere;
+            text-wrap: balance
+        }
+
+        .qr-cta-headline {
+            max-width: 20em;
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: clamp(26px, min(5.6vw, 7.2vh), 104px);
+            line-height: 1.05;
+            letter-spacing: .01em
+        }
+
+        .qr-cta-text {
+            max-width: 32em;
+            font-weight: 600;
+            font-size: clamp(16px, min(3vw, 3.6vh), 48px);
+            line-height: 1.3
+        }
+
+        .qr-cta-code {
+            flex: 0 1 var(--qr-size);
+            min-height: 0;
+            width: var(--qr-size);
+            max-width: 100%;
+            display: flex;
+            justify-content: center
+        }
+
+        .qr-screen .qr-cta-code .qr-card {
+            height: 100%;
+            width: auto
+        }
+
         @keyframes qrIn {
             from {
                 opacity: 0
@@ -2278,9 +2357,29 @@
             @endif
         </div>
 
-        <div class="qr-screen" id="qrScreen" hidden
+        <div @class(['qr-screen', 'has-cta' => $event->hasQrScreenCallToAction()]) id="qrScreen" hidden
             @if ($event->vidiwall_qr_background_url) style="background-image: url('{{ $event->vidiwall_qr_background_url }}')" @endif>
-            @if ($event->qr_code_path)
+            @if ($event->hasQrScreenCallToAction())
+                @php $qrCta = $event->qrScreenCallToAction(); @endphp
+                <div class="qr-cta is-{{ $qrCta['panel'] }}"
+                    style="--qr-ink: {{ $qrCta['text_color'] }}; --qr-panel: {{ $qrCta['panel_color'] }}">
+                    @if ($qrCta['headline'] !== '')
+                        <div class="qr-cta-headline">{{ $qrCta['headline'] }}</div>
+                    @endif
+                    @if ($event->qr_code_path)
+                        <div class="qr-cta-code">
+                            <div class="qr-card">
+                                <img src="{{ $event->qr_code_url }}" alt="QR code">
+                            </div>
+                        </div>
+                    @else
+                        <div class="qr-fallback">{{ $event->getGuestUrl() }}</div>
+                    @endif
+                    @if ($qrCta['small_text'] !== '')
+                        <div class="qr-cta-text">{{ $qrCta['small_text'] }}</div>
+                    @endif
+                </div>
+            @elseif ($event->qr_code_path)
                 <div class="qr-card">
                     <img src="{{ $event->qr_code_url }}" alt="QR code">
                 </div>
