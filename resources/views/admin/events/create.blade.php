@@ -24,6 +24,11 @@
         .ev-actions { position:sticky; bottom:0; display:flex; gap:10px; align-items:center; padding:14px 0; margin-top:20px; background:var(--dark); border-top:1px solid var(--border); z-index:40 }
         .ev-actions .spacer { flex:1 }
 
+        /* Saving reopens the form where the admin left it, so the confirmation floats into view */
+        .alert.ev-saved-toast { position:fixed; left:50%; bottom:96px; transform:translateX(-50%); z-index:60; margin:0;
+            background:var(--card); box-shadow:0 10px 30px rgba(0,0,0,.45); transition:opacity .4s ease }
+        .alert.ev-saved-toast.is-hidden { opacity:0; pointer-events:none }
+
         /* Sub-item grids */
         .ev-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px }
         .ev-grid-2 > .card { margin:0 }
@@ -81,6 +86,7 @@
             @csrf
             @if (isset($event))
                 @method('PUT')
+                <input type="hidden" name="_tab" value="{{ old('_tab', 'details') }}">
             @endif
 
             {{-- ── Tab navigation ────────────────────────────────────────────── --}}
@@ -601,11 +607,16 @@
         (function () {
             const tabs = document.querySelectorAll('.ev-tab');
             const panels = document.querySelectorAll('.ev-panel');
+            const form = document.querySelector('.ev-form-wrap form');
+            const tabInput = form?.querySelector('input[name="_tab"]');
 
             function activate(name) {
                 tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === name));
                 panels.forEach(p => p.classList.toggle('active', p.dataset.panel === name));
                 document.querySelector('.ev-form-wrap')?.classList.toggle('is-wide', name === 'landing');
+                if (tabInput) {
+                    tabInput.value = name;
+                }
             }
 
             tabs.forEach(tab => tab.addEventListener('click', () => {
@@ -613,14 +624,44 @@
                 history.replaceState(null, '', '#' + tab.dataset.tab);
             }));
 
-            const hash = location.hash.replace('#', '');
+            const hash = location.hash.replace('#', '') || tabInput?.value;
             if (hash && document.querySelector(`.ev-tab[data-tab="${hash}"]`)) {
                 activate(hash);
             }
 
+            // Saving reopens this form, so remember the scroll position (relative to the
+            // form, as the success alert above it shifts the page) and restore it.
+            if (tabInput) {
+                const scrollKey = 'ev-form-scroll:' + location.pathname;
+
+                form.addEventListener('submit', () => {
+                    try {
+                        sessionStorage.setItem(scrollKey, JSON.stringify({
+                            tab: tabInput.value,
+                            offset: -form.getBoundingClientRect().top,
+                        }));
+                    } catch (e) {}
+                });
+
+                let saved = null;
+                try {
+                    saved = JSON.parse(sessionStorage.getItem(scrollKey));
+                    sessionStorage.removeItem(scrollKey);
+                } catch (e) {}
+
+                const savedAlert = document.querySelector('.main-content > .alert-success');
+                if (saved && savedAlert && saved.tab === tabInput.value) {
+                    savedAlert.classList.add('ev-saved-toast');
+                    setTimeout(() => savedAlert.classList.add('is-hidden'), 3000);
+                    window.scrollTo({
+                        top: form.getBoundingClientRect().top + window.scrollY + Number(saved.offset || 0),
+                        behavior: 'instant',
+                    });
+                }
+            }
+
             // If a hidden field fails native validation, reveal its panel so the
             // browser can focus and highlight it.
-            const form = document.querySelector('form');
             form?.addEventListener('invalid', e => {
                 const panel = e.target.closest('.ev-panel');
                 if (panel && !panel.classList.contains('active')) {

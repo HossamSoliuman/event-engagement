@@ -347,7 +347,7 @@ class VidiwallQrScreenTest extends TestCase
                 'vidiwall_qr_background' => UploadedFile::fake()->image('qr-art.jpg', 1920, 1080),
             ]))
             ->assertSessionHasNoErrors()
-            ->assertRedirect(route('admin.events.show', $this->event));
+            ->assertRedirect(route('admin.events.edit', $this->event).'#details');
 
         $path = $this->event->fresh()->vidiwall_qr_background_path;
         $this->assertStringStartsWith('vidiwall-backgrounds/', $path);
@@ -423,7 +423,7 @@ class VidiwallQrScreenTest extends TestCase
                 'vidiwall_qr_panel_color' => '#fff',
             ]))
             ->assertSessionHasNoErrors()
-            ->assertRedirect(route('admin.events.show', $this->event));
+            ->assertRedirect(route('admin.events.edit', $this->event).'#details');
 
         $this->assertSame([
             'headline' => 'Scan the code and win a ski pass',

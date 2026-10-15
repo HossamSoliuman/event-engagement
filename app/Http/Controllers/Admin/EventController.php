@@ -17,6 +17,9 @@ class EventController extends Controller
     /** A #RGB or #RRGGBB colour, for values echoed into inline CSS. */
     private const HEX_COLOR = '/^#(?:[0-9a-fA-F]{3}){1,2}$/';
 
+    /** Tabs of the event form, so saving returns the admin to the tab they were on. */
+    private const FORM_TABS = ['details', 'branding', 'landing', 'vidiwall', 'modules'];
+
     public function index()
     {
         $events = Event::withCount(['fotoUploads', 'lotteryEntries', 'votes', 'memberships'])->latest()->paginate(15);
@@ -93,7 +96,9 @@ class EventController extends Controller
         $event->update($data);
         ActivityLog::record('event.updated', ['name' => $event->name], $event->id);
 
-        return redirect()->route('admin.events.show', $event)->with('success', 'Event updated!');
+        $tab = in_array($request->input('_tab'), self::FORM_TABS, true) ? $request->input('_tab') : 'details';
+
+        return redirect()->route('admin.events.edit', $event)->withFragment($tab)->with('success', 'Event updated!');
     }
 
     public function destroy(Event $event)

@@ -54,7 +54,7 @@ class VidiwallBackgroundTest extends TestCase
                 'vidiwall_background' => UploadedFile::fake()->image('uniqa.jpg', 1920, 1080),
             ]))
             ->assertSessionHasNoErrors()
-            ->assertRedirect(route('admin.events.show', $event));
+            ->assertRedirect(route('admin.events.edit', $event).'#details');
 
         $path = $event->fresh()->vidiwall_background_path;
 
