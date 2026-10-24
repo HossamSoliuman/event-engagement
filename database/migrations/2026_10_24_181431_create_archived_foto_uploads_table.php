@@ -35,7 +35,7 @@ return new class extends Migration
             $table->timestamp('displayed_at')->nullable();
             $table->unsignedBigInteger('approved_by')->nullable();
             $table->timestamps();
-            $table->timestamp('archived_at')->index();
+            $table->timestamp('archived_at')->useCurrent()->index();
         });
     }
 
