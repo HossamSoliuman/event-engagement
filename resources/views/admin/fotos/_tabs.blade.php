@@ -25,6 +25,9 @@
             {{ $tabLabel }} <span class="tab-count" data-count="{{ $tabStatus }}">{{ $counts[$tabStatus] }}</span>
         </a>
     @endforeach
+    <a href="{{ route($routePrefix . 'fotos.archived', $event) }}" class="tab {{ $active === 'archived' ? 'active' : '' }}">
+        Archived <span class="tab-count" data-count="archived">{{ $counts['archived'] }}</span>
+    </a>
     <a href="{{ route($routePrefix . 'player.index', $event) }}" class="tab fq-tab-player {{ $active === 'player' ? 'active' : '' }}">
         <i data-lucide="monitor-play" class="lucide-icon"></i> Player
         <span class="fq-dot" id="fqPlayerDot" data-player-state="{{ $playerState }}" title="Player {{ $playerState }}"></span>

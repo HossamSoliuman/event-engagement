@@ -80,7 +80,7 @@
                             <td class="text-muted text-xs">{{ $member->created_at->format('M d · H:i') }}</td>
                             <td>
                                 <form method="POST" action="{{ route('admin.membership.destroy', $member) }}"
-                                    onsubmit="return confirm('Remove this member?')">
+                                    data-confirm="Remove this member?" data-confirm-button="Remove" data-confirm-danger>
                                     @csrf @method('DELETE')
                                     <button class="btn btn-ghost btn-sm" style="color:var(--red)" title="Remove"><i data-lucide="trash-2" class="lucide-icon"></i></button>
                                 </form>

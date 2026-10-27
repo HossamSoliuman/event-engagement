@@ -287,13 +287,8 @@
 <script>
 function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('sbOverlay').classList.add('open'); }
 function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sbOverlay').classList.remove('open'); }
-
-document.querySelectorAll('form[data-confirm]').forEach(f => {
-    f.addEventListener('submit', e => {
-        if (!confirm(f.dataset.confirm)) e.preventDefault();
-    });
-});
 </script>
+@include('layouts._dialog')
 @stack('scripts')
 <script src="https://unpkg.com/lucide@latest"></script>
 <script>

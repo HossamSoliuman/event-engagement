@@ -22,7 +22,7 @@ class EventController extends Controller
 
     public function index()
     {
-        $events = Event::withCount(['fotoUploads', 'lotteryEntries', 'votes', 'memberships'])->latest()->paginate(15);
+        $events = Event::withCount(['fotoUploads', 'archivedFotoUploads', 'lotteryEntries', 'votes', 'memberships'])->latest()->paginate(15);
 
         return view('admin.events.index', compact('events'));
     }
@@ -54,6 +54,7 @@ class EventController extends Controller
     {
         $event->loadCount([
             'fotoUploads',
+            'archivedFotoUploads',
             'lotteryEntries',
             'votes',
             'memberships',
@@ -106,6 +107,7 @@ class EventController extends Controller
         $event->deleteMedia();
 
         $event->fotoUploads()->delete();
+        $event->archivedFotoUploads()->delete();
         $event->lotteryEntries()->delete();
         $event->votes()->delete();
         $event->memberships()->delete();

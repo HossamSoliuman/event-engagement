@@ -2,19 +2,13 @@
 @php
     $state = $foto->screenState();
     $name = $foto->uploader_name ?: 'Anonymous';
-    $source = $foto->isVideo() ? ($foto->video_url ?? $foto->file_url) : $foto->file_url;
     $chip = ['live' => 'On screen', 'queued' => 'In queue', 'shown' => 'Shown'][$state] ?? null;
 @endphp
 <article class="fq-card {{ $state === 'live' ? 'is-live' : '' }}" data-id="{{ $foto->id }}" data-state="{{ $state }}"
-         data-kind="{{ $foto->isVideo() ? 'video' : 'photo' }}" data-src="{{ $source }}" data-name="{{ $name }}"
+         data-kind="{{ $foto->isVideo() ? 'video' : 'photo' }}" data-src="{{ $foto->media_url }}" data-name="{{ $name }}"
          data-shown="{{ $foto->displayed_at?->getTimestampMs() }}">
     <button type="button" class="fq-media" data-act="view" aria-label="Open {{ $name }}'s {{ $foto->isVideo() ? 'video' : 'photo' }}">
-        @if($foto->isVideo())
-            <video src="{{ $source }}#t=0.5" muted playsinline preload="metadata"></video>
-            <span class="fq-kind"><i data-lucide="play" class="lucide-icon"></i>{{ $foto->video_duration ? round($foto->video_duration, 1).'s' : 'Video' }}</span>
-        @else
-            <img src="{{ $foto->thumbnail_url }}" alt="" loading="lazy" decoding="async">
-        @endif
+        @include('admin.fotos._media')
         <span class="fq-chip" @if(! $chip) hidden @endif>{{ $chip }}</span>
         <span class="fq-zoom" aria-hidden="true"><i data-lucide="maximize-2" class="lucide-icon"></i></span>
     </button>

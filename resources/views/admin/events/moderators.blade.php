@@ -25,7 +25,7 @@
         <div style="display:flex;gap:6px;align-items:center">
             <a href="{{ route('moderator.dashboard', $event) }}" target="_blank" class="btn btn-ghost btn-sm">Portal <i data-lucide="arrow-up-right" class="lucide-icon"></i></a>
             <form method="POST" action="{{ route('admin.events.moderators.destroy', [$event, $user]) }}"
-                  data-confirm="Remove {{ $user->name }} from this event?">
+                  data-confirm="Remove {{ $user->name }} from this event?" data-confirm-button="Remove" data-confirm-danger>
                 @csrf @method('DELETE')
                 <button class="btn btn-danger btn-sm">Remove</button>
             </form>
@@ -87,10 +87,3 @@
 
 @endsection
 
-@push('scripts')
-<script>
-document.querySelectorAll('form[data-confirm]').forEach(f => {
-    f.addEventListener('submit', e => { if (!confirm(f.dataset.confirm)) e.preventDefault(); });
-});
-</script>
-@endpush

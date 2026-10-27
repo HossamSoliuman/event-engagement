@@ -472,7 +472,7 @@
                 form.addEventListener('submit', async e => {
                     e.preventDefault();
                     if (form.id === 'vtRevealForm' && CLOSES_ON_REVEAL && !status.voting_closed
-                        && !confirm('Close voting and reveal the winner on the vidiwall?')) {
+                        && !(await appConfirm('Close voting and reveal the winner on the vidiwall?', { confirmLabel: 'Close and reveal' }))) {
                         return;
                     }
                     const button = form.querySelector('button[type=submit]');

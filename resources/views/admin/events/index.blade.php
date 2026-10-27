@@ -38,7 +38,7 @@
                                     @endforeach
                                 </div>
                             </td>
-                            <td>{{ $event->foto_uploads_count }}</td>
+                            <td>{{ $event->foto_uploads_count + $event->archived_foto_uploads_count }}</td>
                             <td>{{ $event->lottery_entries_count + $event->memberships_count }}</td>
                             <td><span
                                     class="badge {{ $event->is_active ? 'badge-active' : 'badge-inactive' }}">{{ $event->is_active ? 'Active' : 'Inactive' }}</span>
@@ -53,7 +53,7 @@
                                         @csrf <button class="btn btn-ghost btn-sm" title="Duplicate">⧉</button>
                                     </form>
                                     <form method="POST" action="{{ route('admin.events.destroy', $event) }}"
-                                        onsubmit="return confirm('Delete this event?')">
+                                        data-confirm="Delete this event?" data-confirm-message="Its uploads, entries, votes and files are deleted too. This cannot be undone." data-confirm-button="Delete" data-confirm-danger>
                                         @csrf
                                         @method('DELETE')
                                         <button class="btn btn-danger btn-sm">Delete</button>

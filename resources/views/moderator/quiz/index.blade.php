@@ -22,7 +22,7 @@
                 <a href="{{ route('moderator.quiz.leaderboard', [$event, $activeRound]) }}" class="btn btn-secondary btn-sm">Leaderboard</a>
                 <form method="POST" action="{{ route('moderator.quiz.end', $event) }}">
                     @csrf
-                    <button class="btn btn-danger btn-sm" onclick="return confirm('End the active round now?')">End Round</button>
+                    <button class="btn btn-danger btn-sm" data-confirm="End the active round now?" data-confirm-button="End round" data-confirm-danger>End Round</button>
                 </form>
             </div>
         </div>
@@ -55,7 +55,7 @@
                         </div>
                         <div style="display:flex;gap:6px;flex-shrink:0">
                             <button class="btn btn-ghost btn-sm" onclick="toggleEdit({{ $q->id }})"><i data-lucide="pencil" class="lucide-icon"></i></button>
-                            <form method="POST" action="{{ route('moderator.quiz.questions.destroy', [$event, $q]) }}" onsubmit="return confirm('Delete this question?')">
+                            <form method="POST" action="{{ route('moderator.quiz.questions.destroy', [$event, $q]) }}" data-confirm="Delete this question?" data-confirm-button="Delete" data-confirm-danger>
                                 @csrf @method('DELETE')
                                 <button class="btn btn-ghost btn-sm" style="color:var(--red)"><i data-lucide="trash-2" class="lucide-icon"></i></button>
                             </form>
@@ -282,11 +282,11 @@
         const checked = document.querySelectorAll('#startRoundForm input[name="question_ids[]"]:checked');
         const perRound = parseInt(document.querySelector('[name="questions_per_round"]').value);
         if (checked.length === 0) {
-            alert('Select at least one question.');
+            appAlert('Select at least one question.');
             return false;
         }
         if (checked.length < perRound) {
-            alert('The pool has fewer questions than each guest should answer. Select more questions or reduce the per-guest count.');
+            appAlert('The pool has fewer questions than each guest should answer.', { message: 'Select more questions or reduce the per-guest count.' });
             return false;
         }
         return true;

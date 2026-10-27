@@ -22,7 +22,7 @@
                 <a href="{{ route('admin.quiz.leaderboard', [$event, $activeRound]) }}" class="btn btn-secondary btn-sm">Leaderboard</a>
                 <form method="POST" action="{{ route('admin.quiz.end', $event) }}">
                     @csrf
-                    <button class="btn btn-danger btn-sm" onclick="return confirm('End the active round now?')">End Round</button>
+                    <button class="btn btn-danger btn-sm" data-confirm="End the active round now?" data-confirm-button="End round" data-confirm-danger>End Round</button>
                 </form>
             </div>
         </div>
@@ -55,7 +55,7 @@
                         </div>
                         <div style="display:flex;gap:6px;flex-shrink:0">
                             <button class="btn btn-ghost btn-sm" onclick="toggleEdit({{ $q->id }})"><i data-lucide="pencil" class="lucide-icon"></i></button>
-                            <form method="POST" action="{{ route('admin.quiz.questions.destroy', $q) }}" onsubmit="return confirm('Delete this question?')">
+                            <form method="POST" action="{{ route('admin.quiz.questions.destroy', $q) }}" data-confirm="Delete this question?" data-confirm-button="Delete" data-confirm-danger>
                                 @csrf @method('DELETE')
                                 <button class="btn btn-ghost btn-sm" style="color:var(--red)"><i data-lucide="trash-2" class="lucide-icon"></i></button>
                             </form>
@@ -257,7 +257,7 @@
                                     <td class="text-muted text-xs">{{ $round->started_at?->format('M d · H:i') ?? '—' }}</td>
                                     <td style="display:flex;gap:6px">
                                         <a href="{{ route('admin.quiz.leaderboard', [$event, $round]) }}" class="btn btn-ghost btn-sm">Results</a>
-                                        <form method="POST" action="{{ route('admin.quiz.rounds.reset', $round) }}" onsubmit="return confirm('Reset all answers for this round?')">
+                                        <form method="POST" action="{{ route('admin.quiz.rounds.reset', $round) }}" data-confirm="Reset all answers for this round?" data-confirm-button="Reset" data-confirm-danger>
                                             @csrf
                                             <button class="btn btn-ghost btn-sm" style="color:var(--muted)" title="Reset round"><i data-lucide="rotate-ccw" class="lucide-icon"></i></button>
                                         </form>
@@ -286,11 +286,11 @@
         const checked = document.querySelectorAll('#startRoundForm input[name="question_ids[]"]:checked');
         const perRound = parseInt(document.querySelector('[name="questions_per_round"]').value);
         if (checked.length === 0) {
-            alert('Select at least one question.');
+            appAlert('Select at least one question.');
             return false;
         }
         if (checked.length < perRound) {
-            alert('The pool has fewer questions than each guest should answer. Select more questions or reduce the per-guest count.');
+            appAlert('The pool has fewer questions than each guest should answer.', { message: 'Select more questions or reduce the per-guest count.' });
             return false;
         }
         return true;

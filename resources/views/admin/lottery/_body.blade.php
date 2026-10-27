@@ -223,7 +223,7 @@
                             <button type="submit" class="btn btn-secondary btn-sm lt-screen-btn"><i data-lucide="monitor-play" class="lucide-icon"></i> Show all on vidiwall</button>
                         </form>
                         <form method="POST" action="{{ $ltRoute('reset') }}"
-                            onsubmit="return confirm(@js($winners->count() === 1 ? 'Clear ' . $winners->first()->name . ' as the winner and reopen the draw?' : 'Clear all ' . $winners->count() . ' winners and reopen the draw?'))">
+                            data-confirm="{{ $winners->count() === 1 ? 'Clear ' . $winners->first()->name . ' as the winner and reopen the draw?' : 'Clear all ' . $winners->count() . ' winners and reopen the draw?' }}" data-confirm-button="Clear" data-confirm-danger>
                             @csrf
                             <button type="submit" class="btn btn-ghost btn-sm lt-danger"><i data-lucide="rotate-ccw" class="lucide-icon"></i> Reset Lottery</button>
                         </form>
@@ -252,13 +252,13 @@
                             <button type="submit" class="lt-icon-btn lt-screen-btn" title="Show on the vidiwall" aria-label="Show {{ $winner->name }} on the vidiwall"><i data-lucide="cast" class="lucide-icon"></i></button>
                         </form>
                         <form method="POST" action="{{ $ltRoute('redraw', [$winner]) }}"
-                            onsubmit="return confirm(@js('Redraw winner #' . $winner->winner_rank . '? ' . $winner->name . ' goes back into the draw and a new winner takes their place.'))">
+                            data-confirm="{{ 'Redraw winner #' . $winner->winner_rank . '? ' . $winner->name . ' goes back into the draw and a new winner takes their place.' }}" data-confirm-button="Redraw">
                             @csrf
                             <input type="hidden" name="on_screen" value="{{ $drawOnScreen ? 1 : 0 }}" data-lt-follow-screen>
                             <button type="submit" class="lt-icon-btn lt-redraw-btn" title="Redraw this place" aria-label="Redraw winner #{{ $winner->winner_rank }}" @disabled($remainingCount === 0)><i data-lucide="refresh-cw" class="lucide-icon"></i></button>
                         </form>
                         <form method="POST" action="{{ $ltRoute('release', [$winner]) }}"
-                            onsubmit="return confirm(@js('Put ' . $winner->name . ' back into the draw? They will no longer be winner #' . $winner->winner_rank . '.'))">
+                            data-confirm="{{ 'Put ' . $winner->name . ' back into the draw? They will no longer be winner #' . $winner->winner_rank . '.' }}" data-confirm-button="Put back">
                             @csrf
                             <button type="submit" class="lt-icon-btn" title="Put back into the draw" aria-label="Put {{ $winner->name }} back into the draw"><i data-lucide="undo-2" class="lucide-icon"></i></button>
                         </form>
@@ -406,7 +406,7 @@
                             </td>
                             <td>
                                 <form method="POST" action="{{ $destroyRoute($entry) }}"
-                                    onsubmit="return confirm(@js($entry->is_winner ? 'Remove ' . $entry->name . '? They are winner #' . $entry->winner_rank . ' and the winners after them move up a place.' : 'Remove this entry?'))">
+                                    data-confirm="{{ $entry->is_winner ? 'Remove ' . $entry->name . '? They are winner #' . $entry->winner_rank . ' and the winners after them move up a place.' : 'Remove this entry?' }}" data-confirm-button="Remove" data-confirm-danger>
                                     @csrf @method('DELETE')
                                     <button class="btn btn-ghost btn-sm" style="color:var(--red)" title="Remove"><i data-lucide="trash-2" class="lucide-icon"></i></button>
                                 </form>

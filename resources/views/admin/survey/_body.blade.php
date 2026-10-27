@@ -135,7 +135,7 @@
                                 <i data-lucide="pencil" class="lucide-icon"></i>
                             </button>
                             <form method="POST" action="{{ $svRoute('questions.destroy', [$question]) }}"
-                                onsubmit="return confirm('Delete this question? Answers already collected for it are deleted too.')">
+                                data-confirm="Delete this question?" data-confirm-message="Answers already collected for it are deleted too." data-confirm-button="Delete" data-confirm-danger>
                                 @csrf @method('DELETE')
                                 <button class="btn btn-ghost btn-sm" title="Delete" aria-label="Delete" style="color:var(--red)">
                                     <i data-lucide="trash-2" class="lucide-icon"></i>
@@ -241,7 +241,7 @@
                         <div class="text-muted text-xs">Deletes every answer collected so far; the questions stay. Download the CSV first.</div>
                     </div>
                     <form method="POST" action="{{ $svRoute('reset') }}"
-                        onsubmit="return confirm('Delete all {{ $responseCount }} survey responses? This cannot be undone.')">
+                        data-confirm="Delete all {{ $responseCount }} survey responses?" data-confirm-message="This cannot be undone." data-confirm-button="Delete all" data-confirm-danger>
                         @csrf
                         <button class="btn btn-danger btn-sm">Clear Responses</button>
                     </form>

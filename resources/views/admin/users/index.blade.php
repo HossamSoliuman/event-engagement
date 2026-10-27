@@ -48,7 +48,7 @@
             <span class="badge {{ $user->is_active ? 'badge-active' : 'badge-inactive' }}">{{ $user->is_active ? 'Active' : 'Inactive' }}</span>
             <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-ghost btn-sm">Edit</a>
             @if($user->id !== auth()->id())
-            <form method="POST" action="{{ route('admin.users.destroy', $user) }}" onsubmit="return confirm('Delete this user?')">
+            <form method="POST" action="{{ route('admin.users.destroy', $user) }}" data-confirm="Delete this user?" data-confirm-button="Delete" data-confirm-danger>
                 @csrf @method('DELETE')
                 <button class="btn btn-danger btn-sm">Delete</button>
             </form>
@@ -107,7 +107,7 @@
             <span class="badge badge-{{ $user->role }}">{{ ucfirst($user->role) }}</span>
             <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-ghost btn-sm">Edit</a>
             @if($user->id !== auth()->id())
-            <form method="POST" action="{{ route('admin.users.destroy', $user) }}" onsubmit="return confirm('Delete?')">
+            <form method="POST" action="{{ route('admin.users.destroy', $user) }}" data-confirm="Delete this user?" data-confirm-button="Delete" data-confirm-danger>
                 @csrf @method('DELETE') <button class="btn btn-danger btn-sm">Delete</button>
             </form>
             @endif

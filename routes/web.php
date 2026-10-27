@@ -88,6 +88,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('events/{event}/preview', [EventController::class, 'preview'])->name('events.preview');
         Route::get('events/{event}/fotos', [FotoModerationController::class, 'index'])->name('fotos.index');
         Route::get('events/{event}/fotos/status', [FotoModerationController::class, 'status'])->name('fotos.status');
+        Route::get('events/{event}/fotos/archived', [FotoModerationController::class, 'archived'])->name('fotos.archived');
+        Route::post('events/{event}/fotos/archive', [FotoModerationController::class, 'archive'])->name('fotos.archive');
+        Route::post('events/{event}/fotos/archived/restore', [FotoModerationController::class, 'restoreArchive'])->name('fotos.restore-archive');
+        Route::post('events/{event}/fotos/archived/{archivedFotoUpload}/restore', [FotoModerationController::class, 'restoreArchived'])->scopeBindings()->name('fotos.restore-archived');
         Route::post('fotos/{foto}/approve', [FotoModerationController::class, 'approve'])->name('fotos.approve');
         Route::post('fotos/{foto}/reject', [FotoModerationController::class, 'reject'])->name('fotos.reject');
         Route::post('fotos/{foto}/remove-from-screen', [FotoModerationController::class, 'removeFromScreen'])->name('fotos.remove-from-screen');
@@ -201,6 +205,10 @@ Route::prefix('moderator')->name('moderator.')->middleware(['auth', 'event.moder
 
     Route::get('{event}/fotos', [ModeratorFotoController::class, 'index'])->name('fotos.index');
     Route::get('{event}/fotos/status', [ModeratorFotoController::class, 'status'])->name('fotos.status');
+    Route::get('{event}/fotos/archived', [ModeratorFotoController::class, 'archived'])->name('fotos.archived');
+    Route::post('{event}/fotos/archive', [ModeratorFotoController::class, 'archive'])->name('fotos.archive');
+    Route::post('{event}/fotos/archived/restore', [ModeratorFotoController::class, 'restoreArchive'])->name('fotos.restore-archive');
+    Route::post('{event}/fotos/archived/{archivedFotoUpload}/restore', [ModeratorFotoController::class, 'restoreArchived'])->scopeBindings()->name('fotos.restore-archived');
     Route::post('{event}/fotos/{foto}/approve', [ModeratorFotoController::class, 'approve'])->name('fotos.approve');
     Route::post('{event}/fotos/{foto}/reject', [ModeratorFotoController::class, 'reject'])->name('fotos.reject');
     Route::post('{event}/fotos/{foto}/remove-from-screen', [ModeratorFotoController::class, 'removeFromScreen'])->name('fotos.remove-from-screen');

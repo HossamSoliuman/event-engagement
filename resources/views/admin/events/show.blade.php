@@ -25,7 +25,7 @@
         </div>
         <div class="stat-card">
             <div class="stat-label">Total Uploads</div>
-            <div class="stat-value">{{ $event->foto_uploads_count }}</div>
+            <div class="stat-value">{{ $event->foto_uploads_count + $event->archived_foto_uploads_count }}</div>
         </div>
         <div class="stat-card">
             <div class="stat-label">Lottery Entries</div>

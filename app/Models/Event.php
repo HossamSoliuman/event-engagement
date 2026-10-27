@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Traits\ReferencesMediaFiles;
 use Closure;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -155,6 +156,19 @@ class Event extends Model
     public function fotoUploads()
     {
         return $this->hasMany(FotoUpload::class);
+    }
+
+    public function archivedFotoUploads(): HasMany
+    {
+        return $this->hasMany(ArchivedFotoUpload::class);
+    }
+
+    /**
+     * Every upload of every day: the Foto Queue's and the archived ones, read-only.
+     */
+    public function allFotoUploads(): Builder
+    {
+        return FotoUpload::withArchived(fn (Builder $query) => $query->where('event_id', $this->id));
     }
 
     /**
@@ -429,6 +443,7 @@ class Event extends Model
     {
         return $this->mediaPaths()
             ->merge(FotoUpload::allMediaPaths($this->fotoUploads()->getQuery()))
+            ->merge(ArchivedFotoUpload::allMediaPaths($this->archivedFotoUploads()->getQuery()))
             ->merge(QuizQuestion::allMediaPaths($this->quizQuestions()->getQuery()))
             ->merge(FanClashMatchup::allMediaPaths($this->fanClashMatchups()->getQuery()))
             ->merge(FanClashRound::allMediaPaths($this->fanClashRounds()->getQuery()))
@@ -576,22 +591,98 @@ class Event extends Model
     }
 
     /**
-     * Uploads per moderation status, for the Foto Queue tabs.
+     * Uploads per moderation status, plus the archived ones, for the Foto Queue tabs. One query.
      *
-     * @return array{pending: int, approved: int, rejected: int}
+     * @return array{pending: int, approved: int, rejected: int, archived: int}
      */
     public function fotoStatusCounts(): array
     {
         $totals = $this->fotoUploads()
             ->selectRaw('status, COUNT(*) as total')
             ->groupBy('status')
+            ->toBase()
+            ->unionAll($this->archivedFotoUploads()->selectRaw("'archived' as status, COUNT(*) as total")->toBase())
             ->pluck('total', 'status');
 
         return [
             'pending' => (int) ($totals['pending'] ?? 0),
             'approved' => (int) ($totals['approved'] ?? 0),
             'rejected' => (int) ($totals['rejected'] ?? 0),
+            'archived' => (int) ($totals['archived'] ?? 0),
         ];
+    }
+
+    /**
+     * "Archive all": every upload in the Foto Queue moves to the archive with
+     * its status, so the queue and the playlist start empty while the QR codes
+     * stay the same. The vidiwall stops, but only when something is archived.
+     * Uploads that arrive meanwhile stay in the queue.
+     *
+     * @return int how many uploads were archived
+     */
+    public function archiveFotoUploads(): int
+    {
+        return DB::transaction(function (): int {
+            $this->lockFotoMoves();
+
+            $lastId = $this->fotoUploads()->max('id');
+
+            if ($lastId === null) {
+                return 0;
+            }
+
+            $this->vidiwallPlayer?->setRelation('event', $this)->stop();
+
+            $uploads = $this->fotoUploads()->where('id', '<=', $lastId);
+
+            ArchivedFotoUpload::query()->insertUsing(
+                [...ArchivedFotoUpload::COPIED_COLUMNS, 'archived_at'],
+                (clone $uploads)->select(ArchivedFotoUpload::COPIED_COLUMNS)->selectRaw('? as archived_at', [now()])->toBase()
+            );
+
+            return $uploads->delete();
+        });
+    }
+
+    /**
+     * Puts archived uploads back into the Foto Queue with their status: the
+     * whole archive, or only `$only`. Approved ones join the end of the
+     * playlist in their old order, one archive run after the other.
+     *
+     * @return int how many uploads were restored
+     */
+    public function restoreArchivedFotoUploads(?ArchivedFotoUpload $only = null): int
+    {
+        return DB::transaction(function () use ($only): int {
+            $this->lockFotoMoves();
+
+            $archived = fn () => $this->archivedFotoUploads()->when($only, fn (Builder $query) => $query->whereKey($only->id));
+            $columns = array_values(array_diff(ArchivedFotoUpload::COPIED_COLUMNS, ['display_order']));
+            $restoredCount = 0;
+
+            foreach ($archived()->toBase()->distinct()->orderBy('archived_at')->pluck('archived_at') as $archivedAt) {
+                $run = $archived()->where('archived_at', $archivedAt);
+                $playlistEnd = (int) $this->fotoUploads()->where('status', 'approved')->max('display_order') + 1;
+
+                FotoUpload::query()->insertUsing(
+                    [...$columns, 'display_order'],
+                    (clone $run)->select($columns)->selectRaw('display_order + ? as display_order', [$playlistEnd])->toBase()
+                );
+
+                $restoredCount += $run->delete();
+            }
+
+            return $restoredCount;
+        });
+    }
+
+    /**
+     * A no-op write on the event row, taken first inside a transaction, so
+     * archiving and restoring for one event run one after the other.
+     */
+    protected function lockFotoMoves(): void
+    {
+        static::query()->whereKey($this->id)->toBase()->update(['updated_at' => DB::raw('updated_at')]);
     }
 
     public function getVoteTallies(): array

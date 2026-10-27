@@ -4,19 +4,23 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
+use App\Models\ArchivedFotoUpload;
 use App\Models\Event;
 use App\Models\FotoUpload;
+use App\Traits\ExportsFotoUploads;
+use App\Traits\ServesFotoArchive;
 use App\Traits\ServesFotoQueue;
-use App\Traits\StagesMediaFiles;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class FotoModerationController extends Controller
 {
-    use ServesFotoQueue, StagesMediaFiles;
+    use ExportsFotoUploads, ServesFotoArchive, ServesFotoQueue;
 
     public function index(Event $event, Request $request): View|JsonResponse
     {
@@ -26,6 +30,26 @@ class FotoModerationController extends Controller
     public function status(Event $event, Request $request): JsonResponse
     {
         return $this->fotoQueueSnapshot($request, $event);
+    }
+
+    public function archived(Request $request, Event $event): View|RedirectResponse
+    {
+        return $this->showFotoArchive($request, $event, 'admin.fotos.archive');
+    }
+
+    public function archive(Event $event): RedirectResponse
+    {
+        return $this->archiveFotoQueue($event);
+    }
+
+    public function restoreArchived(Request $request, Event $event, ArchivedFotoUpload $archivedFotoUpload): JsonResponse|RedirectResponse
+    {
+        return $this->restoreArchivedFoto($request, $event, $archivedFotoUpload);
+    }
+
+    public function restoreArchive(Request $request, Event $event): JsonResponse|RedirectResponse
+    {
+        return $this->restoreFotoArchive($request, $event);
     }
 
     public function approve(Request $request, FotoUpload $foto): JsonResponse|RedirectResponse
@@ -69,54 +93,13 @@ class FotoModerationController extends Controller
         return $this->fotoActionResponse($request, $event, 'Deleted.');
     }
 
-    public function export(Event $event)
+    public function export(Event $event): Response
     {
-        $fotos = $event->fotoUploads()->get();
-        $onScreenIds = $event->onScreenFotoIds();
-        $csv = "ID,Uploader Name,Phone,Media Type,Duration (s),Status,On Screen,Uploaded At\n";
-        foreach ($fotos as $f) {
-            $csv .= implode(',', [
-                $f->id,
-                '"'.($f->uploader_name ?? '').'"',
-                '"'.($f->uploader_phone ?? '').'"',
-                $f->media_type,
-                $f->video_duration ?? '',
-                $f->status,
-                in_array($f->id, $onScreenIds, true) ? 'Yes' : 'No',
-                $f->created_at->format('Y-m-d H:i'),
-            ])."\n";
-        }
-
-        return response($csv, 200, [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => "attachment; filename=\"fotos-{$event->slug}.csv\"",
-        ]);
+        return $this->fotoUploadsCsv($event);
     }
 
-    public function downloadAll(Event $event)
+    public function downloadAll(Event $event): BinaryFileResponse|RedirectResponse
     {
-        $fotos = $event->fotoUploads()->get();
-
-        $zip = new \ZipArchive;
-        $zipFileName = 'fotos-'.$event->slug.'-'.time().'.zip';
-        $zipPath = $this->mediaStagingDirectory().DIRECTORY_SEPARATOR.$zipFileName;
-
-        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
-            foreach ($fotos as $foto) {
-                $filePath = $this->stageMediaFile($foto->file_path);
-                if ($filePath !== null) {
-                    $zip->addFile($filePath, basename($foto->file_path));
-                }
-            }
-            $zip->close();
-        }
-
-        $this->discardStagedMediaFiles();
-
-        if (file_exists($zipPath)) {
-            return response()->download($zipPath)->deleteFileAfterSend(true);
-        }
-
-        return back()->with('error', 'Could not create zip file.');
+        return $this->fotoUploadsZip($event);
     }
 }

@@ -11,6 +11,7 @@ class DashboardController extends Controller
     {
         $event->loadCount([
             'fotoUploads',
+            'archivedFotoUploads',
             'lotteryEntries',
             'votes',
             'memberships',

@@ -61,7 +61,7 @@
                     </td>
                     <td class="text-muted text-xs">{{ $member->created_at->format('d M, H:i') }}</td>
                     <td>
-                        <form method="POST" action="{{ route('moderator.membership.destroy', [$event, $member]) }}" data-confirm="Remove this member?">
+                        <form method="POST" action="{{ route('moderator.membership.destroy', [$event, $member]) }}" data-confirm="Remove this member?" data-confirm-button="Remove" data-confirm-danger>
                             @csrf @method('DELETE') <button class="btn btn-ghost btn-sm">Remove</button>
                         </form>
                     </td>
@@ -79,10 +79,3 @@
 
 @endsection
 
-@push('scripts')
-<script>
-document.querySelectorAll('form[data-confirm]').forEach(f => {
-    f.addEventListener('submit', e => { if (!confirm(f.dataset.confirm)) e.preventDefault(); });
-});
-</script>
-@endpush

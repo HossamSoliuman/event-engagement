@@ -105,17 +105,17 @@ class FotoQueueTest extends TestCase
         $this->actingAs($this->admin)
             ->postJson(route('admin.fotos.approve', $foto))
             ->assertOk()
-            ->assertJsonPath('counts', ['pending' => 0, 'approved' => 1, 'rejected' => 0]);
+            ->assertJsonPath('counts', ['pending' => 0, 'approved' => 1, 'rejected' => 0, 'archived' => 0]);
 
         $this->actingAs($this->admin)
             ->postJson(route('admin.fotos.reject', $foto))
             ->assertOk()
-            ->assertJsonPath('counts', ['pending' => 0, 'approved' => 0, 'rejected' => 1]);
+            ->assertJsonPath('counts', ['pending' => 0, 'approved' => 0, 'rejected' => 1, 'archived' => 0]);
 
         $this->actingAs($this->admin)
             ->deleteJson(route('admin.fotos.destroy', $foto))
             ->assertOk()
-            ->assertJsonPath('counts', ['pending' => 0, 'approved' => 0, 'rejected' => 0]);
+            ->assertJsonPath('counts', ['pending' => 0, 'approved' => 0, 'rejected' => 0, 'archived' => 0]);
 
         $this->assertModelMissing($foto);
     }

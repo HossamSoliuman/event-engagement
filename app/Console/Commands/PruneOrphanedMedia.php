@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\ArchivedFotoUpload;
 use App\Models\Event;
 use App\Models\FanClashMatchup;
 use App\Models\FanClashRound;
@@ -93,6 +94,7 @@ class PruneOrphanedMedia extends Command
     {
         return Event::allMediaPaths(Event::withTrashed())
             ->merge(FotoUpload::allMediaPaths())
+            ->merge(ArchivedFotoUpload::allMediaPaths())
             ->merge(QuizQuestion::allMediaPaths())
             ->merge(FanClashMatchup::allMediaPaths())
             ->merge(FanClashRound::allMediaPaths())

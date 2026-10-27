@@ -30,7 +30,7 @@
             </div>
             <form method="POST" action="{{ route('moderator.fanclash.end', $event) }}">
                 @csrf
-                <button class="btn btn-danger btn-sm" onclick="return confirm('End the active round now?')">End Round</button>
+                <button class="btn btn-danger btn-sm" data-confirm="End the active round now?" data-confirm-button="End round" data-confirm-danger>End Round</button>
             </form>
         </div>
     </div>
@@ -81,7 +81,7 @@
                                 <img src="{{ $m->sponsor_logo_url }}" alt="Sponsor" style="height:28px;width:auto;border-radius:4px;background:#fff;padding:2px">
                             @endif
                             <button class="btn btn-ghost btn-sm" onclick="fcToggleEdit({{ $m->id }})"><i data-lucide="pencil" class="lucide-icon"></i></button>
-                            <form method="POST" action="{{ route('moderator.fanclash.matchups.destroy', [$event, $m]) }}" onsubmit="return confirm('Delete this matchup?')">
+                            <form method="POST" action="{{ route('moderator.fanclash.matchups.destroy', [$event, $m]) }}" data-confirm="Delete this matchup?" data-confirm-button="Delete" data-confirm-danger>
                                 @csrf @method('DELETE')
                                 <button class="btn btn-ghost btn-sm" style="color:var(--red)"><i data-lucide="trash-2" class="lucide-icon"></i></button>
                             </form>
@@ -286,7 +286,7 @@
                                     </td>
                                     <td>{{ $round->participants_count }}</td>
                                     <td style="display:flex;gap:6px">
-                                        <form method="POST" action="{{ route('moderator.fanclash.rounds.reset', [$event, $round]) }}" onsubmit="return confirm('Reset this round (clears taps and participants)?')">
+                                        <form method="POST" action="{{ route('moderator.fanclash.rounds.reset', [$event, $round]) }}" data-confirm="Reset this round?" data-confirm-message="Its taps and participants are cleared." data-confirm-button="Reset" data-confirm-danger>
                                             @csrf
                                             <button class="btn btn-ghost btn-sm" style="color:var(--muted)" title="Reset round"><i data-lucide="rotate-ccw" class="lucide-icon"></i></button>
                                         </form>
@@ -325,7 +325,7 @@
         if (sel && sel.value !== '') return true;
         const names = [...document.querySelectorAll('.fc-adhoc-name')].map(i => i.value.trim());
         if (names.some(n => !n)) {
-            alert('Pick a saved matchup, or type both contender names.');
+            appAlert('Pick a saved matchup, or type both contender names.');
             return false;
         }
         return true;

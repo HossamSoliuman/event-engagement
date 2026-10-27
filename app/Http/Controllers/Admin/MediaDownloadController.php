@@ -23,24 +23,29 @@ class MediaDownloadController extends Controller
     {
         abort_unless(auth()->user()?->isAdmin(), 403);
 
-        $events = Event::query()
-            ->withCount([
-                'fotoUploads as uploads_count',
-                'fotoUploads as photos_count' => fn (Builder $query) => $query->where('media_type', 'photo'),
-                'fotoUploads as videos_count' => fn (Builder $query) => $query->where('media_type', 'video'),
-            ])
-            ->withSum('fotoUploads as uploads_bytes', 'file_size')
-            ->latest('id')
-            ->get();
+        $totals = FotoUpload::withArchived()
+            ->toBase()
+            ->selectRaw("event_id, COUNT(*) as uploads, SUM(CASE WHEN media_type = 'photo' THEN 1 ELSE 0 END) as photos, SUM(CASE WHEN media_type = 'video' THEN 1 ELSE 0 END) as videos, COALESCE(SUM(file_size), 0) as bytes")
+            ->groupBy('event_id')
+            ->get()
+            ->keyBy('event_id');
+
+        $events = Event::query()->latest('id')->get()->each(function (Event $event) use ($totals): void {
+            $total = $totals->get($event->id);
+            $event->uploads_count = (int) ($total->uploads ?? 0);
+            $event->photos_count = (int) ($total->photos ?? 0);
+            $event->videos_count = (int) ($total->videos ?? 0);
+            $event->uploads_bytes = (int) ($total->bytes ?? 0);
+        });
 
         $summary = [
-            'uploads' => FotoUpload::query()->count(),
-            'photos' => FotoUpload::query()->where('media_type', 'photo')->count(),
-            'videos' => FotoUpload::query()->where('media_type', 'video')->count(),
-            'bytes' => (int) FotoUpload::query()->sum('file_size'),
+            'uploads' => (int) $totals->sum('uploads'),
+            'photos' => (int) $totals->sum('photos'),
+            'videos' => (int) $totals->sum('videos'),
+            'bytes' => (int) $totals->sum('bytes'),
         ];
 
-        $recentUploads = FotoUpload::query()
+        $recentUploads = FotoUpload::withArchived()
             ->with('event:id,name,slug')
             ->latest()
             ->limit(6)
@@ -164,7 +169,7 @@ class MediaDownloadController extends Controller
      */
     private function filteredUploadsQuery(array $filters): Builder
     {
-        return FotoUpload::query()
+        return FotoUpload::withArchived(fn (Builder $query) => $query
             ->when(
                 $filters['event_id'] ?? null,
                 fn (Builder $query, mixed $eventId) => $query->where('event_id', $eventId)
@@ -176,7 +181,7 @@ class MediaDownloadController extends Controller
             ->when(
                 $filters['status'] !== 'all',
                 fn (Builder $query) => $query->where('status', $filters['status'])
-            )
+            ))
             ->orderBy('id');
     }
 

@@ -1353,6 +1353,7 @@
             });
         }
     </script>
+    @include('layouts._dialog')
     @livewireScripts
     @stack('scripts')
     <script src="https://unpkg.com/lucide@latest"></script>

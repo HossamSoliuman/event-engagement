@@ -32,7 +32,7 @@
             <div class="text-muted text-xs">This permanently deletes all {{ $totalVotes }} votes and cannot be undone.</div>
         </div>
         <form method="POST" action="{{ route('admin.voting.reset',$event) }}"
-              onsubmit="return confirm('Delete ALL votes? This cannot be undone.')">
+              data-confirm="Delete all votes?" data-confirm-message="This cannot be undone." data-confirm-button="Delete all" data-confirm-danger>
             @csrf <button class="btn btn-danger btn-sm"><i data-lucide="trash-2" class="lucide-icon"></i> Reset All Votes</button>
         </form>
     </div>

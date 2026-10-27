@@ -26,16 +26,18 @@ trait ReferencesMediaFiles
     }
 
     /**
-     * Distinct media-disk paths stored on every row the query matches.
+     * Distinct media-disk paths stored on every row the query matches. Rows are
+     * read in chunks, so large upload archives don't have to fit in memory.
      *
      * @return Collection<int, string>
      */
     public static function allMediaPaths(?Builder $query = null): Collection
     {
         return ($query ?? static::query())
-            ->get()
+            ->lazyById(1000)
             ->flatMap(fn (self $row) => $row->mediaPaths())
             ->unique()
-            ->values();
+            ->values()
+            ->collect();
     }
 }

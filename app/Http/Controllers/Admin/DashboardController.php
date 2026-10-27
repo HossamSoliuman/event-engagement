@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
+use App\Models\ArchivedFotoUpload;
 use App\Models\Event;
 use App\Models\FotoUpload;
 use App\Models\LotteryEntry;
@@ -17,29 +18,30 @@ class DashboardController extends Controller
     {
         $events = Event::withCount([
             'fotoUploads',
+            'archivedFotoUploads',
             'lotteryEntries',
             'votes',
             'memberships',
-            'fotoUploads as pending_fotos_count' => fn($q) => $q->where('status', 'pending'),
-            'fotoUploads as approved_fotos_count' => fn($q) => $q->where('status', 'approved'),
+            'fotoUploads as pending_fotos_count' => fn ($q) => $q->where('status', 'pending'),
+            'fotoUploads as approved_fotos_count' => fn ($q) => $q->where('status', 'approved'),
         ])->latest()->get();
 
-        $activeEvent  = $events->where('is_active', true)->first();
+        $activeEvent = $events->where('is_active', true)->first();
         $pendingFotos = FotoUpload::where('status', 'pending')->count();
 
         // Global stats
         $totalStats = [
-            'foto_uploads'    => FotoUpload::count(),
+            'foto_uploads' => FotoUpload::count() + ArchivedFotoUpload::count(),
             'lottery_entries' => LotteryEntry::count(),
-            'votes'           => Vote::count(),
-            'memberships'     => Membership::count(),
+            'votes' => Vote::count(),
+            'memberships' => Membership::count(),
         ];
 
         // Recent activity
         $recentActivity = ActivityLog::with('user', 'event')
             ->latest()->limit(7)->get();
 
-        $hourExpr = DB::getDriverName() === 'sqlite' ? "strftime('%H', created_at)" : "HOUR(created_at)";
+        $hourExpr = DB::getDriverName() === 'sqlite' ? "strftime('%H', created_at)" : 'HOUR(created_at)';
 
         $uploadActivity = FotoUpload::selectRaw("$hourExpr as hour, COUNT(*) as total")
             ->where('created_at', '>=', now()->subHours(24))

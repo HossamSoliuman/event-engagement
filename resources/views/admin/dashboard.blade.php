@@ -88,7 +88,7 @@
         <div style="flex:1;min-width:0">
             <div class="font-bold truncate" style="font-size:13px">{{ $event->name }}</div>
             <div class="text-muted text-xs">
-                {{ $event->foto_uploads_count }} fotos · {{ $event->votes_count }} votes · {{ $event->memberships_count }} members
+                {{ $event->foto_uploads_count + $event->archived_foto_uploads_count }} fotos · {{ $event->votes_count }} votes · {{ $event->memberships_count }} members
             </div>
         </div>
         <div style="display:flex;gap:5px">

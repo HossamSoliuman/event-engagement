@@ -20,7 +20,7 @@
 <div class="card">
     <div class="card-header">
         <h3>Individual Votes</h3>
-        <form method="POST" action="{{ route('moderator.voting.reset', $event) }}" onsubmit="return confirm('This will delete ALL votes. Are you sure?')">
+        <form method="POST" action="{{ route('moderator.voting.reset', $event) }}" data-confirm="Delete all votes?" data-confirm-message="This cannot be undone." data-confirm-button="Delete all" data-confirm-danger>
             @csrf <button class="btn btn-danger btn-sm">Reset All Votes</button>
         </form>
     </div>

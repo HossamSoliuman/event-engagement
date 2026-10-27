@@ -196,7 +196,7 @@ trait CalculatesEventStatistics
      */
     private function fotoStatistics(Event $event, CarbonInterface $from, CarbonInterface $to): array
     {
-        $base = fn () => $event->fotoUploads()->whereBetween('created_at', [$from, $to]);
+        $base = fn () => $event->allFotoUploads()->whereBetween('created_at', [$from, $to]);
 
         return [
             'total' => $base()->count(),
@@ -216,7 +216,7 @@ trait CalculatesEventStatistics
      */
     private function uploadsByHour(Event $event, CarbonInterface $from, CarbonInterface $to): array
     {
-        $counts = $event->fotoUploads()
+        $counts = $event->allFotoUploads()
             ->whereBetween('created_at', [$from, $to])
             ->selectRaw($this->hourExpression().' as bucket, COUNT(*) as total')
             ->groupBy('bucket')
@@ -241,7 +241,7 @@ trait CalculatesEventStatistics
         $range = [$from, $to];
 
         $modules = [
-            'fotobomb' => ['Foto Bomb', $event->module_fotobomb, fn () => $event->fotoUploads()],
+            'fotobomb' => ['Foto Bomb', $event->module_fotobomb, fn () => $event->allFotoUploads()],
             'voting' => ['Voting', $event->module_voting, fn () => $event->votes()],
             'lottery' => ['Lottery', $event->module_lottery, fn () => $event->lotteryEntries()],
             'membership' => ['Membership', $event->module_membership, fn () => $event->memberships()],
@@ -287,7 +287,7 @@ trait CalculatesEventStatistics
         $participantsByModule = [];
 
         $relations = [
-            'fotobomb' => fn () => $event->fotoUploads(),
+            'fotobomb' => fn () => $event->allFotoUploads(),
             'voting' => fn () => $event->votes(),
             'lottery' => fn () => $event->lotteryEntries(),
             'membership' => fn () => $event->memberships(),

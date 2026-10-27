@@ -2,14 +2,15 @@
 
 namespace App\Models;
 
+use App\Traits\HasFotoMedia;
 use App\Traits\ReferencesMediaFiles;
+use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
 
 class FotoUpload extends Model
 {
-    use ReferencesMediaFiles;
+    use HasFotoMedia, ReferencesMediaFiles;
 
     /** @var list<string> */
     public const MEDIA_COLUMNS = ['file_path', 'thumbnail_path', 'video_path'];
@@ -25,11 +26,31 @@ class FotoUpload extends Model
 
     protected $fillable = ['event_id', 'visitor_id', 'file_path', 'thumbnail_path', 'video_path', 'media_type', 'video_duration', 'original_filename', 'file_size', 'mime_type', 'uploader_name', 'uploader_phone', 'uploader_session', 'status', 'on_screen', 'display_order', 'admin_note', 'approved_at', 'displayed_at', 'approved_by'];
 
-    protected $casts = ['on_screen' => 'boolean', 'display_order' => 'integer', 'approved_at' => 'datetime', 'displayed_at' => 'datetime', 'video_duration' => 'float'];
+    protected $casts = ['on_screen' => 'boolean', 'display_order' => 'integer', 'approved_at' => 'datetime', 'displayed_at' => 'datetime', 'video_duration' => 'float', 'archived_at' => 'datetime'];
 
     protected static function booted(): void
     {
         static::deleting(fn (FotoUpload $foto) => $foto->removeFromScreen());
+    }
+
+    /**
+     * Foto Queue uploads and archived ones as one read-only query, so downloads,
+     * exports and statistics cover every day of an event. `$constrain` narrows
+     * both tables before they are combined; archived rows carry `archived_at`.
+     *
+     * @param  (Closure(Builder): mixed)|null  $constrain
+     */
+    public static function withArchived(?Closure $constrain = null): Builder
+    {
+        $current = static::query()->select(ArchivedFotoUpload::COPIED_COLUMNS)->selectRaw('NULL as archived_at');
+        $archived = ArchivedFotoUpload::query()->select([...ArchivedFotoUpload::COPIED_COLUMNS, 'archived_at']);
+
+        if ($constrain) {
+            $constrain($current);
+            $constrain($archived);
+        }
+
+        return static::query()->fromSub($current->toBase()->unionAll($archived->toBase()), (new static)->getTable());
     }
 
     public function event()
@@ -71,26 +92,6 @@ class FotoUpload extends Model
             ->reorder()
             ->orderByDesc('display_order')
             ->orderByDesc('id');
-    }
-
-    public function getFileUrlAttribute(): string
-    {
-        return Storage::disk('media')->url($this->file_path);
-    }
-
-    public function getThumbnailUrlAttribute(): string
-    {
-        return $this->thumbnail_path ? Storage::disk('media')->url($this->thumbnail_path) : $this->file_url;
-    }
-
-    public function getVideoUrlAttribute(): ?string
-    {
-        return $this->video_path ? Storage::disk('media')->url($this->video_path) : null;
-    }
-
-    public function isVideo(): bool
-    {
-        return $this->media_type === 'video';
     }
 
     public function isPending(): bool
