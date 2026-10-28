@@ -165,6 +165,18 @@ class VidiwallBackgroundTest extends TestCase
             ->assertSee('const HAS_WALL_BG = false;', false);
     }
 
+    public function test_the_wall_shows_no_slide_progress_bar_with_or_without_a_background(): void
+    {
+        $plain = Event::factory()->create(['is_active' => true]);
+
+        foreach ([$plain, $this->eventWithBackground()] as $event) {
+            $this->get(route('vidiwall.show', $event->slug))
+                ->assertOk()
+                ->assertDontSee('slideProgress', false)
+                ->assertDontSee('slide-progress', false);
+        }
+    }
+
     public function test_the_edit_form_shows_the_current_background(): void
     {
         $event = $this->eventWithBackground();

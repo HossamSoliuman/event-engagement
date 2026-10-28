@@ -296,16 +296,6 @@
             color: rgba(255, 255, 255, .7)
         }
 
-        .slide-progress {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            height: 3px;
-            background: var(--p);
-            z-index: 4;
-            transition: width linear
-        }
-
         .live-badge {
             position: absolute;
             top: 14px;
@@ -489,12 +479,6 @@
 
         .screen.has-bg .tile-frame {
             box-shadow: 0 24px 70px rgba(0, 0, 0, .5), 0 0 0 1px rgba(255, 255, 255, .14)
-        }
-
-        .screen.has-bg .slide-progress {
-            bottom: calc(-1 * clamp(8px, 1.4vh, 16px));
-            height: 4px;
-            border-radius: 4px
         }
 
         .screen.has-bg .event-title {
@@ -2184,7 +2168,6 @@
                     <div class="live-badge" id="liveBadge" style="display:none">&#9679; LIVE</div>
                     <div class="video-badge" id="videoBadge" style="display:none">&#9654; VIDEO</div>
                     <div class="slide-counter" id="slideCounter" style="display:none"></div>
-                    <div class="slide-progress" id="slideProgress" style="width:0;display:none"></div>
                 </div>
             </div>
 
@@ -2510,7 +2493,6 @@
             document.getElementById('liveBadge').style.display = 'none';
             document.getElementById('videoBadge').style.display = 'none';
             document.getElementById('slideCounter').style.display = 'none';
-            document.getElementById('slideProgress').style.display = 'none';
             setBackground(null);
             lastFotoId = null;
             lastPageKey = null;
@@ -2530,9 +2512,7 @@
             }
             slideIndex = 0;
 
-            const progress = document.getElementById('slideProgress');
             const liveVideo = document.getElementById('liveVideo');
-            progress.style.display = 'block';
 
             function nextSlide() {
                 clearTimeout(slideTimer);
@@ -2550,9 +2530,6 @@
                 const f = slideFotos[slideIndex];
 
                 if (f.media_type === 'video' && f.video_url) {
-                    progress.style.transition = 'none';
-                    progress.style.width = '0%';
-
                     showVideo(f.video_url, f.uploader, slideIndex + 1, slideFotos.length, goNext);
 
                     slideTimer = setTimeout(goNext, 60_000);
@@ -2562,12 +2539,6 @@
                     liveVideo.src = '';
 
                     showPhoto(f.url, f.uploader, slideIndex + 1, slideFotos.length);
-
-                    progress.style.transition = 'none';
-                    progress.style.width = '0%';
-                    progress.offsetHeight;
-                    progress.style.transition = `width ${interval}s linear`;
-                    progress.style.width = '100%';
 
                     slideTimer = setTimeout(goNext, interval * 1000);
                 }
@@ -2717,16 +2688,6 @@
             });
         }
 
-        function runQueueProgress(fromMs, slotMs) {
-            const progress = document.getElementById('slideProgress');
-            progress.style.display = 'block';
-            progress.style.transition = 'none';
-            progress.style.width = Math.min(100, fromMs / slotMs * 100) + '%';
-            progress.offsetHeight;
-            progress.style.transition = `width ${Math.max(0, slotMs - fromMs)}ms linear`;
-            progress.style.width = '100%';
-        }
-
         function resetPlayerView() {
             lastFotoId = null;
             lastPageKey = null;
@@ -2785,7 +2746,6 @@
 
             if (foto.media_type === 'video' && foto.video_url) {
                 const video = document.getElementById('liveVideo');
-                document.getElementById('slideProgress').style.display = 'none';
 
                 if (isNewItem) {
                     const startAt = elapsed > 500 ? '#t=' + (elapsed / 1000).toFixed(1) : '';
@@ -2812,10 +2772,7 @@
                 }
 
                 if (playing) {
-                    runQueueProgress(elapsed, slot);
                     queueTimer = setTimeout(finish, Math.max(0, slot - elapsed));
-                } else {
-                    document.getElementById('slideProgress').style.display = 'none';
                 }
             }
         }
@@ -2882,7 +2839,7 @@
 
             function hideStage() {
                 ['idleState', 'photoFrame', 'videoFrame', 'photoGrid', 'uploaderTag', 'liveBadge',
-                    'videoBadge', 'slideCounter', 'slideProgress'].forEach(id => {
+                    'videoBadge', 'slideCounter'].forEach(id => {
                     const n = document.getElementById(id);
                     if (n) n.style.display = 'none';
                 });
