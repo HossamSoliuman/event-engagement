@@ -37,6 +37,14 @@ class Event extends Model
     public const QR_SCREEN_PANELS = ['none', 'solid', 'glass'];
 
     /**
+     * Fonts every device already has. Google Fonts does not serve them, and one unknown
+     * family fails the whole stylesheet request, so they are never asked for.
+     *
+     * @var list<string>
+     */
+    public const SYSTEM_FONTS = ['Arial', 'Arial Black', 'Helvetica', 'Helvetica Neue', 'Verdana', 'Tahoma', 'Trebuchet MS', 'Georgia', 'Times New Roman', 'Courier New', 'Impact', 'Segoe UI'];
+
+    /**
      * What a lottery entry looks like once it is no longer a winner.
      *
      * @var array<string, mixed>
@@ -525,6 +533,59 @@ class Event extends Model
             'panel' => in_array($this->vidiwall_qr_panel, self::QR_SCREEN_PANELS, true) ? $this->vidiwall_qr_panel : 'none',
             'panel_color' => $this->hexColorOr($this->vidiwall_qr_panel_color, '#000000'),
         ];
+    }
+
+    /**
+     * The Branding heading font, reduced to characters a font name needs because it is echoed into CSS.
+     */
+    public function headingFont(): string
+    {
+        return self::cleanFontName($this->font_heading) ?: 'Syne';
+    }
+
+    /**
+     * The Branding body font, reduced to characters a font name needs because it is echoed into CSS.
+     */
+    public function bodyFont(): string
+    {
+        return self::cleanFontName($this->font_body) ?: 'DM Sans';
+    }
+
+    public static function isSystemFont(string $font): bool
+    {
+        return in_array(strtolower($font), array_map('strtolower', self::SYSTEM_FONTS), true);
+    }
+
+    /**
+     * The Google Fonts stylesheet for the heading and body fonts, leaving out system fonts like Arial.
+     * Null when both are system fonts.
+     */
+    public function googleFontsUrl(): ?string
+    {
+        $weights = [];
+        foreach ([[$this->headingFont(), [700, 800]], [$this->bodyFont(), [300, 400, 500, 600]]] as [$font, $fontWeights]) {
+            if (! self::isSystemFont($font)) {
+                $weights[$font] = [...($weights[$font] ?? []), ...$fontWeights];
+            }
+        }
+
+        if ($weights === []) {
+            return null;
+        }
+
+        $families = [];
+        foreach ($weights as $font => $fontWeights) {
+            $fontWeights = array_unique($fontWeights);
+            sort($fontWeights);
+            $families[] = 'family='.urlencode($font).':wght@'.implode(';', $fontWeights);
+        }
+
+        return 'https://fonts.googleapis.com/css2?'.implode('&', $families).'&display=swap';
+    }
+
+    private static function cleanFontName(?string $font): string
+    {
+        return trim(preg_replace('/\s+/', ' ', preg_replace('/[^A-Za-z0-9 \-]/', '', (string) $font)));
     }
 
     /**

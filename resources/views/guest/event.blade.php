@@ -7,12 +7,13 @@
     <meta name="theme-color" content="{{ $event->primary_color }}">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <title>{{ $event->name }}</title>
-    <link 
-        @php
-$fontH = $event->font_heading ?: 'Syne';
-        $fontB = $event->font_body    ?: 'DM Sans'; @endphp <link
-        href="https://fonts.googleapis.com/css2?family={{ urlencode($fontH) }}:wght@700;800&family={{ urlencode($fontB) }}:wght@300;400;500;600&display=swap"
-        rel="stylesheet">
+    @php
+        $fontH = $event->headingFont();
+        $fontB = $event->bodyFont();
+    @endphp
+    @if ($brandFonts = $event->googleFontsUrl())
+        <link href="{{ $brandFonts }}" rel="stylesheet">
+    @endif
 
     @php
         $lightBg = $event->hasLightBackground();

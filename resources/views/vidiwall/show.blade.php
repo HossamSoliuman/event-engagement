@@ -16,6 +16,9 @@
     <title>{{ $event->name }} — Vidiwall</title>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;600&display=swap"
         rel="stylesheet">
+    @if ($event->hasQrScreenCallToAction() && ($brandFonts = $event->googleFontsUrl()))
+        <link href="{{ $brandFonts }}" rel="stylesheet">
+    @endif
     @if ($event->hasVidiwallBackground())
         <link rel="preload" as="image" href="{{ $event->vidiwall_background_url }}">
     @endif
@@ -29,6 +32,8 @@
             --acc: {{ $event->accent_color }};
             --on-p: {{ $event->readableInk($event->primary_color) }};
             --on-bg: {{ $event->readableInk($event->secondary_color) }};
+            --font-h: '{{ $event->headingFont() }}', 'Syne', sans-serif;
+            --font-b: '{{ $event->bodyFont() }}', 'DM Sans', sans-serif;
             --frame-c: {{ $frameColor }};
             --frame-t: {{ $frameInk }};
         }
@@ -558,7 +563,7 @@
 
         .qr-cta-headline {
             max-width: 20em;
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 800;
             font-size: clamp(26px, min(5.6vw, 7.2vh), 104px);
             line-height: 1.05;
@@ -567,6 +572,7 @@
 
         .qr-cta-text {
             max-width: 32em;
+            font-family: var(--font-b);
             font-weight: 600;
             font-size: clamp(16px, min(3vw, 3.6vh), 48px);
             line-height: 1.3

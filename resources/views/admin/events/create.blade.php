@@ -250,7 +250,8 @@
                             </div>
                         </div>
                         <div class="form-hint">Any Google Fonts name works, e.g. Oswald, Bebas Neue, Raleway, Montserrat,
-                            Playfair Display or Inter.</div>
+                            Playfair Display or Inter. System fonts like Arial and Helvetica work too. The vidiwall QR
+                            screen text uses these fonts as well.</div>
                         <div
                             style="margin-top:14px;padding:12px 14px;background:var(--dark);border:1px solid var(--border);border-radius:8px">
                             <div id="fontPreviewHeading" style="font-size:20px;font-weight:800;margin-bottom:4px">Championship
@@ -387,6 +388,8 @@
                                 <input type="text" name="vidiwall_qr_small_text" id="vidiwall_qr_small_text"
                                     class="form-control" maxlength="140"
                                     value="{{ old('vidiwall_qr_small_text', $qrCta['small_text']) }}" placeholder="Optional">
+                                <div class="form-hint">The headline uses the heading font and the small text the body font
+                                    from the Branding tab.</div>
                             </div>
                             @php $qrPanel = old('vidiwall_qr_panel', $qrCta['panel']); @endphp
                             <div>

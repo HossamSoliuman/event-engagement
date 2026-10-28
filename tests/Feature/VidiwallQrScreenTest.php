@@ -521,6 +521,75 @@ class VidiwallQrScreenTest extends TestCase
         $this->assertSame('#E30613', $event->vidiwall_qr_panel_color);
     }
 
+    public function test_the_qr_screen_text_uses_the_branding_fonts(): void
+    {
+        $this->event->update(['vidiwall_qr_headline' => 'Scan me', 'font_heading' => 'Arial', 'font_body' => 'Oswald']);
+
+        $this->get(route('vidiwall.show', $this->event->slug))
+            ->assertOk()
+            ->assertSee("--font-h: 'Arial', 'Syne', sans-serif;", false)
+            ->assertSee("--font-b: 'Oswald', 'DM Sans', sans-serif;", false)
+            ->assertSee('font-family: var(--font-h);', false)
+            ->assertSee('font-family: var(--font-b);', false)
+            ->assertSee('<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600&amp;display=swap" rel="stylesheet">', false)
+            ->assertDontSee('family=Arial', false);
+    }
+
+    public function test_system_fonts_are_never_requested_from_google_fonts(): void
+    {
+        $this->event->update(['vidiwall_qr_headline' => 'Scan me', 'font_heading' => 'arial', 'font_body' => 'Helvetica']);
+
+        $this->assertNull($this->event->googleFontsUrl());
+
+        $this->get(route('vidiwall.show', $this->event->slug))
+            ->assertOk()
+            ->assertSee("--font-h: 'arial', 'Syne', sans-serif;", false)
+            ->assertDontSee('family=arial', false)
+            ->assertDontSee('family=Helvetica', false);
+    }
+
+    public function test_the_wall_falls_back_to_syne_and_dm_sans_without_branding_fonts(): void
+    {
+        $this->get(route('vidiwall.show', $this->event->slug))
+            ->assertOk()
+            ->assertSee("--font-h: 'Syne', 'Syne', sans-serif;", false)
+            ->assertSee("--font-b: 'DM Sans', 'DM Sans', sans-serif;", false);
+    }
+
+    public function test_one_font_for_heading_and_body_is_requested_once_with_all_weights(): void
+    {
+        $this->event->update(['font_heading' => 'Bebas Neue', 'font_body' => 'Bebas Neue']);
+
+        $this->assertSame(
+            'https://fonts.googleapis.com/css2?family=Bebas+Neue:wght@300;400;500;600;700;800&display=swap',
+            $this->event->googleFontsUrl(),
+        );
+    }
+
+    public function test_font_names_cannot_break_out_of_the_css(): void
+    {
+        $this->event->update(['vidiwall_qr_headline' => 'Scan me', 'font_heading' => "Oswald'; } body { display:none", 'font_body' => '<b>Inter</b>']);
+
+        $this->assertSame('Oswald body displaynone', $this->event->headingFont());
+        $this->assertSame('bInterb', $this->event->bodyFont());
+
+        $this->get(route('vidiwall.show', $this->event->slug))
+            ->assertOk()
+            ->assertSee("--font-h: 'Oswald body displaynone', 'Syne', sans-serif;", false)
+            ->assertDontSee("Oswald'; }", false);
+    }
+
+    public function test_the_guest_page_shows_arial_without_breaking_the_body_font(): void
+    {
+        $this->event->update(['font_heading' => 'Arial', 'font_body' => 'DM Sans']);
+
+        $this->get("/e/{$this->event->slug}")
+            ->assertOk()
+            ->assertSee("--font-h: 'Arial', sans-serif;", false)
+            ->assertSee('<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&amp;display=swap" rel="stylesheet">', false)
+            ->assertDontSee('family=Arial', false);
+    }
+
     public function test_the_wall_shows_the_headline_qr_code_and_small_text_in_a_panel(): void
     {
         $this->event->update([
