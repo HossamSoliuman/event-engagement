@@ -2,6 +2,14 @@
 @section('title', isset($event) ? 'Edit ' . $event->name : 'New Event')
 @section('page-title', isset($event) ? 'Edit Event' : 'New Event')
 
+@if (isset($event))
+    @section('topbar-actions')
+        <form method="POST" action="{{ route('admin.events.duplicate', $event) }}" style="display:inline">
+            @csrf <button class="btn btn-outline btn-sm"><i data-lucide="copy" class="lucide-icon"></i> Copy</button>
+        </form>
+    @endsection
+@endif
+
 @push('styles')
     <style>
         .ev-form-wrap { max-width: 980px; }

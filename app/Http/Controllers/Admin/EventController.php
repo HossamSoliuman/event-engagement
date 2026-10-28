@@ -157,7 +157,9 @@ class EventController extends Controller
         } catch (\Exception $e) {
         }
 
-        return redirect()->route('admin.events.edit', $new)->with('success', 'Event duplicated!');
+        ActivityLog::record('event.copied', ['name' => $new->name], $new->id);
+
+        return redirect()->route('admin.events.edit', $new)->with('success', 'Event copied. You are now editing the copy, which stays inactive until you switch it on.');
     }
 
     // ── Private Helpers ───────────────────────────────────────────────────────
@@ -192,6 +194,8 @@ class EventController extends Controller
             'landing_hero_title' => 'nullable|string|max:255',
             'landing_hero_sub' => 'nullable|string|max:255',
             'design' => 'nullable|array:'.implode(',', array_keys(Event::landingDesignDefaults())),
+            'landing_module_order' => 'nullable|array',
+            'landing_module_order.*' => 'distinct|in:'.implode(',', array_keys(Event::landingModules())),
             'frame_top_text' => 'nullable|string|max:100',
             'frame_bottom_text' => 'nullable|string|max:100',
             'frame_side_text' => 'nullable|string|max:100',
@@ -226,6 +230,8 @@ class EventController extends Controller
             'vidiwall_qr_text_color.regex' => 'The QR screen text colour must be a hex colour like #FFFFFF.',
             'vidiwall_qr_panel_color.regex' => 'The QR screen panel colour must be a hex colour like #000000.',
             'vidiwall_qr_panel.in' => 'Choose none, solid or glass for the QR screen panel.',
+            'landing_module_order.*.in' => 'The module order contains an unknown module.',
+            'landing_module_order.*.distinct' => 'Each module can appear only once in the module order.',
         ], [
             'vidiwall_qr_headline' => 'QR screen headline',
             'vidiwall_qr_small_text' => 'QR screen small text',

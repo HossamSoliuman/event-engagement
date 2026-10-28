@@ -142,6 +142,7 @@
             'admin.login'          => '<i data-lucide="key" class="lucide-icon"></i>',
             'event.created'        => '<i data-lucide="calendar" class="lucide-icon"></i>',
             'event.updated'        => '<i data-lucide="edit-3" class="lucide-icon"></i>',
+            'event.copied'         => '<i data-lucide="copy" class="lucide-icon"></i>',
         ];
         $icon = $icons[$log->action] ?? '·';
         $label = str_replace(['.','-','_'],' ', $log->action);

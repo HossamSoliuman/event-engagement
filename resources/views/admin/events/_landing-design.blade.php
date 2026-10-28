@@ -10,6 +10,7 @@
         'fanclash' => ['Fan Clash', 'swords'],
         'survey' => ['Fan Survey', 'clipboard-list'],
     ];
+    $ldOrder = \App\Models\Event::completeLandingModuleOrder(old('landing_module_order', $event->landing_module_order ?? null));
 @endphp
 
 <div class="ev-panel" data-panel="landing" id="ldPanel">
@@ -255,6 +256,35 @@
                 <summary><span class="ld-num">4</span> Module Grid <span class="ld-tag">applies to all {{ count($ldModules) }}</span> <i
                         data-lucide="chevron-down" class="lucide-icon ld-chev"></i></summary>
                 <div class="ld-sec-body">
+                    <div class="ld-ctl">
+                        <label class="ld-ctl-label"><span>Module order</span></label>
+                        <ol class="ld-order" id="ldOrder">
+                            @foreach ($ldOrder as $mod)
+                                @php
+                                    [$modLabel, $modIcon] = $ldModules[$mod];
+                                    $isOn = isset($event) ? (bool) $event->{'module_' . $mod} : true;
+                                @endphp
+                                <li class="ld-order-item" draggable="true" data-mod="{{ $mod }}">
+                                    <input type="hidden" name="landing_module_order[]" value="{{ $mod }}">
+                                    <i data-lucide="grip-vertical" class="lucide-icon ld-order-grip"></i>
+                                    <i data-lucide="{{ $modIcon }}" class="lucide-icon"></i>
+                                    <span class="ld-order-name">{{ $modLabel }}</span>
+                                    @unless ($isOn)
+                                        <span class="ld-tag ld-tag-off">hidden</span>
+                                    @endunless
+                                    <button type="button" class="ld-order-move" data-move="up"
+                                        aria-label="Move {{ $modLabel }} up"><i data-lucide="chevron-up"
+                                            class="lucide-icon"></i></button>
+                                    <button type="button" class="ld-order-move" data-move="down"
+                                        aria-label="Move {{ $modLabel }} down"><i data-lucide="chevron-down"
+                                            class="lucide-icon"></i></button>
+                                </li>
+                            @endforeach
+                        </ol>
+                        <div class="ld-hint">Drag a module or use the arrows. Hidden modules keep their place for when
+                            you switch them on.</div>
+                    </div>
+
                     @include('admin.events._design-range', [
                         'name' => 'design[card_columns]',
                         'label' => 'Modules per row',
@@ -648,6 +678,21 @@
         .ld-seg input:checked + span { background:var(--red); color:#fff }
         .ld-seg input:focus-visible + span { outline:2px solid var(--red); outline-offset:2px }
 
+        .ld-order { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:5px }
+        .ld-order-item { display:flex; align-items:center; gap:9px; padding:7px 8px 7px 10px; border-radius:9px;
+            background:var(--dark); border:1px solid var(--border); font-size:13px; font-weight:600; cursor:grab;
+            user-select:none }
+        .ld-order-item:hover { border-color:color-mix(in srgb, var(--red) 40%, var(--border)) }
+        .ld-order-item.is-dragging { opacity:.45; border-style:dashed; cursor:grabbing }
+        .ld-order-item .lucide-icon { width:15px; height:15px; flex-shrink:0 }
+        .ld-order-grip { opacity:.4 }
+        .ld-order-name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+        .ld-order-move { display:grid; place-items:center; width:26px; height:26px; border-radius:6px; flex-shrink:0;
+            border:1px solid var(--border); background:var(--card); color:var(--muted); cursor:pointer }
+        .ld-order-move:hover { color:var(--text); border-color:var(--red) }
+        .ld-order-move:focus-visible { outline:2px solid var(--red); outline-offset:1px }
+        .ld-order-item:first-child [data-move="up"], .ld-order-item:last-child [data-move="down"] { visibility:hidden }
+
         .ld-colors { display:grid; grid-template-columns:1fr 1fr; gap:12px }
         .ld-color-row { display:flex; gap:8px; align-items:center }
         .ld-color-row input[type=color] { width:34px; height:34px; padding:2px; border-radius:7px;
@@ -808,6 +853,8 @@
 
                 if (bgImage !== null) s.bg = bgImage;
 
+                s.order = [...panel.querySelectorAll('input[name="landing_module_order[]"]')].map(el => el.value);
+
                 return s;
             }
 
@@ -858,6 +905,47 @@
 
             window.addEventListener('message', e => {
                 if (e.origin === location.origin && e.data?.__eb === 'preview-ready') push();
+            });
+
+            // Module order: the hidden inputs submit in list order, so moving a row is all it takes.
+            const orderList = document.getElementById('ldOrder');
+            let dragged = null;
+            orderList?.addEventListener('dragstart', e => {
+                dragged = e.target.closest('.ld-order-item');
+                if (!dragged) return;
+                dragged.classList.add('is-dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', dragged.dataset.mod);
+            });
+            orderList?.addEventListener('dragover', e => {
+                if (!dragged) return;
+                e.preventDefault();
+                const over = e.target.closest('.ld-order-item');
+                if (!over || over === dragged) return;
+                const box = over.getBoundingClientRect();
+                orderList.insertBefore(dragged, e.clientY > box.top + box.height / 2 ? over.nextElementSibling : over);
+            });
+            orderList?.addEventListener('drop', e => e.preventDefault());
+            orderList?.addEventListener('dragend', () => {
+                if (!dragged) return;
+                dragged.classList.remove('is-dragging');
+                dragged = null;
+                push();
+            });
+            orderList?.addEventListener('click', e => {
+                const button = e.target.closest('[data-move]');
+                if (!button) return;
+                const item = button.closest('.ld-order-item');
+                const up = button.dataset.move === 'up';
+                if (up && item.previousElementSibling) {
+                    orderList.insertBefore(item, item.previousElementSibling);
+                } else if (!up && item.nextElementSibling) {
+                    orderList.insertBefore(item.nextElementSibling, item);
+                }
+                // At the top or bottom the pressed arrow hides, so keep focus on the other one.
+                const atEdge = up ? !item.previousElementSibling : !item.nextElementSibling;
+                (atEdge ? item.querySelector(up ? '[data-move="down"]' : '[data-move="up"]') : button).focus();
+                push();
             });
 
             // Zoom + reload

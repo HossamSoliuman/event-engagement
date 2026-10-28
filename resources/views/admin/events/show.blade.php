@@ -4,6 +4,9 @@
 
 @section('topbar-actions')
     <a href="{{ route('admin.events.edit', $event) }}" class="btn btn-secondary btn-sm">Edit</a>
+    <form method="POST" action="{{ route('admin.events.duplicate', $event) }}" style="display:inline">
+        @csrf <button class="btn btn-outline btn-sm"><i data-lucide="copy" class="lucide-icon"></i> Copy</button>
+    </form>
     <form method="POST" action="{{ route('admin.events.generate-qr', $event) }}" style="display:inline">
         @csrf <button class="btn btn-outline btn-sm"><i data-lucide="rotate-cw" class="lucide-icon"></i> QR</button>
     </form>

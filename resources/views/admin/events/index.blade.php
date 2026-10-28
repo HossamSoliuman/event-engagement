@@ -50,7 +50,8 @@
                                         class="btn btn-secondary btn-sm">Manage</a>
                                     <a href="{{ route('admin.events.edit', $event) }}" class="btn btn-ghost btn-sm">Edit</a>
                                     <form method="POST" action="{{ route('admin.events.duplicate', $event) }}">
-                                        @csrf <button class="btn btn-ghost btn-sm" title="Duplicate">⧉</button>
+                                        @csrf
+                                        <button class="btn btn-outline btn-sm"><i data-lucide="copy" class="lucide-icon"></i> Copy</button>
                                     </form>
                                     <form method="POST" action="{{ route('admin.events.destroy', $event) }}"
                                         data-confirm="Delete this event?" data-confirm-message="Its uploads, entries, votes and files are deleted too. This cannot be undone." data-confirm-button="Delete" data-confirm-danger>

@@ -1368,7 +1368,7 @@ $fontH = $event->font_heading ?: 'Syne';
             </div>
 
             <div class="cl-grid" data-cols="{{ (int) $ld['card_columns'] }}">
-                @foreach (\App\Models\Event::landingModules() as $mod => $iconName)
+                @foreach ($event->orderedLandingModules() as $mod => $iconName)
                     @continue(!$event->{'module_' . $mod})
                     @php
                         $tc = $event->tileConfig($mod);
@@ -3072,6 +3072,14 @@ $fontH = $event->font_heading ?: 'Syne';
 
                 for (const mod in (d.tiles || {})) {
                     applyVars(document.querySelector('.cl-card[data-mod="' + mod + '"]'), d.tiles[mod]);
+                }
+
+                // Module order: move the cards to the end of the grid one by one, in the new order.
+                if (grid && Array.isArray(d.order)) {
+                    d.order.forEach(mod => {
+                        const card = grid.querySelector(':scope > .cl-card[data-mod="' + mod + '"]');
+                        if (card) grid.appendChild(card);
+                    });
                 }
 
                 // Guest page language: a locked language hides the pill and repaints every label.

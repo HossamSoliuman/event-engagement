@@ -102,6 +102,7 @@ class Event extends Model
         'landing_hero_title',
         'landing_hero_sub',
         'landing_design',
+        'landing_module_order',
         'privacy_policy_text',
         'starts_at',
         'ends_at',
@@ -142,6 +143,7 @@ class Event extends Model
         'ends_at' => 'datetime',
         'vidiwall_frame_config' => 'array',
         'landing_design' => 'array',
+        'landing_module_order' => 'array',
         'tile_fotobomb_config' => 'array',
         'tile_voting_config' => 'array',
         'tile_lottery_config' => 'array',
@@ -886,6 +888,44 @@ class Event extends Model
             'fanclash' => 'swords',
             'survey' => 'clipboard-list',
         ];
+    }
+
+    /**
+     * Every landing module key in the order the admin set, followed by any module
+     * missing from that order (new modules, old events) in the default order.
+     *
+     * @return list<string>
+     */
+    public function landingModuleOrder(): array
+    {
+        return self::completeLandingModuleOrder($this->landing_module_order);
+    }
+
+    /**
+     * Turns a saved (or submitted) module order into a full one: unknown keys are
+     * dropped and missing modules are appended in the default order.
+     *
+     * @return list<string>
+     */
+    public static function completeLandingModuleOrder(mixed $order): array
+    {
+        $modules = array_keys(self::landingModules());
+        $known = array_filter(is_array($order) ? $order : [], fn (mixed $module): bool => in_array($module, $modules, true));
+
+        return array_values(array_unique([...$known, ...$modules]));
+    }
+
+    /**
+     * The landing page modules in the admin's order, with their fallback icon.
+     *
+     * @return array<string, string>
+     */
+    public function orderedLandingModules(): array
+    {
+        $icons = self::landingModules();
+        $order = $this->landingModuleOrder();
+
+        return array_combine($order, array_map(fn (string $module): string => $icons[$module], $order));
     }
 
     /**
