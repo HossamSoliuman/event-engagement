@@ -28,6 +28,14 @@
         .sb-event-badge{margin:10px 12px 0;background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.25);border-radius:8px;padding:8px 12px}
         .sb-event-badge .ev-label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--mod);font-weight:700}
         .sb-event-badge .ev-name{font-size:13px;font-weight:700;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .sb-event-switch summary{list-style:none;display:flex;align-items:center;gap:8px;cursor:pointer}
+        .sb-event-switch summary::-webkit-details-marker{display:none}
+        .sb-event-switch summary .lucide-icon{color:var(--mod);flex-shrink:0}
+        .sb-event-switch .ev-text{flex:1;min-width:0}
+        .sb-event-switch .ev-options{display:flex;flex-direction:column;gap:2px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(99,102,241,.25);max-height:240px;overflow-y:auto}
+        .sb-event-switch .ev-option{padding:6px 8px;border-radius:6px;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .sb-event-switch .ev-option:hover{color:var(--text);background:rgba(255,255,255,.04)}
+        .sb-event-switch .ev-option.current{color:var(--mod);font-weight:700}
         .sb-scroll{flex:1;overflow-y:auto;padding:12px 0;scrollbar-width:none}
         .sb-scroll::-webkit-scrollbar{display:none}
         .sb-label{padding:10px 18px 4px;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
@@ -182,9 +190,27 @@
         <div class="tagline">Moderator Portal</div>
     </div>
 
-    @php $event = $event ?? null; @endphp
+    @php
+        $event = $event ?? null;
+        $switchableEvents = $event ? auth()->user()->moderatedEvents()->latest('events.id')->get(['events.id', 'events.name']) : collect();
+    @endphp
 
-    @if($event)
+    @if($event && $switchableEvents->count() > 1)
+    <details class="sb-event-badge sb-event-switch" id="eventSwitch">
+        <summary>
+            <div class="ev-text">
+                <div class="ev-label">Your Event</div>
+                <div class="ev-name">{{ $event->name }}</div>
+            </div>
+            <i data-lucide="chevrons-up-down" class="lucide-icon"></i>
+        </summary>
+        <div class="ev-options">
+            @foreach($switchableEvents as $switchEvent)
+            <a href="{{ route('moderator.dashboard', $switchEvent) }}" class="ev-option {{ $switchEvent->is($event) ? 'current' : '' }}">{{ $switchEvent->name }}</a>
+            @endforeach
+        </div>
+    </details>
+    @elseif($event)
     <div class="sb-event-badge">
         <div class="ev-label">Your Event</div>
         <div class="ev-name">{{ $event->name }}</div>
@@ -287,6 +313,10 @@
 <script>
 function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('sbOverlay').classList.add('open'); }
 function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sbOverlay').classList.remove('open'); }
+document.addEventListener('click', function (e) {
+    const eventSwitch = document.getElementById('eventSwitch');
+    if (eventSwitch && eventSwitch.open && !eventSwitch.contains(e.target)) eventSwitch.open = false;
+});
 </script>
 @include('layouts._dialog')
 @stack('scripts')

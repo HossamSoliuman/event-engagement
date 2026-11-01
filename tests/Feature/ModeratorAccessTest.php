@@ -102,6 +102,35 @@ class ModeratorAccessTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_moderator_with_several_events_can_switch_between_them(): void
+    {
+        $event = Event::factory()->create(['name' => 'Client Event One']);
+        $secondEvent = Event::factory()->create(['name' => 'Client Event Two']);
+        $foreignEvent = Event::factory()->create(['name' => 'Someone Elses Event']);
+        $moderator = User::factory()->create(['role' => 'moderator']);
+        $event->moderators()->attach($moderator);
+        $secondEvent->moderators()->attach($moderator);
+
+        $this->actingAs($moderator)
+            ->get(route('moderator.dashboard', $event))
+            ->assertOk()
+            ->assertSee('id="eventSwitch"', false)
+            ->assertSee(route('moderator.dashboard', $secondEvent), false)
+            ->assertDontSee($foreignEvent->name);
+    }
+
+    public function test_moderator_with_one_event_sees_no_switcher(): void
+    {
+        $event = Event::factory()->create();
+        $moderator = User::factory()->create(['role' => 'moderator']);
+        $event->moderators()->attach($moderator);
+
+        $this->actingAs($moderator)
+            ->get(route('moderator.dashboard', $event))
+            ->assertOk()
+            ->assertDontSee('id="eventSwitch"', false);
+    }
+
     public function test_mobile_api_is_for_admins_only(): void
     {
         $event = Event::factory()->create();
