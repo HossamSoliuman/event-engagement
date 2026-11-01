@@ -23,6 +23,10 @@ class MobileApiController extends Controller
             return response()->json(['message' => 'Invalid credentials.'], 401);
         }
 
+        if (! $user->isAdmin()) {
+            return response()->json(['message' => 'The mobile app is for admins only.'], 403);
+        }
+
         $token = $user->createToken('mobile-admin')->plainTextToken;
         $user->update(['last_login_at' => now()]);
 

@@ -183,7 +183,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     });
 });
 
-Route::prefix('api/v1')->middleware('auth:sanctum')->group(function () {
+Route::prefix('api/v1')->middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::get('dashboard', [MobileApiController::class, 'dashboard']);
     Route::get('events/{event}/fotos/pending', [MobileApiController::class, 'pendingFotos']);
     Route::post('fotos/{foto}/approve', [MobileApiController::class, 'approveFoto']);

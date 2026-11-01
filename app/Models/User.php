@@ -42,6 +42,14 @@ class User extends Authenticatable
         return $this->belongsToMany(Event::class, 'event_moderators')->withTimestamps();
     }
 
+    /**
+     * The event a moderator lands on: their newest assigned event.
+     */
+    public function defaultModeratedEvent(): ?Event
+    {
+        return $this->moderatedEvents()->latest('events.id')->first();
+    }
+
     public function getAvatarUrlAttribute(): string
     {
         return $this->avatar_path ? Storage::disk('media')->url($this->avatar_path) : 'https://ui-avatars.com/api/?name='.urlencode($this->name).'&background=FF3D00&color=fff&size=64';

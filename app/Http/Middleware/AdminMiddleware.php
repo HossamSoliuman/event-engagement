@@ -7,11 +7,26 @@ use Illuminate\Http\Request;
 
 class AdminMiddleware
 {
+    /**
+     * The admin panel and API are for admins only. Moderators work in the
+     * per-event moderator portal, so a page visit sends them there.
+     */
     public function handle(Request $request, Closure $next)
     {
-        if (!auth()->check() || !auth()->user()->isModerator()) {
-            abort(403, 'Unauthorised.');
+        $user = auth()->user();
+
+        if ($user?->isAdmin()) {
+            return $next($request);
         }
-        return $next($request);
+
+        if ($user?->role === 'moderator' && $request->isMethod('GET') && ! $request->expectsJson()) {
+            $event = $user->defaultModeratedEvent();
+
+            if ($event) {
+                return redirect()->route('moderator.dashboard', $event);
+            }
+        }
+
+        abort(403, 'Unauthorised.');
     }
 }

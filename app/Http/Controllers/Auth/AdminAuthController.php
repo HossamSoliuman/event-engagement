@@ -9,29 +9,39 @@ use Illuminate\Support\Facades\Auth;
 
 class AdminAuthController extends Controller
 {
+    private const UNASSIGNED_MESSAGE = 'You have not been assigned to any event yet. Please contact your administrator.';
+
     public function showLogin()
     {
         if (Auth::check()) {
             $user = Auth::user();
             if ($user->role === 'moderator') {
-                $event = $user->moderatedEvents()->first();
-                if ($event) return redirect()->route('moderator.dashboard', $event);
+                $event = $user->defaultModeratedEvent();
+                if ($event) {
+                    return redirect()->route('moderator.dashboard', $event);
+                }
+                Auth::logout();
+
+                return view('admin.auth.login')->withErrors(['email' => self::UNASSIGNED_MESSAGE]);
             }
+
             return redirect()->route('admin.dashboard');
         }
+
         return view('admin.auth.login');
     }
 
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'email'    => ['required', 'email'],
+            'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
-            if (!Auth::user()->is_active) {
+            if (! Auth::user()->is_active) {
                 Auth::logout();
+
                 return back()->withErrors(['email' => 'Your account has been deactivated.']);
             }
             $request->session()->regenerate();
@@ -40,9 +50,13 @@ class AdminAuthController extends Controller
 
             $user = Auth::user();
             if ($user->role === 'moderator') {
-                $event = $user->moderatedEvents()->first();
-                if ($event) return redirect()->route('moderator.dashboard', $event);
-                return redirect()->route('admin.login')->withErrors(['email' => 'You have not been assigned to any event yet. Please contact your administrator.']);
+                $event = $user->defaultModeratedEvent();
+                if ($event) {
+                    return redirect()->route('moderator.dashboard', $event);
+                }
+                Auth::logout();
+
+                return redirect()->route('admin.login')->withErrors(['email' => self::UNASSIGNED_MESSAGE]);
             }
 
             return redirect()->intended(route('admin.dashboard'));
@@ -57,6 +71,7 @@ class AdminAuthController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return redirect()->route('admin.login');
     }
 }
