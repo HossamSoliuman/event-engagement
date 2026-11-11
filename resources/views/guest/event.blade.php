@@ -660,6 +660,39 @@
             margin-bottom: 16px
         }
 
+        .vote-timer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 14px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid color-mix(in srgb, var(--acc) 40%, transparent);
+            background: color-mix(in srgb, var(--acc) 10%, transparent);
+            font-size: 13px;
+            font-weight: 600
+        }
+
+        .vote-timer[hidden] {
+            display: none
+        }
+
+        .vote-timer strong {
+            font-size: 18px;
+            font-variant-numeric: tabular-nums;
+            color: var(--acc)
+        }
+
+        .vote-timer.is-ending {
+            border-color: rgba(239, 68, 68, .5);
+            background: rgba(239, 68, 68, .1)
+        }
+
+        .vote-timer.is-ending strong {
+            color: #ef4444
+        }
+
         .vote-card {
             border: 2px solid var(--border);
             border-radius: 12px;
@@ -1741,16 +1774,20 @@
             <div class="mod-body">
                 <p class="section-title"><i data-lucide="trophy" class="lucide-icon"></i> {{ $event->voting_title }}</p>
                 <p class="section-desc">{{ $event->voting_desc }}</p>
-                @if ($event->voting_closed)
-                    <div
-                        style="background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:14px;padding:28px;text-align:center">
-                        <div style="font-size:40px;margin-bottom:12px"><i data-lucide="lock" class="lucide-icon"></i></div>
-                        <div style="font-weight:700;font-size:16px;margin-bottom:6px" data-en="Voting is closed"
-                            data-de="Abstimmung beendet">{{ $t('Voting is closed', 'Abstimmung beendet') }}</div>
-                        <div style="font-size:13px;color:var(--muted)" data-en="Results will be announced shortly."
-                            data-de="Ergebnisse folgen in Kürze.">{{ $t('Results will be announced shortly.', 'Ergebnisse folgen in Kürze.') }}</div>
+                <div id="voteClosed" @if (! $event->voting_closed) hidden @endif
+                    style="background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:14px;padding:28px;text-align:center">
+                    <div style="font-size:40px;margin-bottom:12px"><i data-lucide="lock" class="lucide-icon"></i></div>
+                    <div style="font-weight:700;font-size:16px;margin-bottom:6px" data-en="Voting is closed"
+                        data-de="Abstimmung beendet">{{ $t('Voting is closed', 'Abstimmung beendet') }}</div>
+                    <div style="font-size:13px;color:var(--muted)" data-en="Results will be announced shortly."
+                        data-de="Ergebnisse folgen in Kürze.">{{ $t('Results will be announced shortly.', 'Ergebnisse folgen in Kürze.') }}</div>
+                </div>
+                <div id="voteOpen" @if ($event->voting_closed) hidden @endif>
+                    <div class="vote-timer" id="voteTimer" hidden>
+                        <i data-lucide="timer" class="lucide-icon"></i>
+                        <span data-en="Time left to vote" data-de="Noch Zeit zum Abstimmen">{{ $t('Time left to vote', 'Noch Zeit zum Abstimmen') }}</span>
+                        <strong id="voteTimerNum"></strong>
                     </div>
-                @else
                     <div class="vote-grid" id="voteGrid">
                         @foreach ($event->voting_options ?? [] as $i => $opt)
                             <div class="vote-card" data-cand="{{ $opt['name'] }}" onclick="selectVote(this)">
@@ -1780,7 +1817,7 @@
                         <p data-en="Live results shown on the big screen."
                             data-de="Live-Ergebnisse auf der Leinwand.">{{ $t('Live results shown on the big screen.', 'Live-Ergebnisse auf der Leinwand.') }}</p>
                     </div>
-                @endif
+                </div>
             </div>
         </div>
     @endif
@@ -2170,6 +2207,7 @@
             document.getElementById('screen-' + n)?.classList.add('open');
             window.scrollTo(0, 0);
             if (n === 'fanclash' && window.fcOpen) { window.fcOpen(); }
+            if (n === 'voting' && window.voteOpen) { window.voteOpen(); }
         }
 
         function closeModule(n) {
@@ -2177,6 +2215,7 @@
             document.getElementById('landing').style.display = 'flex';
             window.scrollTo(0, 0);
             if (n === 'fanclash' && window.fcClose) { window.fcClose(); }
+            if (n === 'voting' && window.voteClose) { window.voteClose(); }
         }
 
         function toast(msg, err = false) {
@@ -2517,6 +2556,66 @@
                 btn.disabled = false;
             }
         }
+
+        /* The vote follows the console while its screen is open: it opens and
+           closes without a reload and counts down when voting has a timer. */
+        (function () {
+            const closedBox = document.getElementById('voteClosed');
+            if (!closedBox) return;
+            const openBox = document.getElementById('voteOpen');
+            const timerBox = document.getElementById('voteTimer');
+            const timerNum = document.getElementById('voteTimerNum');
+            const success = document.getElementById('voteSuccess');
+            let open = @json(! $event->voting_closed);
+            let deadline = @json($event->votingMsLeft());
+            deadline = deadline === null ? null : performance.now() + deadline;
+            let pollTimer = null;
+            let tickTimer = null;
+
+            function voted() {
+                return success.style.display === 'block';
+            }
+
+            function paint() {
+                const left = deadline === null ? null : Math.max(0, deadline - performance.now());
+                const closed = !open || left === 0;
+                closedBox.hidden = !closed || voted();
+                openBox.hidden = closed && !voted();
+                timerBox.hidden = closed || left === null || voted();
+                if (!timerBox.hidden) {
+                    const second = Math.ceil(left / 1000);
+                    timerNum.textContent = Math.floor(second / 60) + ':' + String(second % 60).padStart(2, '0');
+                    timerBox.classList.toggle('is-ending', second <= 10);
+                }
+            }
+
+            async function poll() {
+                try {
+                    const r = await fetch(`/e/${SLUG}/vote/status`, { headers: { Accept: 'application/json' }, cache: 'no-store' });
+                    if (r.ok) {
+                        const d = await r.json();
+                        open = d.open;
+                        deadline = d.ends_in_ms === null ? null : performance.now() + d.ends_in_ms;
+                        paint();
+                    }
+                } catch (e) {}
+                pollTimer = setTimeout(poll, 10000);
+            }
+
+            window.voteOpen = () => {
+                clearTimeout(pollTimer);
+                clearInterval(tickTimer);
+                poll();
+                tickTimer = setInterval(paint, 250);
+            };
+
+            window.voteClose = () => {
+                clearTimeout(pollTimer);
+                clearInterval(tickTimer);
+            };
+
+            paint();
+        })();
 
         function selectVote(card) {
             document.querySelectorAll('#screen-voting .vote-card').forEach(c => c.classList.remove('sel'));
