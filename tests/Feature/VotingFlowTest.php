@@ -115,20 +115,55 @@ class VotingFlowTest extends TestCase
 
     public function test_phones_can_follow_the_vote(): void
     {
+        $notVoted = ['voted' => false, 'choice' => null, 'tallies' => null];
+
         $this->getJson(route('vote.status', $this->event->slug))
             ->assertOk()
-            ->assertExactJson(['open' => true, 'ends_in_ms' => null]);
+            ->assertExactJson(['open' => true, 'ends_in_ms' => null] + $notVoted);
 
         $this->event->votingShow()->update(['voting_minutes' => 5]);
         $this->actingAs($this->admin)->postJson(route('admin.voting.start', $this->event))->assertOk();
 
         $this->travelToMs(60000);
         $this->getJson(route('vote.status', $this->event->slug))
-            ->assertExactJson(['open' => true, 'ends_in_ms' => 240000]);
+            ->assertExactJson(['open' => true, 'ends_in_ms' => 240000] + $notVoted);
 
         $this->travelToMs(300000);
         $this->getJson(route('vote.status', $this->event->slug))
-            ->assertExactJson(['open' => false, 'ends_in_ms' => null]);
+            ->assertExactJson(['open' => false, 'ends_in_ms' => null] + $notVoted);
+    }
+
+    public function test_a_phone_that_voted_gets_its_choice_and_the_live_tallies(): void
+    {
+        $this->postJson(route('vote.store', $this->event->slug), ['candidate' => 'Ben Otto'])->assertOk();
+        $this->vote('Anna Keller', 2);
+
+        $this->getJson(route('vote.status', $this->event->slug))
+            ->assertJsonPath('voted', true)
+            ->assertJsonPath('choice', 'Ben Otto')
+            ->assertJsonPath('tallies.Anna Keller', 2)
+            ->assertJsonPath('tallies.Ben Otto', 1);
+    }
+
+    public function test_a_guest_votes_once_per_vote_and_again_after_a_new_vote(): void
+    {
+        $this->postJson(route('vote.store', $this->event->slug), ['candidate' => 'Anna Keller'])->assertOk();
+        $this->postJson(route('vote.store', $this->event->slug), ['candidate' => 'Ben Otto'])
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'You have already voted!');
+
+        $this->actingAs($this->admin)->postJson(route('admin.voting.reset', $this->event))->assertOk();
+        auth()->logout();
+
+        $this->getJson(route('vote.status', $this->event->slug))
+            ->assertJsonPath('voted', false)
+            ->assertJsonPath('choice', null);
+
+        $this->postJson(route('vote.store', $this->event->slug), ['candidate' => 'Ben Otto'])
+            ->assertOk()
+            ->assertJsonPath('tallies.Ben Otto', 1);
+
+        $this->assertSame(['Ben Otto'], $this->event->votes()->pluck('candidate_name')->all());
     }
 
     public function test_the_vote_page_on_phones_counts_down_and_follows_the_vote(): void
