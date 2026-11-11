@@ -1618,7 +1618,8 @@
             flex-direction: column;
             align-items: center;
             gap: clamp(14px, 3vh, 40px);
-            width: clamp(140px, min(22vw, 46vh), 440px)
+            width: clamp(140px, min(22vw, 46vh), 440px);
+            container-type: inline-size
         }
 
         .vot-side.has-timer {
@@ -1652,7 +1653,7 @@
         .vot-timer-num {
             font-family: 'Syne', sans-serif;
             font-weight: 800;
-            font-size: clamp(40px, min(7vw, 13vh), 140px);
+            font-size: 21cqw;
             line-height: 1;
             font-variant-numeric: tabular-nums;
             color: var(--acc);
@@ -3514,9 +3515,9 @@
 
             /* Minutes and seconds to the end of voting; the last ten turn red
                and pulse with every second. */
-            function paintTimer(now) {
+            function paintTimer() {
                 if (deadline === null) return;
-                const second = Math.ceil(Math.max(0, deadline - now) / 1000);
+                const second = Math.ceil(Math.max(0, deadline - performance.now()) / 1000);
                 if (second === lastSecond) return;
                 lastSecond = second;
                 timerNum.textContent = Math.floor(second / 60) + ':' + String(second % 60).padStart(2, '0');
@@ -3835,7 +3836,7 @@
 
                 if (show.type === 'live') {
                     setScene('live');
-                    paintTimer(now);
+                    paintTimer();
                 } else if (show.type === 'podium') {
                     setScene('podium');
                 } else if (phase === 'intro') {
