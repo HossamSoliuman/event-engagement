@@ -2589,13 +2589,19 @@
                 }
             }
 
+            /* A reply to a poll sent before this phone voted must not undo the vote. */
             async function poll() {
+                const before = voted();
                 try {
                     const r = await fetch(`/e/${SLUG}/vote/status`, { headers: { Accept: 'application/json' }, cache: 'no-store' });
                     if (r.ok) {
                         const d = await r.json();
                         open = d.open;
                         deadline = d.ends_in_ms === null ? null : performance.now() + d.ends_in_ms;
+                        if (voted() === before && d.voted !== undefined) {
+                            if (d.voted !== before) setVoted(d.voted, d.choice);
+                            if (d.voted && d.tallies) paintVoteTallies(d.tallies);
+                        }
                         paint();
                     }
                 } catch (e) {}
@@ -2633,22 +2639,33 @@
                 candidate: selCandidate
             });
             if (d.success) {
-                if (d.tallies) {
-                    const total = Object.values(d.tallies).reduce((a, b) => a + b, 0);
-                    document.querySelectorAll('#screen-voting .vote-card').forEach(c => {
-                        const cnt = d.tallies[c.dataset.cand] || 0;
-                        c.querySelector('.v-fill').style.width = (total > 0 ? Math.round((cnt / total) *
-                                100) :
-                            0) + '%';
-                    });
-                }
-                document.getElementById('voteAction').style.display = 'none';
-                document.getElementById('voteSuccess').style.display = 'block';
+                if (d.tallies) paintVoteTallies(d.tallies);
+                setVoted(true, selCandidate);
                 setLang(lang);
             } else {
                 toast(d.message, true);
                 btn.disabled = false;
             }
+        }
+
+        function paintVoteTallies(tallies) {
+            const total = Object.values(tallies).reduce((a, b) => a + b, 0);
+            document.querySelectorAll('#screen-voting .vote-card').forEach(c => {
+                const cnt = tallies[c.dataset.cand] || 0;
+                c.querySelector('.v-fill').style.width = (total > 0 ? Math.round((cnt / total) * 100) : 0) + '%';
+            });
+        }
+
+        /* Shows the thank-you with the guest's pick, or the vote form again after a new vote. */
+        function setVoted(isVoted, choice) {
+            document.querySelectorAll('#screen-voting .vote-card').forEach(c => {
+                c.classList.toggle('sel', isVoted && c.dataset.cand === choice);
+                if (!isVoted) c.querySelector('.v-fill').style.width = '0%';
+            });
+            selCandidate = isVoted ? choice : null;
+            document.getElementById('voteAction').style.display = isVoted ? 'none' : '';
+            document.getElementById('voteSuccess').style.display = isVoted ? 'block' : 'none';
+            document.getElementById('voteBtn').disabled = false;
         }
 
 
