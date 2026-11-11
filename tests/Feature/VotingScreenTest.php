@@ -444,7 +444,7 @@ class VotingScreenTest extends TestCase
             ->get(route('admin.voting.index', $this->event))
             ->assertOk()
             ->assertSeeInOrder(['Ben Otto', 'Anna Keller', 'Cara Lind'])
-            ->assertSee('Vidiwall Show')
+            ->assertSee('Screen options')
             ->assertSee(json_encode(route('admin.voting.screen', $this->event)), false);
 
         $this->vote('Cara Lind', 3);
@@ -541,7 +541,7 @@ class VotingScreenTest extends TestCase
         $this->actingAs($moderator)
             ->get(route('moderator.voting.index', $this->event))
             ->assertOk()
-            ->assertSee('Vidiwall Show')
+            ->assertSee('Screen options')
             ->assertSee('Individual Votes')
             ->assertSee(json_encode(route('moderator.voting.screen', $this->event)), false);
 

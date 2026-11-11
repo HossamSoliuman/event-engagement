@@ -4,11 +4,6 @@
 
 @section('topbar-actions')
     <a href="{{ route('moderator.voting.export', $event) }}" class="btn btn-secondary btn-sm">Export CSV</a>
-    @if($event->voting_closed)
-        <form method="POST" action="{{ route('moderator.voting.reopen', $event) }}">@csrf<button class="btn btn-outline btn-sm">Reopen Voting</button></form>
-    @else
-        <form method="POST" action="{{ route('moderator.voting.close', $event) }}">@csrf<button class="btn btn-outline btn-sm">Close Voting</button></form>
-    @endif
     <a href="{{ route('vidiwall.show', $event->slug) }}" target="_blank" class="btn btn-gold btn-sm">Vidiwall</a>
 @endsection
 
@@ -20,9 +15,6 @@
 <div class="card">
     <div class="card-header">
         <h3>Individual Votes</h3>
-        <form method="POST" action="{{ route('moderator.voting.reset', $event) }}" data-confirm="Delete all votes?" data-confirm-message="This cannot be undone." data-confirm-button="Delete all" data-confirm-danger>
-            @csrf <button class="btn btn-danger btn-sm">Reset All Votes</button>
-        </form>
     </div>
     <div class="table-wrap">
         <table class="table">
