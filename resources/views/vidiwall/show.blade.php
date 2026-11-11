@@ -1611,18 +1611,79 @@
             box-shadow: 0 0 calc(var(--row) * .3) color-mix(in srgb, var(--acc) 45%, transparent)
         }
 
-        .vot-qr {
+        .vot-side {
             flex: 0 0 auto;
             align-self: center;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: clamp(8px, 1.8vh, 22px);
+            gap: clamp(14px, 3vh, 40px);
             width: clamp(140px, min(22vw, 46vh), 440px)
         }
 
+        .vot-side.has-timer {
+            width: clamp(140px, min(22vw, 36vh), 400px)
+        }
+
+        .vot-side[hidden],
+        .vot-timer[hidden],
         .vot-qr[hidden] {
             display: none
+        }
+
+        .vot-timer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: clamp(2px, .6vh, 8px);
+            text-align: center
+        }
+
+        .vot-timer-label {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: clamp(12px, min(1.3vw, 2.4vh), 24px);
+            letter-spacing: .2em;
+            text-transform: uppercase;
+            opacity: .7;
+            white-space: nowrap
+        }
+
+        .vot-timer-num {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: clamp(40px, min(7vw, 13vh), 140px);
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+            color: var(--acc);
+            transition: color .3s
+        }
+
+        .vot-timer.is-ending .vot-timer-num {
+            color: #ef4444;
+            text-shadow: 0 0 .4em rgba(239, 68, 68, .45)
+        }
+
+        .vot-timer-num.is-tick {
+            animation: votTimerTick .9s cubic-bezier(.22, 1, .36, 1)
+        }
+
+        @keyframes votTimerTick {
+            0% {
+                transform: scale(1.18)
+            }
+
+            100% {
+                transform: scale(1)
+            }
+        }
+
+        .vot-qr {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: clamp(8px, 1.8vh, 22px);
+            width: 100%
         }
 
         .vot-qr-card {
@@ -2272,15 +2333,21 @@
                     <div class="vot-body">
                         <div class="vot-scene vot-live" data-scene="live" hidden>
                             <div class="vot-chart" id="votChart"></div>
-                            <div class="vot-qr" id="votQr" hidden>
-                                @if ($event->qr_code_path)
-                                    <div class="vot-qr-card">
-                                        <img src="{{ $event->qr_code_url }}" alt="QR code">
-                                    </div>
-                                @else
-                                    <div class="vot-qr-url">{{ $event->getGuestUrl() }}</div>
-                                @endif
-                                <div class="vot-qr-text">Scan to vote</div>
+                            <div class="vot-side" id="votSide" hidden>
+                                <div class="vot-timer" id="votTimer" hidden>
+                                    <div class="vot-timer-label">Voting closes in</div>
+                                    <div class="vot-timer-num" id="votTimerNum"></div>
+                                </div>
+                                <div class="vot-qr" id="votQr" hidden>
+                                    @if ($event->qr_code_path)
+                                        <div class="vot-qr-card">
+                                            <img src="{{ $event->qr_code_url }}" alt="QR code">
+                                        </div>
+                                    @else
+                                        <div class="vot-qr-url">{{ $event->getGuestUrl() }}</div>
+                                    @endif
+                                    <div class="vot-qr-text">Scan to vote</div>
+                                </div>
                             </div>
                         </div>
 
@@ -3329,6 +3396,7 @@
             const el = id => document.getElementById(id);
             const headline = el('votHeadline'), statusChip = el('votStatus'), statusText = el('votStatusText'),
                 chart = el('votChart'), qr = el('votQr'),
+                side = el('votSide'), timer = el('votTimer'), timerNum = el('votTimerNum'),
                 countNum = el('votCountNum'), ringFill = el('votRingFill'),
                 result = el('votResult'), eyebrow = el('votEyebrow'), winnersBox = el('votWinners'),
                 podium = el('votPodium'), foot = el('votFoot'), progress = el('votProgress');
@@ -3347,6 +3415,8 @@
             let podiumOrder = null;
             let podiumFinal = false;
             let podiumTimer = null;
+            let deadline = null;
+            let lastSecond = null;
             let leaveTimer = null;
             let pollTimer = null;
 
@@ -3425,6 +3495,38 @@
                     : (final ? 'Final results' : 'Voting open');
                 foot.textContent = show.total !== null ? votesText(show.total) : '';
                 qr.hidden = !show.qr;
+                timer.hidden = deadline === null;
+                side.hidden = qr.hidden && timer.hidden;
+                side.classList.toggle('has-timer', !timer.hidden);
+            }
+
+            /* The end of voting on this screen's clock, kept steady against
+               small differences between polls. */
+            function syncDeadline(next) {
+                if (next.type !== 'live' || !next.open || next.ends_in_ms === null || next.ends_in_ms === undefined) {
+                    deadline = null;
+                    lastSecond = null;
+                    return;
+                }
+                const at = performance.now() + next.ends_in_ms;
+                if (deadline === null || Math.abs(at - deadline) > 400) deadline = at;
+            }
+
+            /* Minutes and seconds to the end of voting; the last ten turn red
+               and pulse with every second. */
+            function paintTimer(now) {
+                if (deadline === null) return;
+                const second = Math.ceil(Math.max(0, deadline - now) / 1000);
+                if (second === lastSecond) return;
+                lastSecond = second;
+                timerNum.textContent = Math.floor(second / 60) + ':' + String(second % 60).padStart(2, '0');
+                const ending = second <= 10;
+                timer.classList.toggle('is-ending', ending);
+                if (ending && second > 0) {
+                    timerNum.classList.remove('is-tick');
+                    timerNum.offsetHeight;
+                    timerNum.classList.add('is-tick');
+                }
             }
 
             /* ── Live results: one row per athlete, moved into place when the
@@ -3733,6 +3835,7 @@
 
                 if (show.type === 'live') {
                     setScene('live');
+                    paintTimer(now);
                 } else if (show.type === 'podium') {
                     setScene('podium');
                 } else if (phase === 'intro') {
@@ -3782,6 +3885,7 @@
                 if (!show && d.revision === closedRevision) return;
 
                 const nextOrigin = performance.now() - d.show.elapsed_ms;
+                syncDeadline(d.show);
 
                 if (!show || d.revision !== revision) {
                     const wasRevealed = show && revealedRevision === revision && show.type === 'reveal' && d.show.type === 'reveal'
