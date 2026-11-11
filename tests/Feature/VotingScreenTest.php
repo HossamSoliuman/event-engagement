@@ -208,14 +208,19 @@ class VotingScreenTest extends TestCase
         $this->assertNull($this->event->votingScreen()->first()->show_type);
     }
 
-    public function test_a_reveal_can_leave_voting_open(): void
+    public function test_a_reveal_stops_a_running_voting_timer(): void
     {
         $this->vote('Anna Keller', 1);
-        $this->event->votingShow()->update(['close_on_reveal' => false]);
+        $this->actingAs($this->admin)->postJson(route('admin.voting.start', $this->event))->assertOk();
 
-        $this->actingAs($this->admin)->postJson(route('admin.voting.screen.reveal', $this->event))->assertOk();
+        $this->actingAs($this->admin)
+            ->postJson(route('admin.voting.screen.reveal', $this->event))
+            ->assertOk()
+            ->assertJsonPath('voting_closed', true)
+            ->assertJsonPath('ends_in_ms', null)
+            ->assertJsonPath('stage', 'winner');
 
-        $this->assertFalse($this->event->fresh()->voting_closed);
+        $this->assertNull($this->event->fresh()->voting_ends_at);
     }
 
     public function test_a_tie_reveals_everyone_sharing_first_place(): void
@@ -471,7 +476,6 @@ class VotingScreenTest extends TestCase
                 'show_position' => 1,
                 'show_qr' => 0,
                 'confetti' => 1,
-                'close_on_reveal' => 0,
             ])
             ->assertRedirect(route('admin.voting.index', $this->event).'#vidiwall-show')
             ->assertSessionHas('success', 'Vidiwall show settings saved.');
@@ -487,7 +491,6 @@ class VotingScreenTest extends TestCase
         $this->assertTrue($screen->show_position);
         $this->assertFalse($screen->show_qr);
         $this->assertTrue($screen->confetti);
-        $this->assertFalse($screen->close_on_reveal);
 
         $this->actingAs($this->admin)
             ->put(route('admin.voting.screen.update', $this->event), [

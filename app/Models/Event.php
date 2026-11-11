@@ -142,6 +142,7 @@ class Event extends Model
         'module_fanclash' => 'boolean',
         'module_survey' => 'boolean',
         'voting_closed' => 'boolean',
+        'voting_ends_at' => 'datetime',
         'lottery_drawn' => 'boolean',
         'vidiwall_show_uploader' => 'boolean',
         'vidiwall_slideshow_mode' => 'boolean',
@@ -295,6 +296,67 @@ class Event extends Model
         $this->setRelation('votingScreen', $screen);
 
         return $screen;
+    }
+
+    /**
+     * Opens voting, for the given number of minutes or, with 0, until it is
+     * closed by hand.
+     */
+    public function openVoting(int $minutes = 0): void
+    {
+        $this->forceFill([
+            'voting_closed' => false,
+            'voting_ends_at' => $minutes > 0 ? now()->addMinutes($minutes) : null,
+        ])->save();
+    }
+
+    public function closeVoting(): void
+    {
+        $this->forceFill(['voting_closed' => true, 'voting_ends_at' => null])->save();
+    }
+
+    /**
+     * Gives a running voting timer more time.
+     */
+    public function extendVoting(int $seconds): void
+    {
+        if ($this->voting_closed || ! $this->voting_ends_at) {
+            return;
+        }
+
+        $this->forceFill(['voting_ends_at' => $this->voting_ends_at->copy()->addSeconds($seconds)])->save();
+    }
+
+    /**
+     * Closes voting once its timer has run out. Whoever asks first closes it;
+     * the conditional update keeps two requests at the same moment from both
+     * doing so.
+     */
+    public function closeVotingWhenTimeIsUp(): void
+    {
+        if ($this->voting_closed || ! $this->voting_ends_at || $this->voting_ends_at->isFuture()) {
+            return;
+        }
+
+        static::query()->whereKey($this->id)
+            ->where('voting_closed', false)
+            ->where('voting_ends_at', '<=', now())
+            ->update(['voting_closed' => true]);
+
+        $this->forceFill(['voting_closed' => true])->syncOriginalAttribute('voting_closed');
+    }
+
+    /**
+     * Milliseconds until voting closes by itself, or null when it is closed
+     * or has no timer.
+     */
+    public function votingMsLeft(): ?int
+    {
+        if ($this->voting_closed || ! $this->voting_ends_at) {
+            return null;
+        }
+
+        return max(0, $this->voting_ends_at->getTimestampMs() - now()->getTimestampMs());
     }
 
     /**

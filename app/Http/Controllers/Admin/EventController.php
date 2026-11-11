@@ -151,6 +151,7 @@ class EventController extends Controller
         $new->lottery_drawn = false;
         $new->lottery_winner_id = null;
         $new->voting_closed = false;
+        $new->voting_ends_at = null;
         $new->save();
         try {
             $new->generateQrCode();

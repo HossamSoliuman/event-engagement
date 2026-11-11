@@ -32,7 +32,6 @@ class UpdateVotingScreenSettingsRequest extends FormRequest
             'show_position' => ['nullable', 'boolean'],
             'show_qr' => ['nullable', 'boolean'],
             'confetti' => ['nullable', 'boolean'],
-            'close_on_reveal' => ['nullable', 'boolean'],
         ];
     }
 
@@ -78,7 +77,6 @@ class UpdateVotingScreenSettingsRequest extends FormRequest
             'show_position' => $this->boolean('show_position'),
             'show_qr' => $this->boolean('show_qr'),
             'confetti' => $this->boolean('confetti'),
-            'close_on_reveal' => $this->boolean('close_on_reveal'),
         ];
     }
 }

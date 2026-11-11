@@ -9,8 +9,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\DB;
 
 /**
- * The vote's turn on the vidiwall: how the results are presented and the show
- * that is on screen right now. Live results and the podium follow the votes as
+ * The vote's turn on the vidiwall: how the results are presented, the show
+ * that is on screen right now and how far the vote has got (`stage`: ready,
+ * voting, revealed, finished). Live results and the podium follow the votes as
  * they come in. A winner reveal is timed from `show_starts_ms` (intro,
  * countdown, then the winner) and keeps the standings from the moment it
  * started, so a late vote cannot change the winner halfway through. Every
@@ -25,6 +26,19 @@ class VotingScreen extends Model
     public const SHOW_REVEAL = 'reveal';
 
     public const SHOW_PODIUM = 'podium';
+
+    public const STAGE_READY = 'ready';
+
+    public const STAGE_VOTING = 'voting';
+
+    public const STAGE_REVEALED = 'revealed';
+
+    public const STAGE_FINISHED = 'finished';
+
+    /**
+     * The voting times the console offers, in minutes; 0 means no timer.
+     */
+    public const VOTING_MINUTES = [1, 2, 3, 5, 10, 0];
 
     public const PHASE_INTRO = 'intro';
 
@@ -45,6 +59,7 @@ class VotingScreen extends Model
 
     protected $fillable = [
         'event_id',
+        'voting_minutes',
         'headline',
         'top_count',
         'show_votes',
@@ -55,10 +70,10 @@ class VotingScreen extends Model
         'countdown_seconds',
         'result_seconds',
         'confetti',
-        'close_on_reveal',
     ];
 
     protected $casts = [
+        'voting_minutes' => 'integer',
         'top_count' => 'integer',
         'show_votes' => 'boolean',
         'show_percent' => 'boolean',
@@ -68,7 +83,6 @@ class VotingScreen extends Model
         'countdown_seconds' => 'integer',
         'result_seconds' => 'integer',
         'confetti' => 'boolean',
-        'close_on_reveal' => 'boolean',
         'show_starts_ms' => 'integer',
         'show_countdown_ms' => 'integer',
         'show_result_ms' => 'integer',
@@ -78,6 +92,8 @@ class VotingScreen extends Model
     ];
 
     protected $attributes = [
+        'voting_minutes' => 3,
+        'stage' => self::STAGE_READY,
         'top_count' => 0,
         'show_votes' => true,
         'show_percent' => true,
@@ -87,7 +103,6 @@ class VotingScreen extends Model
         'countdown_seconds' => 5,
         'result_seconds' => 0,
         'confetti' => true,
-        'close_on_reveal' => true,
         'show_countdown_ms' => 0,
         'show_result_ms' => 0,
         'resume_player' => false,
@@ -148,6 +163,30 @@ class VotingScreen extends Model
     }
 
     /**
+     * Where the vote is, as the console shows it: ready to start, voting,
+     * voting closed, the winner, the podium or done.
+     */
+    public function displayStage(): string
+    {
+        return match ($this->stage) {
+            self::STAGE_VOTING => $this->event->voting_closed ? 'closed' : 'voting',
+            self::STAGE_REVEALED => $this->show_type === self::SHOW_PODIUM ? 'podium' : 'winner',
+            self::STAGE_FINISHED => 'done',
+            default => 'ready',
+        };
+    }
+
+    /**
+     * Opens voting for the set time and puts the live results up, QR code and
+     * countdown included.
+     */
+    public function startVoting(): void
+    {
+        $this->event->openVoting($this->voting_minutes);
+        $this->begin(self::SHOW_LIVE, fn () => ['stage' => self::STAGE_VOTING]);
+    }
+
+    /**
      * Puts the standings up; they move with every vote until hidden.
      */
     public function showLive(): void
@@ -163,6 +202,7 @@ class VotingScreen extends Model
     public function startReveal(array $standings): void
     {
         $this->begin(self::SHOW_REVEAL, fn (self $screen) => [
+            'stage' => self::STAGE_REVEALED,
             'show_starts_ms' => now()->getTimestampMs() + self::INTRO_MS,
             'show_countdown_ms' => $screen->countdown_seconds * 1000,
             'show_result_ms' => $screen->result_seconds * 1000,
@@ -197,6 +237,28 @@ class VotingScreen extends Model
     public function hide(): void
     {
         $this->mutate(fn (self $screen) => $screen->clearShow());
+    }
+
+    /**
+     * Ends the vote: off the screen, with the playlist carrying on.
+     */
+    public function finish(): void
+    {
+        $this->mutate(function (self $screen): void {
+            $screen->clearShow();
+            $screen->stage = self::STAGE_FINISHED;
+        });
+    }
+
+    /**
+     * Back to the start for a new vote, off the screen.
+     */
+    public function restart(): void
+    {
+        $this->mutate(function (self $screen): void {
+            $screen->clearShow();
+            $screen->stage = self::STAGE_READY;
+        });
     }
 
     /**
@@ -261,6 +323,7 @@ class VotingScreen extends Model
      */
     public function screenFeed(): array
     {
+        $this->event->closeVotingWhenTimeIsUp();
         $this->settle();
 
         if (! $this->show_type) {
@@ -282,6 +345,7 @@ class VotingScreen extends Model
                 'confetti' => $this->confetti,
                 'open' => $open,
                 'qr' => $this->show_type === self::SHOW_LIVE && $this->show_qr && $open,
+                'ends_in_ms' => $this->show_type === self::SHOW_LIVE ? $this->event->votingMsLeft() : null,
                 'total' => $this->show_total ? array_sum(array_column($standings, 'votes')) : null,
                 'standings' => $this->present($this->athletesOnScreen($standings), $standings),
                 'winners' => $this->show_type === self::SHOW_REVEAL ? $this->present(self::winnersOf($standings), $standings) : [],
@@ -292,7 +356,7 @@ class VotingScreen extends Model
     /**
      * The show as the control pages mirror it.
      *
-     * @return array{revision: int, show: array<string, mixed>|null}
+     * @return array{revision: int, stage: string, voting_minutes: int, show: array<string, mixed>|null}
      */
     public function controlStatus(): array
     {
@@ -300,6 +364,8 @@ class VotingScreen extends Model
 
         return [
             'revision' => $this->revision,
+            'stage' => $this->displayStage(),
+            'voting_minutes' => $this->voting_minutes,
             'show' => $this->show_type ? [
                 'type' => $this->show_type,
                 'phase' => $this->phase(),

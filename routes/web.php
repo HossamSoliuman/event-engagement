@@ -43,6 +43,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/e/{slug}', [EventPageController::class, 'index'])->middleware('track.view:landing')->name('event.landing');
 Route::post('/e/{slug}/session', [EventPageController::class, 'startSession'])->name('event.session.start');
 Route::post('/e/{slug}/foto/upload', [FotoBombController::class, 'upload'])->name('fotobomb.upload');
+Route::get('/e/{slug}/vote/status', [VoteController::class, 'status'])->name('vote.status');
 Route::post('/e/{slug}/vote', [VoteController::class, 'store'])->name('vote.store');
 Route::post('/e/{slug}/lottery', [LotteryController::class, 'enter'])->name('lottery.enter');
 Route::post('/e/{slug}/membership', [MembershipController::class, 'signup'])->name('membership.signup');
@@ -127,7 +128,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('events/{event}/lottery/screen/reveal', [LotteryAdminController::class, 'revealNow'])->name('lottery.screen.reveal');
         Route::post('events/{event}/lottery/screen/hide', [LotteryAdminController::class, 'hideScreen'])->name('lottery.screen.hide');
         Route::get('events/{event}/voting', [VotingAdminController::class, 'index'])->name('voting.index');
+        Route::post('events/{event}/voting/start', [VotingAdminController::class, 'start'])->name('voting.start');
         Route::post('events/{event}/voting/close', [VotingAdminController::class, 'close'])->name('voting.close');
+        Route::post('events/{event}/voting/extend', [VotingAdminController::class, 'extend'])->name('voting.extend');
+        Route::post('events/{event}/voting/timer', [VotingAdminController::class, 'updateTimer'])->name('voting.timer');
         Route::post('events/{event}/voting/reopen', [VotingAdminController::class, 'reopen'])->name('voting.reopen');
         Route::post('events/{event}/voting/reset', [VotingAdminController::class, 'reset'])->name('voting.reset');
         Route::get('events/{event}/voting/export', [VotingAdminController::class, 'export'])->name('voting.export');
@@ -138,6 +142,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('events/{event}/voting/screen/podium', [VotingAdminController::class, 'showPodium'])->name('voting.screen.podium');
         Route::post('events/{event}/voting/screen/reveal-now', [VotingAdminController::class, 'revealNow'])->name('voting.screen.reveal-now');
         Route::post('events/{event}/voting/screen/hide', [VotingAdminController::class, 'hideScreen'])->name('voting.screen.hide');
+        Route::post('events/{event}/voting/screen/finish', [VotingAdminController::class, 'finish'])->name('voting.screen.finish');
         Route::get('events/{event}/membership', [MembershipAdminController::class, 'index'])->name('membership.index');
         Route::delete('membership/{member}', [MembershipAdminController::class, 'destroy'])->name('membership.destroy');
         Route::get('events/{event}/membership/export', [MembershipAdminController::class, 'export'])->name('membership.export');
@@ -246,7 +251,10 @@ Route::prefix('moderator')->name('moderator.')->middleware(['auth', 'event.moder
     Route::post('{event}/lottery/screen/hide', [ModeratorLotteryController::class, 'hideScreen'])->name('lottery.screen.hide');
 
     Route::get('{event}/voting', [ModeratorVotingController::class, 'index'])->name('voting.index');
+    Route::post('{event}/voting/start', [ModeratorVotingController::class, 'start'])->name('voting.start');
     Route::post('{event}/voting/close', [ModeratorVotingController::class, 'close'])->name('voting.close');
+    Route::post('{event}/voting/extend', [ModeratorVotingController::class, 'extend'])->name('voting.extend');
+    Route::post('{event}/voting/timer', [ModeratorVotingController::class, 'updateTimer'])->name('voting.timer');
     Route::post('{event}/voting/reopen', [ModeratorVotingController::class, 'reopen'])->name('voting.reopen');
     Route::post('{event}/voting/reset', [ModeratorVotingController::class, 'reset'])->name('voting.reset');
     Route::get('{event}/voting/export', [ModeratorVotingController::class, 'export'])->name('voting.export');
@@ -257,6 +265,7 @@ Route::prefix('moderator')->name('moderator.')->middleware(['auth', 'event.moder
     Route::post('{event}/voting/screen/podium', [ModeratorVotingController::class, 'showPodium'])->name('voting.screen.podium');
     Route::post('{event}/voting/screen/reveal-now', [ModeratorVotingController::class, 'revealNow'])->name('voting.screen.reveal-now');
     Route::post('{event}/voting/screen/hide', [ModeratorVotingController::class, 'hideScreen'])->name('voting.screen.hide');
+    Route::post('{event}/voting/screen/finish', [ModeratorVotingController::class, 'finish'])->name('voting.screen.finish');
 
     Route::get('{event}/membership', [ModeratorMembershipController::class, 'index'])->name('membership.index');
     Route::delete('{event}/membership/{member}', [ModeratorMembershipController::class, 'destroy'])->name('membership.destroy');

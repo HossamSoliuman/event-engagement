@@ -7,14 +7,31 @@ use App\Http\Middleware\TrackPageView;
 use App\Models\ActivityLog;
 use App\Models\Event;
 use App\Models\Vote;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class VoteController extends Controller
 {
+    /**
+     * Whether guests can vote right now and how long for, so an open phone
+     * follows the vote without a reload.
+     */
+    public function status(string $slug): JsonResponse
+    {
+        $event = Event::where('slug', $slug)->where('is_active', true)->where('module_voting', true)->firstOrFail();
+        $event->closeVotingWhenTimeIsUp();
+
+        return response()->json([
+            'open' => ! $event->voting_closed,
+            'ends_in_ms' => $event->votingMsLeft(),
+        ]);
+    }
+
     public function store(Request $request, string $slug)
     {
         $event = Event::where('slug', $slug)->where('is_active', true)->where('module_voting', true)->firstOrFail();
+        $event->closeVotingWhenTimeIsUp();
         if ($event->voting_closed) {
             return response()->json(['success' => false, 'message' => 'Voting is now closed.'], 422);
         }
