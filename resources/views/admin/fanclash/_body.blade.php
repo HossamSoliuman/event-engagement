@@ -30,7 +30,12 @@
         .fc-pv-name { max-width: 44%; font-family: var(--cfont); font-weight: 800; font-size: 5cqw; line-height: 1; text-transform: uppercase; }
         .fc-pv-name.is-a { color: var(--ca); text-align: left; }
         .fc-pv-name.is-b { color: var(--cb); text-align: right; }
-        .fc-pv-vs { align-self: center; font-family: var(--cfont); font-weight: 800; font-size: 2.4cqw; letter-spacing: .3em; opacity: .55; }
+        .fc-pv-vs { display: flex; align-items: center; justify-content: center; width: 6.4cqw; aspect-ratio: 1; border-radius: 50%; border: .2cqw solid color-mix(in srgb, var(--cink) 28%, transparent); font-family: var(--cfont); font-weight: 800; font-size: 2.2cqw; letter-spacing: .06em; text-indent: .06em; color: var(--chl); }
+        [data-pv="matchup"] .fc-pv-head { margin-bottom: auto; }
+        [data-pv="matchup"] .fc-pv-names { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 3cqw; margin-bottom: 1cqw; }
+        [data-pv="matchup"] .fc-pv-name { max-width: none; text-align: center; }
+        [data-pv="matchup"] .fc-pv-qr { width: 18cqw; }
+        [data-pv="matchup"] .fc-pv-hint { margin-bottom: auto; opacity: .7; }
         .fc-pv-bar { position: relative; width: 100%; height: 5cqw; border-radius: 1cqw; overflow: hidden; background: color-mix(in srgb, var(--cink) 8%, transparent); border: 1px solid color-mix(in srgb, var(--cink) 16%, transparent); }
         .fc-pv-fill { position: absolute; top: 0; bottom: 0; width: 50%; transition: width .6s cubic-bezier(.4, 0, .2, 1); }
         .fc-pv-fill.is-a { left: 0; background: var(--ca); }
@@ -212,7 +217,7 @@
                         <i data-lucide="qr-code" class="lucide-icon"></i>
                     @endif
                 </div>
-                <div class="fc-pv-hint">Scan &middot; pick a side</div>
+                <div class="fc-pv-hint">Scan to pick your side</div>
             </div>
 
             <div class="fc-pv" data-pv="countdown" hidden>
@@ -842,8 +847,22 @@
                 }
 
                 const shown = root.querySelector(`[data-pv="${scene}"]`);
-                shown.querySelectorAll('[data-pv-a]').forEach(node => fitText(node, round.side_a_name));
-                shown.querySelectorAll('[data-pv-b]').forEach(node => fitText(node, round.side_b_name));
+                const nameA = shown.querySelector('[data-pv-a]');
+                const nameB = shown.querySelector('[data-pv-b]');
+                if (nameA && nameB) fitNames(nameA, nameB, round.side_a_name, round.side_b_name);
+            }
+
+            /* Both side names share the smaller of their fitted sizes, as on the wall. */
+            function fitNames(nodeA, nodeB, a, b) {
+                const key = [preview.clientWidth, a, b].join('|');
+                if (nodeA.parentElement.dataset.fit === key) return;
+                nodeA.parentElement.dataset.fit = key;
+                nodeA.dataset.fitWidth = '';
+                nodeB.dataset.fitWidth = '';
+                fitText(nodeA, a);
+                fitText(nodeB, b);
+                const size = Math.min(parseFloat(getComputedStyle(nodeA).fontSize), parseFloat(getComputedStyle(nodeB).fontSize));
+                nodeA.style.fontSize = nodeB.style.fontSize = size + 'px';
             }
 
             function renderSeconds() {
