@@ -560,6 +560,7 @@
 </div>
 
 @push('scripts')
+    @include('layouts._server-clock')
     <script>
         function fcToggleEdit(id) {
             const form = document.getElementById('matchup-edit-' + id);
@@ -601,8 +602,10 @@
 
             let status = @json($screenStatus);
             let seconds = status.round_seconds;
+            const serverTime = serverClock();
             let startAt = null;
             let endAt = null;
+            let closeAt = null;
             let busy = false;
             let pressed = null;
             let seq = 0;
@@ -619,6 +622,11 @@
             function clock(ms) {
                 const total = Math.max(0, Math.ceil(ms / 1000));
                 return Math.floor(total / 60) + ':' + String(total % 60).padStart(2, '0');
+            }
+
+            /* The count-in never shows more than its set seconds, as on the wall and the phones. */
+            function countIn(startsIn, round) {
+                return String(Math.min(round.countdown_seconds || Infinity, Math.ceil(startsIn / 1000)));
             }
 
             function score(round) {
@@ -710,7 +718,7 @@
                 const picked = choice();
                 const blockedBy = ['prepare', 'start'].includes(action) ? status.blocked : null;
                 const missingNames = action === 'prepare' && (!picked.a || !picked.b);
-                main.disabled = busy || navigating || !!blockedBy || missingNames;
+                main.disabled = busy || navigating || !!blockedBy || missingNames || (action === 'end' && timeUp);
                 hint.hidden = !blockedBy;
                 setText(hint, blockedBy || '');
 
@@ -740,7 +748,7 @@
                     metaText = onWall ? 'On the vidiwall · fans scan and pick a side' : 'Not on the vidiwall';
                 } else if (stage === 'live' && counting) {
                     labelText = 'Starting';
-                    bigText = String(Math.ceil(startsIn / 1000));
+                    bigText = countIn(startsIn, round);
                     metaText = `${round.side_a_name} vs ${round.side_b_name} · ${wallText}`;
                 } else if (stage === 'live') {
                     const fans = round.fans.a + round.fans.b;
@@ -822,7 +830,7 @@
                     $('fcPvQr').hidden = !checked('show_qr');
                 } else if (stage === 'live' && counting) {
                     setScene('countdown');
-                    setText($('fcPvCount'), String(Math.ceil(startsIn / 1000)));
+                    setText($('fcPvCount'), countIn(startsIn, round));
                 } else if (stage === 'live') {
                     setScene('live');
                     $('fcPvFoot').hidden = !checked('show_qr');
@@ -875,22 +883,27 @@
                 renderPreview(view);
                 if (view.timeUp && !timeUpPolled) {
                     timeUpPolled = true;
-                    schedulePoll(400);
+                    schedulePoll(untilClosed(1000));
                 }
                 requestAnimationFrame(frame);
             }
 
+            /* The round's moments come as server times, so the console counts in step with the wall and the phones. */
             function syncClock(next) {
                 const round = next.round;
-                if (next.stage !== 'live' || !round) {
-                    startAt = null;
-                    endAt = null;
-                    return;
-                }
-                const nextEnd = performance.now() + round.starts_in_ms + round.remaining_ms;
-                const nextStart = nextEnd - round.duration_ms;
-                if (startAt === null || Math.abs(nextStart - startAt) > 400) startAt = nextStart;
-                if (endAt === null || Math.abs(nextEnd - endAt) > 400) endAt = nextEnd;
+                const live = next.stage === 'live' && round;
+                startAt = live ? serverTime.local(round.starts_at_ms) : null;
+                endAt = live ? serverTime.local(round.ends_at_ms) : null;
+                closeAt = live ? serverTime.local(round.closes_at_ms) : null;
+            }
+
+            /* The round takes late taps for a moment after the clock runs out, so the result is asked for just after it closes. */
+            function untilClosed(ms) {
+                return closeAt === null ? ms : Math.min(ms, Math.max(0, closeAt - performance.now()) + 150);
+            }
+
+            function readClock(sentAt, receivedAt, data) {
+                serverTime.read(sentAt, receivedAt, data && data.round ? data.round.server_now_ms : undefined);
             }
 
             function applyStatus(next, message) {
@@ -928,10 +941,16 @@
             async function poll() {
                 const mine = seq;
                 try {
+                    const sentAt = performance.now();
                     const res = await fetch(URLS.status, { headers: { Accept: 'application/json' }, cache: 'no-store' });
-                    if (res.ok && mine === seq && !busy) applyStatus(await res.json());
+                    const receivedAt = performance.now();
+                    if (res.ok) {
+                        const data = await res.json();
+                        readClock(sentAt, receivedAt, data);
+                        if (mine === seq && !busy) applyStatus(data);
+                    }
                 } catch (e) {}
-                schedulePoll(status.stage === 'ready' ? 3000 : 1000);
+                schedulePoll(status.stage === 'ready' ? 3000 : untilClosed(1000));
             }
 
             /** The pressed button spins until the answer is back, so a slow connection never looks like a dead button. */
@@ -942,16 +961,19 @@
                 seq++;
                 let data = null;
                 try {
+                    const sentAt = performance.now();
                     const res = await fetch(URLS[name], {
                         method: 'POST',
                         headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
                         body: JSON.stringify(body),
                     });
+                    const receivedAt = performance.now();
                     if (res.status === 419) {
                         showToast('Your session expired. Reload the page.', true);
                         return null;
                     }
                     data = await res.json().catch(() => ({}));
+                    readClock(sentAt, receivedAt, data);
                     const message = data.message || (data.errors ? Object.values(data.errors)[0][0] : null);
                     if (data.revision !== undefined) applyStatus(data, res.ok ? message : null);
                     if (!navigating) showToast(message, !res.ok);
@@ -1063,6 +1085,8 @@
                 }
             } catch (e) {}
 
+            const page = performance.getEntriesByType ? performance.getEntriesByType('navigation')[0] : null;
+            readClock(page ? page.requestStart : 0, page ? page.responseStart : performance.now(), status);
             applyStatus(status);
             renderSeconds();
             requestAnimationFrame(frame);
