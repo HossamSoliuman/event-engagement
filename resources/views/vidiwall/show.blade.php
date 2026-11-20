@@ -3260,6 +3260,8 @@
                 requestAnimationFrame(frame);
             }
 
+            /* The round started duration_ms before it ends, so a round that is
+               already running keeps its start where it was on every poll. */
             function apply(data) {
                 const d = data.show;
                 if (!d) {
@@ -3269,9 +3271,8 @@
 
                 const newRound = !show || show.round_id !== d.round_id;
                 if (d.stage === 'live') {
-                    const now = performance.now();
-                    const nextStart = now + d.starts_in_ms;
-                    const nextEnd = nextStart + d.remaining_ms;
+                    const nextEnd = performance.now() + d.starts_in_ms + d.remaining_ms;
+                    const nextStart = nextEnd - d.duration_ms;
                     if (newRound || startAt === null || Math.abs(nextStart - startAt) > 400) startAt = nextStart;
                     if (newRound || endAt === null || Math.abs(nextEnd - endAt) > 400) endAt = nextEnd;
                 } else {
