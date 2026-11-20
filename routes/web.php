@@ -161,13 +161,20 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('events/{event}/quiz/export', [QuizAdminController::class, 'export'])->name('quiz.export');
 
         Route::get('events/{event}/fanclash', [FanClashAdminController::class, 'index'])->name('fanclash.index');
+        Route::get('events/{event}/fanclash/screen', [FanClashAdminController::class, 'screen'])->name('fanclash.screen');
+        Route::post('events/{event}/fanclash/prepare', [FanClashAdminController::class, 'prepare'])->name('fanclash.prepare');
+        Route::post('events/{event}/fanclash/start', [FanClashAdminController::class, 'start'])->name('fanclash.start');
+        Route::post('events/{event}/fanclash/end', [FanClashAdminController::class, 'end'])->name('fanclash.end');
+        Route::post('events/{event}/fanclash/extend', [FanClashAdminController::class, 'extend'])->name('fanclash.extend');
+        Route::post('events/{event}/fanclash/show', [FanClashAdminController::class, 'show'])->name('fanclash.show');
+        Route::post('events/{event}/fanclash/hide', [FanClashAdminController::class, 'hide'])->name('fanclash.hide');
+        Route::post('events/{event}/fanclash/finish', [FanClashAdminController::class, 'finish'])->name('fanclash.finish');
+        Route::post('events/{event}/fanclash/cancel', [FanClashAdminController::class, 'cancel'])->name('fanclash.cancel');
+        Route::put('events/{event}/fanclash/screen', [FanClashAdminController::class, 'updateScreen'])->name('fanclash.screen.update');
         Route::post('events/{event}/fanclash/matchups', [FanClashAdminController::class, 'storeMatchup'])->name('fanclash.matchups.store');
-        Route::put('fanclash/matchups/{matchup}', [FanClashAdminController::class, 'updateMatchup'])->name('fanclash.matchups.update');
-        Route::delete('fanclash/matchups/{matchup}', [FanClashAdminController::class, 'destroyMatchup'])->name('fanclash.matchups.destroy');
-        Route::post('events/{event}/fanclash/start', [FanClashAdminController::class, 'startRound'])->name('fanclash.start');
-        Route::post('events/{event}/fanclash/end', [FanClashAdminController::class, 'endRound'])->name('fanclash.end');
-        Route::post('events/{event}/fanclash/clear-screen', [FanClashAdminController::class, 'clearScreen'])->name('fanclash.clear-screen');
-        Route::post('fanclash/rounds/{round}/reset', [FanClashAdminController::class, 'resetRound'])->name('fanclash.rounds.reset');
+        Route::put('events/{event}/fanclash/matchups/{fanClashMatchup}', [FanClashAdminController::class, 'updateMatchup'])->scopeBindings()->name('fanclash.matchups.update');
+        Route::delete('events/{event}/fanclash/matchups/{fanClashMatchup}', [FanClashAdminController::class, 'destroyMatchup'])->scopeBindings()->name('fanclash.matchups.destroy');
+        Route::delete('events/{event}/fanclash/rounds/{fanClashRound}', [FanClashAdminController::class, 'destroyRound'])->scopeBindings()->name('fanclash.rounds.destroy');
         Route::get('events/{event}/fanclash/export', [FanClashAdminController::class, 'export'])->name('fanclash.export');
 
         Route::get('events/{event}/survey', [SurveyAdminController::class, 'index'])->name('survey.index');
@@ -285,13 +292,20 @@ Route::prefix('moderator')->name('moderator.')->middleware(['auth', 'event.moder
     Route::get('{event}/quiz/export', [ModeratorQuizController::class, 'export'])->name('quiz.export');
 
     Route::get('{event}/fanclash', [ModeratorFanClashController::class, 'index'])->name('fanclash.index');
+    Route::get('{event}/fanclash/screen', [ModeratorFanClashController::class, 'screen'])->name('fanclash.screen');
+    Route::post('{event}/fanclash/prepare', [ModeratorFanClashController::class, 'prepare'])->name('fanclash.prepare');
+    Route::post('{event}/fanclash/start', [ModeratorFanClashController::class, 'start'])->name('fanclash.start');
+    Route::post('{event}/fanclash/end', [ModeratorFanClashController::class, 'end'])->name('fanclash.end');
+    Route::post('{event}/fanclash/extend', [ModeratorFanClashController::class, 'extend'])->name('fanclash.extend');
+    Route::post('{event}/fanclash/show', [ModeratorFanClashController::class, 'show'])->name('fanclash.show');
+    Route::post('{event}/fanclash/hide', [ModeratorFanClashController::class, 'hide'])->name('fanclash.hide');
+    Route::post('{event}/fanclash/finish', [ModeratorFanClashController::class, 'finish'])->name('fanclash.finish');
+    Route::post('{event}/fanclash/cancel', [ModeratorFanClashController::class, 'cancel'])->name('fanclash.cancel');
+    Route::put('{event}/fanclash/screen', [ModeratorFanClashController::class, 'updateScreen'])->name('fanclash.screen.update');
     Route::post('{event}/fanclash/matchups', [ModeratorFanClashController::class, 'storeMatchup'])->name('fanclash.matchups.store');
-    Route::put('{event}/fanclash/matchups/{matchup}', [ModeratorFanClashController::class, 'updateMatchup'])->name('fanclash.matchups.update');
-    Route::delete('{event}/fanclash/matchups/{matchup}', [ModeratorFanClashController::class, 'destroyMatchup'])->name('fanclash.matchups.destroy');
-    Route::post('{event}/fanclash/start', [ModeratorFanClashController::class, 'startRound'])->name('fanclash.start');
-    Route::post('{event}/fanclash/end', [ModeratorFanClashController::class, 'endRound'])->name('fanclash.end');
-    Route::post('{event}/fanclash/clear-screen', [ModeratorFanClashController::class, 'clearScreen'])->name('fanclash.clear-screen');
-    Route::post('{event}/fanclash/rounds/{round}/reset', [ModeratorFanClashController::class, 'resetRound'])->name('fanclash.rounds.reset');
+    Route::put('{event}/fanclash/matchups/{fanClashMatchup}', [ModeratorFanClashController::class, 'updateMatchup'])->scopeBindings()->name('fanclash.matchups.update');
+    Route::delete('{event}/fanclash/matchups/{fanClashMatchup}', [ModeratorFanClashController::class, 'destroyMatchup'])->scopeBindings()->name('fanclash.matchups.destroy');
+    Route::delete('{event}/fanclash/rounds/{fanClashRound}', [ModeratorFanClashController::class, 'destroyRound'])->scopeBindings()->name('fanclash.rounds.destroy');
     Route::get('{event}/fanclash/export', [ModeratorFanClashController::class, 'export'])->name('fanclash.export');
 
     Route::get('{event}/survey', [ModeratorSurveyController::class, 'index'])->name('survey.index');
