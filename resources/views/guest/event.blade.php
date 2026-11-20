@@ -78,7 +78,7 @@
         #screen-lottery .mod-header-title .lucide-icon, #screen-lottery .section-title .lucide-icon, #screen-lottery .s-icon .lucide-icon { color: #6366f1; }
         #screen-membership .mod-header-title .lucide-icon, #screen-membership .section-title .lucide-icon, #screen-membership .s-icon .lucide-icon { color: #22c55e; }
         #screen-quiz .mod-header-title .lucide-icon, #screen-quiz .section-title .lucide-icon, #screen-quiz .s-icon .lucide-icon { color: #f59e0b; }
-        #screen-fanclash .mod-header-title .lucide-icon { color: #ef4444; }
+        #screen-fanclash .mod-header-title .lucide-icon { color: var(--p); }
         #screen-survey .mod-header-title .lucide-icon, #screen-survey .section-title .lucide-icon, #screen-survey .s-icon .lucide-icon { color: #14b8a6; }
 
         html {
@@ -1997,7 +1997,7 @@
                     #screen-fanclash .mod-body{display:flex;flex-direction:column}
                     .fc-screen{flex:1;display:flex;flex-direction:column}
                     .fc-eyebrow{font-size:11px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:var(--muted);text-align:center;margin-bottom:20px;display:flex;align-items:center;justify-content:center;gap:9px}
-                    .fc-eyebrow .fc-dot{width:7px;height:7px;border-radius:50%;background:#ef4444;box-shadow:0 0 10px #ef4444;animation:fcpip 1.6s infinite}
+                    .fc-eyebrow .fc-dot{width:7px;height:7px;border-radius:50%;background:var(--p);box-shadow:0 0 10px var(--p);animation:fcpip 1.6s infinite}
                     @keyframes fcpip{0%,100%{opacity:1}50%{opacity:.3}}
 
                     .fc-pick-title{font-family:'Syne',sans-serif;font-weight:800;font-size:32px;text-align:center;letter-spacing:-.02em;line-height:1.05}
@@ -2022,7 +2022,7 @@
                     .fc-count.fc-low{color:#ef4444}
 
                     .fc-waiting{text-align:center;margin:auto 0}
-                    .fc-pulse{width:64px;height:64px;border-radius:50%;background:#ef4444;margin:0 auto 20px;animation:fcpulse 1.6s ease-in-out infinite}
+                    .fc-pulse{width:64px;height:64px;border-radius:50%;background:var(--p);margin:0 auto 20px;animation:fcpulse 1.6s ease-in-out infinite}
                     @keyframes fcpulse{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.14);opacity:1}}
                     .fc-muted{color:var(--muted);font-size:14px;line-height:1.55}
 
