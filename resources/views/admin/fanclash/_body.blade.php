@@ -8,6 +8,9 @@
 @endphp
 
 @push('styles')
+    @if ($brandFonts = $event->googleFontsUrl())
+        <link href="{{ $brandFonts }}" rel="stylesheet">
+    @endif
     <style>
         [hidden] { display: none !important; }
         .fc { --fc-accent: var(--mod, var(--red)); }
@@ -20,20 +23,20 @@
         .fc-pv-idle { background: #05050c; color: var(--muted); font-size: 13px; gap: 10px; }
         .fc-pv-idle .lucide-icon { width: 40px; height: 40px; stroke-width: 1.5px; opacity: .6; }
         .fc-pv-head { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 2cqw; }
-        .fc-pv-brand { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 2.2cqw; letter-spacing: .2em; text-transform: uppercase; color: var(--chl); }
-        .fc-pv-chip { flex: 0 0 auto; padding: .35em 1.1em; border-radius: 999px; background: #ef4444; color: #fff; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.5cqw; letter-spacing: .2em; text-transform: uppercase; }
+        .fc-pv-brand { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--cfont); font-weight: 800; font-size: 2.2cqw; letter-spacing: .2em; text-transform: uppercase; color: var(--chl); }
+        .fc-pv-chip { flex: 0 0 auto; padding: .35em 1.1em; border-radius: 999px; background: #ef4444; color: #fff; font-family: var(--cfont); font-weight: 800; font-size: 1.5cqw; letter-spacing: .2em; text-transform: uppercase; }
         .fc-pv-chip.is-ready { background: color-mix(in srgb, var(--cink) 14%, transparent); color: var(--cink); }
         .fc-pv-names { width: 100%; display: flex; align-items: flex-end; justify-content: space-between; gap: 3cqw; }
-        .fc-pv-name { max-width: 44%; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 5cqw; line-height: 1; text-transform: uppercase; }
+        .fc-pv-name { max-width: 44%; font-family: var(--cfont); font-weight: 800; font-size: 5cqw; line-height: 1; text-transform: uppercase; }
         .fc-pv-name.is-a { color: var(--ca); text-align: left; }
         .fc-pv-name.is-b { color: var(--cb); text-align: right; }
-        .fc-pv-vs { align-self: center; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 2.4cqw; letter-spacing: .3em; opacity: .55; }
+        .fc-pv-vs { align-self: center; font-family: var(--cfont); font-weight: 800; font-size: 2.4cqw; letter-spacing: .3em; opacity: .55; }
         .fc-pv-bar { position: relative; width: 100%; height: 5cqw; border-radius: 1cqw; overflow: hidden; background: color-mix(in srgb, var(--cink) 8%, transparent); border: 1px solid color-mix(in srgb, var(--cink) 16%, transparent); }
         .fc-pv-fill { position: absolute; top: 0; bottom: 0; width: 50%; transition: width .6s cubic-bezier(.4, 0, .2, 1); }
         .fc-pv-fill.is-a { left: 0; background: var(--ca); }
         .fc-pv-fill.is-b { right: 0; background: var(--cb); }
-        .fc-pv-knot { position: absolute; top: 0; bottom: 0; left: 50%; width: .5cqw; background: #fff; transform: translateX(-50%); box-shadow: 0 0 1.6cqw rgba(255, 255, 255, .85); transition: left .6s cubic-bezier(.4, 0, .2, 1); }
-        .fc-pv-row { width: 100%; display: flex; align-items: center; justify-content: space-between; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 2.6cqw; font-variant-numeric: tabular-nums; }
+        .fc-pv-knot { position: absolute; top: 0; bottom: 0; left: 50%; width: .5cqw; background: #fff; transform: translateX(-50%); box-shadow: 0 0 0 .3cqw var(--cbg), 0 0 1.6cqw rgba(255, 255, 255, .85); transition: left .6s cubic-bezier(.4, 0, .2, 1); }
+        .fc-pv-row { width: 100%; display: flex; align-items: center; justify-content: space-between; font-family: var(--cfont); font-weight: 800; font-size: 2.6cqw; font-variant-numeric: tabular-nums; }
         .fc-pv-row .is-a { color: var(--ca); }
         .fc-pv-row .is-b { color: var(--cb); }
         .fc-pv-count { font-size: 4cqw; }
@@ -42,11 +45,11 @@
         .fc-pv-qr .lucide-icon { width: 70%; height: 70%; }
         .fc-pv-qr.is-mini { width: 7cqw; padding: .5cqw; border-radius: .8cqw; }
         .fc-pv-foot { display: flex; align-items: center; justify-content: center; gap: 1.6cqw; }
-        .fc-pv-hint { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.6cqw; letter-spacing: .2em; text-transform: uppercase; opacity: .55; }
-        .fc-pv-big { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 16cqw; line-height: 1; font-variant-numeric: tabular-nums; color: var(--chl); }
-        .fc-pv-eyebrow { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 2.2cqw; letter-spacing: .3em; text-transform: uppercase; opacity: .6; }
-        .fc-pv-winner { max-width: 100%; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 8cqw; line-height: 1; text-transform: uppercase; color: var(--cwin, var(--cink)); }
-        .fc-pv-score { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 3cqw; font-variant-numeric: tabular-nums; }
+        .fc-pv-hint { font-family: var(--cfont); font-weight: 700; font-size: 1.6cqw; letter-spacing: .2em; text-transform: uppercase; opacity: .55; }
+        .fc-pv-big { font-family: var(--cfont); font-weight: 800; font-size: 16cqw; line-height: 1; font-variant-numeric: tabular-nums; color: var(--chl); }
+        .fc-pv-eyebrow { font-family: var(--cfont); font-weight: 700; font-size: 2.2cqw; letter-spacing: .3em; text-transform: uppercase; opacity: .6; }
+        .fc-pv-winner { max-width: 100%; font-family: var(--cfont); font-weight: 800; font-size: 8cqw; line-height: 1; text-transform: uppercase; color: var(--cwin, var(--cink)); }
+        .fc-pv-score { font-family: var(--cfont); font-weight: 800; font-size: 3cqw; font-variant-numeric: tabular-nums; }
         .fc-pv-score .is-a { color: var(--ca); }
         .fc-pv-score .is-b { color: var(--cb); }
         .fc-screen-tag { position: absolute; top: 12px; left: 12px; padding: 4px 11px; border-radius: 30px; font-size: 10px; font-weight: 800; letter-spacing: 1.6px; background: var(--gold); color: #0A0A18; }
@@ -186,7 +189,7 @@
 <div class="fc" id="fc" data-stage="{{ $screenStatus['stage'] }}">
     <div class="card fc-deck">
         <div class="fc-screen" id="fcScreen"
-            style="--cbg: {{ $clashBg }}; --cink: {{ $clashInk }}; --chl: {{ $event->fanclash_accent_color ? $event->fanClashAccentColor() : $clashInk }}; --ca: #ef4444; --cb: #3B82F6">
+            style="--cfont: '{{ $event->headingFont() }}', 'Syne', sans-serif; --cbg: {{ $clashBg }}; --cink: {{ $clashInk }}; --chl: {{ $event->fanclash_accent_color ? $event->fanClashAccentColor() : $clashInk }}; --ca: #ef4444; --cb: #3B82F6">
             <div class="fc-pv fc-pv-idle" data-pv="idle">
                 <i data-lucide="monitor-off" class="lucide-icon"></i>
                 <span>Fan Clash is not on the vidiwall.</span>

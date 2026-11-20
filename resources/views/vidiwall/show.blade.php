@@ -739,7 +739,7 @@
             background: #fff;
             border-radius: 4px;
             transform: translateX(-50%);
-            box-shadow: 0 0 22px rgba(255, 255, 255, .85);
+            box-shadow: 0 0 0 clamp(2px, .25vw, 5px) var(--clash-bg), 0 0 22px rgba(255, 255, 255, .85);
             transition: left .6s cubic-bezier(.4, 0, .2, 1);
             z-index: 3
         }
