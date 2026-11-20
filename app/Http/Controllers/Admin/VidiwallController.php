@@ -43,7 +43,6 @@ class VidiwallController extends Controller
                     'media_type' => $f->media_type,
                     'url' => $f->file_url,
                     'video_url' => $f->video_url,
-                    'uploader' => $f->uploader_name,
                     'displayed_at' => $f->displayed_at,
                 ]);
 
@@ -51,7 +50,6 @@ class VidiwallController extends Controller
                 'mode' => 'slideshow',
                 'fotos' => $fotos,
                 'interval' => $event->vidiwall_slideshow_interval,
-                'show_uploader' => $event->vidiwall_show_uploader,
                 'overlay_text' => $event->vidiwall_overlay_text,
                 'primary_color' => $event->primary_color,
                 'accent_color' => $event->accent_color,
@@ -79,14 +77,12 @@ class VidiwallController extends Controller
                 'media_type' => $onScreen->media_type,
                 'url' => $onScreen->file_url,
                 'video_url' => $onScreen->video_url,
-                'uploader' => $onScreen->uploader_name,
                 'displayed_at' => $onScreen->displayed_at,
                 'slot_ms' => $onScreen->screenSlotMs(),
             ] : null,
             'page' => $page->map(fn (FotoUpload $foto) => $this->screenItem($foto))->values()->all(),
             'next' => $nextPage->isNotEmpty() ? $this->screenItem($nextPage->first()) : null,
             'next_page' => $nextPage->map(fn (FotoUpload $foto) => $this->screenItem($foto))->values()->all(),
-            'show_uploader' => $event->vidiwall_show_uploader,
             'overlay_text' => $event->vidiwall_overlay_text,
             'primary_color' => $event->primary_color,
             'accent_color' => $event->accent_color,
@@ -119,7 +115,7 @@ class VidiwallController extends Controller
     }
 
     /**
-     * @return array{id: int, media_type: string, url: string, video_url: string|null, uploader: string|null}
+     * @return array{id: int, media_type: string, url: string, video_url: string|null}
      */
     private function screenItem(FotoUpload $foto): array
     {
@@ -128,7 +124,6 @@ class VidiwallController extends Controller
             'media_type' => $foto->media_type,
             'url' => $foto->file_url,
             'video_url' => $foto->video_url,
-            'uploader' => $foto->uploader_name,
         ];
     }
 

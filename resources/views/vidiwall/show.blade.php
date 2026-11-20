@@ -262,36 +262,6 @@
             background: #000
         }
 
-        .uploader {
-            position: absolute;
-            bottom: 26px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, .75);
-            border: 1px solid var(--acc);
-            border-radius: 40px;
-            padding: 8px 24px;
-            font-family: var(--font-h);
-            font-size: clamp(14px, 1.6vw, 20px);
-            font-weight: 700;
-            color: var(--acc);
-            z-index: 3;
-            white-space: nowrap;
-            animation: tagIn .4s .2s both
-        }
-
-        @keyframes tagIn {
-            from {
-                opacity: 0;
-                transform: translateX(-50%) translateY(18px)
-            }
-
-            to {
-                opacity: 1;
-                transform: translateX(-50%) translateY(0)
-            }
-        }
-
         .slide-counter {
             position: absolute;
             top: 14px;
@@ -403,25 +373,6 @@
             width: 100%;
             height: 100%;
             object-fit: cover
-        }
-
-        .tile-name {
-            position: absolute;
-            left: 50%;
-            bottom: clamp(6px, 1.2vh, 14px);
-            transform: translateX(-50%);
-            max-width: calc(100% - 16px);
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            background: rgba(0, 0, 0, .75);
-            border: 1px solid var(--acc);
-            border-radius: 40px;
-            padding: 4px 14px;
-            font-family: var(--font-h);
-            font-size: clamp(11px, 1.1vw, 16px);
-            font-weight: 700;
-            color: var(--acc)
         }
 
         /* ── Safe area: the box live media and the idle card sit in ── */
@@ -2485,10 +2436,6 @@
 
                     <div class="photo-grid" id="photoGrid" style="display:none"></div>
 
-                    <div class="uploader" id="uploaderTag" style="display:none">
-                        <span id="uploaderName"></span>
-                    </div>
-
                     <div class="live-badge" id="liveBadge" style="display:none">&#9679; LIVE</div>
                     <div class="video-badge" id="videoBadge" style="display:none">&#9654; VIDEO</div>
                     <div class="slide-counter" id="slideCounter" style="display:none"></div>
@@ -2727,7 +2674,6 @@
     @include('layouts._server-clock')
     <script>
         const SLUG = '{{ $event->slug }}';
-        const SHOW_NAME = {{ $event->vidiwall_show_uploader ? 'true' : 'false' }};
         const HAS_FANCLASH = {{ $event->module_fanclash ? 'true' : 'false' }};
         const HAS_LOTTERY = {{ $event->module_lottery ? 'true' : 'false' }};
         const HAS_VOTING = {{ $event->module_voting ? 'true' : 'false' }};
@@ -2761,17 +2707,6 @@
             document.getElementById('stageBg').style.backgroundImage = url ? `url('${url}')` : '';
         }
 
-        function showUploaderTag(name) {
-            const upTag = document.getElementById('uploaderTag');
-            const nameSp = document.getElementById('uploaderName');
-            if (SHOW_NAME && name) {
-                upTag.style.display = 'block';
-                nameSp.textContent = name;
-            } else {
-                upTag.style.display = 'none';
-            }
-        }
-
         function showSlideInfo(slideNum, total) {
             const counter = document.getElementById('slideCounter');
             if (slideNum !== undefined) {
@@ -2782,7 +2717,7 @@
             }
         }
 
-        function showPhoto(url, name, slideNum, total) {
+        function showPhoto(url, slideNum, total) {
             document.getElementById('idleState').style.display = 'none';
             document.getElementById('videoFrame').style.display = 'none';
             document.getElementById('videoBadge').style.display = 'none';
@@ -2795,7 +2730,6 @@
 
             document.getElementById('liveBadge').style.display = 'block';
 
-            showUploaderTag(name);
             showSlideInfo(slideNum, total);
 
             const frame = document.getElementById('photoFrame');
@@ -2811,7 +2745,7 @@
             setBackground(url);
         }
 
-        function showVideo(videoUrl, name, slideNum, total, onEnded, autoplay = true) {
+        function showVideo(videoUrl, slideNum, total, onEnded, autoplay = true) {
             document.getElementById('idleState').style.display = 'none';
             document.getElementById('photoFrame').style.display = 'none';
             document.getElementById('liveBadge').style.display = 'none';
@@ -2819,7 +2753,6 @@
 
             document.getElementById('videoBadge').style.display = 'block';
 
-            showUploaderTag(name);
             showSlideInfo(slideNum, total);
 
             const frame = document.getElementById('videoFrame');
@@ -2841,7 +2774,6 @@
             document.getElementById('photoFrame').style.display = 'none';
             document.getElementById('videoFrame').style.display = 'none';
             hideGrid();
-            document.getElementById('uploaderTag').style.display = 'none';
             document.getElementById('liveBadge').style.display = 'none';
             document.getElementById('videoBadge').style.display = 'none';
             document.getElementById('slideCounter').style.display = 'none';
@@ -2882,7 +2814,7 @@
                 const f = slideFotos[slideIndex];
 
                 if (f.media_type === 'video' && f.video_url) {
-                    showVideo(f.video_url, f.uploader, slideIndex + 1, slideFotos.length, goNext);
+                    showVideo(f.video_url, slideIndex + 1, slideFotos.length, goNext);
 
                     slideTimer = setTimeout(goNext, 60_000);
                 } else {
@@ -2890,7 +2822,7 @@
                     liveVideo.pause();
                     liveVideo.src = '';
 
-                    showPhoto(f.url, f.uploader, slideIndex + 1, slideFotos.length);
+                    showPhoto(f.url, slideIndex + 1, slideFotos.length);
 
                     slideTimer = setTimeout(goNext, interval * 1000);
                 }
@@ -2950,13 +2882,6 @@
             img.src = item.url;
             frame.appendChild(img);
 
-            if (SHOW_NAME && item.uploader) {
-                const name = document.createElement('div');
-                name.className = 'tile-name';
-                name.textContent = item.uploader;
-                frame.appendChild(name);
-            }
-
             tile.appendChild(frame);
             return tile;
         }
@@ -2970,7 +2895,6 @@
             document.getElementById('photoFrame').style.display = 'none';
             document.getElementById('videoFrame').style.display = 'none';
             document.getElementById('videoBadge').style.display = 'none';
-            document.getElementById('uploaderTag').style.display = 'none';
             document.getElementById('slideCounter').style.display = 'none';
             document.getElementById('liveBadge').style.display = 'block';
             document.getElementById('liveImg').onload = null;
@@ -3101,7 +3025,7 @@
 
                 if (isNewItem) {
                     const startAt = elapsed > 500 ? '#t=' + (elapsed / 1000).toFixed(1) : '';
-                    showVideo(foto.video_url + startAt, foto.uploader, undefined, undefined, finish, playing);
+                    showVideo(foto.video_url + startAt, undefined, undefined, finish, playing);
                 } else {
                     video.onended = finish;
                     video.onerror = finish;
@@ -3120,7 +3044,7 @@
                 if (tiled && isNewPage) {
                     showGrid(page, layout);
                 } else if (!tiled && isNewPage) {
-                    showPhoto(foto.url, foto.uploader);
+                    showPhoto(foto.url);
                 }
 
                 if (playing) {
@@ -3203,7 +3127,7 @@
             }
 
             function hideStage() {
-                ['idleState', 'photoFrame', 'videoFrame', 'photoGrid', 'uploaderTag', 'liveBadge',
+                ['idleState', 'photoFrame', 'videoFrame', 'photoGrid', 'liveBadge',
                     'videoBadge', 'slideCounter'].forEach(id => {
                     const n = document.getElementById(id);
                     if (n) n.style.display = 'none';
