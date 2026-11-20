@@ -2167,6 +2167,7 @@
 
     <div id="toast"></div>
 
+    @include('layouts._server-clock')
     <script>
         const SLUG = '{{ $event->slug }}',
             CSRF = '{{ csrf_token() }}',
@@ -2917,8 +2918,9 @@
             let colA = '#ef4444', colB = '#3B82F6',
                 nameA = lang === 'de' ? 'Seite A' : 'Side A', nameB = lang === 'de' ? 'Seite B' : 'Side B';
             let localTaps = 0, pendingTaps = 0, stamps = [];
-            let startPerf = null, endPerf = null, durationMs = 20000;
-            let rafId = null, flushId = null, pollId = null, pollMs = null, celebrated = false;
+            const clock = serverClock();
+            let startPerf = null, endPerf = null, closePerf = null, durationMs = 20000, countdownSeconds = 0;
+            let rafId = null, flushId = null, pollId = null, pollMs = null, celebrated = false, flushing = false;
 
             const token = localStorage.getItem('eb_clash_token') || (() => {
                 const t = Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -2951,15 +2953,19 @@
                 return startPerf === null ? Infinity : Math.max(0, startPerf - performance.now());
             }
             /* The round's clock: unknown while the matchup waits for the start,
-               then the countdown and the taps run on the phone's own time. */
+               then the server's own moments, so the phone counts in step with
+               the vidiwall however slow its connection is. */
             function syncClock(d) {
                 durationMs = (d.duration_seconds || 20) * 1000;
-                if (d.status !== 'active') { startPerf = null; endPerf = null; return; }
-                const now = performance.now();
-                const start = now + (d.starts_in_ms || 0);
-                const end = start + (d.remaining_ms ?? durationMs);
-                if (startPerf === null || Math.abs(start - startPerf) > 400) startPerf = start;
-                if (endPerf === null || Math.abs(end - endPerf) > 400) endPerf = end;
+                countdownSeconds = d.countdown_seconds || 0;
+                if (d.status !== 'active') { startPerf = null; endPerf = null; closePerf = null; return; }
+                startPerf = clock.local(d.starts_at_ms);
+                endPerf = clock.local(d.ends_at_ms);
+                closePerf = clock.local(d.closes_at_ms);
+            }
+            /* The count-in never shows more than its set seconds, as on the vidiwall. */
+            function countIn(wait) {
+                return String(Math.min(countdownSeconds || Infinity, Math.ceil(wait / 1000)));
             }
             function setPoll(ms) {
                 if (ms === pollMs) return;
@@ -3034,7 +3040,7 @@
                     const wait = startsInNow();
                     if (wait <= 0) { goTap(); }
                     else {
-                        tapWord.textContent = wait === Infinity ? '…' : String(Math.ceil(wait / 1000));
+                        tapWord.textContent = wait === Infinity ? '…' : countIn(wait);
                         rateLine.style.display = 'none'; waitLine.style.display = '';
                         countEl.textContent = Math.ceil(remainingNow() / 1000);
                         rafId = requestAnimationFrame(frame);
@@ -3052,17 +3058,36 @@
                 rafId = requestAnimationFrame(frame);
             }
 
+            /* One batch at a time, so two batches on a slow connection never
+               overwrite each other's count. The last taps go out as soon as
+               the batch before them is back, and again if they fail, for as
+               long as the round still takes late taps. */
             async function flush() {
-                if (pendingTaps <= 0) return;
+                if (flushing || pendingTaps <= 0) return;
+                flushing = true;
                 const batch = pendingTaps; pendingTaps = 0;
+                let failed = false;
                 try {
+                    const sentAt = performance.now();
                     const d = await post(`/e/${SLUG}/clash/tap`, { session_token: token, side, taps: batch });
-                    if (d && d.error && d.starts_in_ms !== undefined) { pendingTaps += batch; return; }
-                    if (d && d.remaining_ms !== undefined) { endPerf = performance.now() + d.remaining_ms; }
-                    if (d && d.status === 'finished') { endLocal(); }
-                } catch { pendingTaps += batch; }
+                    clock.read(sentAt, performance.now(), d && d.server_now_ms);
+                    if (d && d.error && d.starts_in_ms !== undefined) { pendingTaps += batch; }
+                    else {
+                        if (d && typeof d.ends_at_ms === 'number') { endPerf = clock.local(d.ends_at_ms); closePerf = clock.local(d.closes_at_ms); }
+                        if (d && d.status === 'finished') { endLocal(); }
+                    }
+                } catch {
+                    pendingTaps += batch;
+                    failed = true;
+                }
+                flushing = false;
+                if (state !== 'ending' || pendingTaps <= 0) return;
+                if (!failed) flush();
+                else if (closePerf !== null && performance.now() < closePerf) setTimeout(flush, 300);
             }
 
+            /* The result is asked for just after the round closes, spread a
+               little so the whole room does not ask at the same instant. */
             function endLocal() {
                 if (state !== 'tap') return;
                 state = 'ending';
@@ -3071,7 +3096,15 @@
                 tapBtn.classList.add('fc-dis');
                 countEl.textContent = '0';
                 flush();
-                setPoll(700); poll();
+                setPoll(700);
+                if (closePerf !== null) setTimeout(poll, Math.max(0, closePerf - performance.now()) + 150 + Math.random() * 350);
+            }
+
+            /* The operator gave the round more time after this phone's clock
+               had already run out, so tapping picks up again. */
+            function resumeTap() {
+                goTap();
+                cancelAnimationFrame(rafId); rafId = requestAnimationFrame(frame);
             }
 
             function showResult(d) {
@@ -3108,6 +3141,9 @@
                         renderPick(d);
                     } else if (state === 'armed' || state === 'tap') {
                         syncClock(d);
+                    } else if (state === 'ending' && d.status === 'active') {
+                        syncClock(d);
+                        if (remainingNow() > 0) resumeTap();
                     }
                 } else if (d.status === 'finished') {
                     if ((state === 'pick' || state === 'armed') && roundId !== null && roundId !== d.round_id) {
@@ -3132,8 +3168,12 @@
 
             async function poll() {
                 try {
+                    const sentAt = performance.now();
                     const r = await fetch(`/e/${SLUG}/clash/status`);
-                    applyStatus(await r.json());
+                    const receivedAt = performance.now();
+                    const d = await r.json();
+                    clock.read(sentAt, receivedAt, d.server_now_ms);
+                    applyStatus(d);
                 } catch {}
             }
 
