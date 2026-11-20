@@ -148,6 +148,10 @@ class FanClashController extends Controller
             return $this->screenResponse($request, $event, 'No round is running.', 422);
         }
 
+        if ($screen->currentRound()?->remainingMs() <= 0) {
+            return $this->screenResponse($request, $event, 'Time is up. The result is on its way.', 422);
+        }
+
         $screen->extend();
 
         return $this->screenResponse($request, $event, FanClashScreen::EXTEND_SECONDS.' more seconds to tap.');

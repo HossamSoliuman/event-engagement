@@ -179,14 +179,15 @@ class FanClashScreen extends Model
     }
 
     /**
-     * Gives the running round more time.
+     * Gives the running round more time, while its clock is still running.
+     * Once it has run out the phones have stopped, so the round stays over.
      */
     public function extend(): void
     {
         $this->mutate(function (self $screen): void {
             $round = $screen->currentRound();
 
-            if ($round?->status !== 'active') {
+            if ($round?->status !== 'active' || $round->remainingMs() <= 0) {
                 return;
             }
 
@@ -362,6 +363,8 @@ class FanClashScreen extends Model
             },
             'winner_side' => $round->winner_side,
             'sponsor_logo_url' => $round->sponsor_logo_url,
+            'countdown_seconds' => $this->countdown_seconds,
+            ...$round->clock(),
         ];
     }
 

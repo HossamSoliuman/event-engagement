@@ -43,18 +43,20 @@ class FanClashController extends Controller
                 'side_a_color' => $round->side_a_color,
                 'side_b_color' => $round->side_b_color,
                 'duration_seconds' => $round->duration_seconds,
+                'countdown_seconds' => $event->fanClashScreen?->countdown_seconds ?? 0,
                 'started_at' => $round->started_at?->toIso8601String(),
                 'starts_in_ms' => $round->startsInMs(),
                 'remaining_ms' => min($round->duration_seconds * 1000, $round->remainingMs()),
                 'side_a_taps' => $round->side_a_taps,
                 'side_b_taps' => $round->side_b_taps,
+                ...$round->clock(),
             ]);
         }
 
         $upNext = $event->fanClashScreen?->round;
 
         if ($upNext && $upNext->status === 'waiting') {
-            return response()->json([
+            return $this->withServerTime([
                 'status' => 'ready',
                 'round_id' => $upNext->id,
                 'category' => $upNext->category,
@@ -71,10 +73,10 @@ class FanClashController extends Controller
             : $event->fanClashRounds()->where('status', 'finished')->latest()->first();
 
         if ($finished) {
-            return response()->json($this->finishedPayload($finished));
+            return $this->withServerTime($this->finishedPayload($finished));
         }
 
-        return response()->json(['status' => 'waiting']);
+        return $this->withServerTime(['status' => 'waiting']);
     }
 
     public function tap(Request $request, string $slug): JsonResponse
@@ -138,7 +140,19 @@ class FanClashController extends Controller
             'side_a_taps' => $round->side_a_taps,
             'side_b_taps' => $round->side_b_taps,
             'remaining_ms' => min($round->duration_seconds * 1000, $round->remainingMs()),
+            ...$round->clock(),
         ]);
+    }
+
+    /**
+     * Every answer carries the server's time, so a phone keeps its copy of
+     * the round's clock in step from the moment it opens the clash.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    private function withServerTime(array $payload): JsonResponse
+    {
+        return response()->json([...$payload, 'server_now_ms' => FanClashRound::nowMs()]);
     }
 
     /**

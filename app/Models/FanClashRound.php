@@ -16,6 +16,12 @@ class FanClashRound extends Model
     /** @var list<string> */
     public const MEDIA_COLUMNS = ['side_a_image_path', 'side_b_image_path', 'sponsor_logo_path'];
 
+    /**
+     * How long after the clock runs out the round still takes taps that
+     * were made in time and are on their way, before it closes.
+     */
+    public const LATE_TAP_GRACE_MS = 1500;
+
     protected $fillable = [
         'event_id',
         'fan_clash_matchup_id',
@@ -71,18 +77,52 @@ class FanClashRound extends Model
 
     public function remainingMs(): int
     {
-        if (! $this->started_at) {
-            return $this->duration_seconds * 1000;
-        }
+        $endsAt = $this->endsAtMs();
 
-        $endMs = $this->started_at->getTimestampMs() + ($this->duration_seconds * 1000);
-
-        return max(0, $endMs - (int) (microtime(true) * 1000));
+        return $endsAt === null ? $this->duration_seconds * 1000 : max(0, $endsAt - self::nowMs());
     }
 
+    /**
+     * When the clock runs out, in server milliseconds.
+     */
+    public function endsAtMs(): ?int
+    {
+        return $this->started_at ? $this->started_at->getTimestampMs() + $this->duration_seconds * 1000 : null;
+    }
+
+    /**
+     * The round closes a moment after its clock runs out, so the taps made
+     * just before the end that are still on their way from the phones count.
+     */
     public function isExpired(): bool
     {
-        return $this->started_at !== null && $this->remainingMs() <= 0;
+        $endsAt = $this->endsAtMs();
+
+        return $endsAt !== null && self::nowMs() >= $endsAt + self::LATE_TAP_GRACE_MS;
+    }
+
+    /**
+     * The round's moments in server milliseconds with the server's time
+     * now, so every screen counts against the same clock however long the
+     * answer took to reach it.
+     *
+     * @return array{server_now_ms: int, starts_at_ms: int|null, ends_at_ms: int|null, closes_at_ms: int|null}
+     */
+    public function clock(): array
+    {
+        $endsAt = $this->isActive() ? $this->endsAtMs() : null;
+
+        return [
+            'server_now_ms' => self::nowMs(),
+            'starts_at_ms' => $endsAt === null ? null : $this->started_at->getTimestampMs(),
+            'ends_at_ms' => $endsAt,
+            'closes_at_ms' => $endsAt === null ? null : $endsAt + self::LATE_TAP_GRACE_MS,
+        ];
+    }
+
+    public static function nowMs(): int
+    {
+        return (int) (microtime(true) * 1000);
     }
 
     /**
@@ -94,7 +134,7 @@ class FanClashRound extends Model
             return 0;
         }
 
-        return max(0, $this->started_at->getTimestampMs() - (int) (microtime(true) * 1000));
+        return max(0, $this->started_at->getTimestampMs() - self::nowMs());
     }
 
     public function hasStarted(): bool
