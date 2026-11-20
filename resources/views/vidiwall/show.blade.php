@@ -6,6 +6,7 @@
     $frameTopText = $frame['top_text'];
     $frameBottomText = $frame['bottom_text'] !== '' ? $frame['bottom_text'] : $frame['top_text'];
     $frameSideText = $frame['side_text'];
+    $clashBg = $event->fanClashBackgroundColor();
 @endphp
 <!DOCTYPE html>
 <html lang="en">
@@ -32,6 +33,9 @@
             --acc: {{ $event->accent_color }};
             --on-p: {{ $event->readableInk($event->primary_color) }};
             --on-bg: {{ $event->readableInk($event->secondary_color) }};
+            --clash-bg: {{ $clashBg }};
+            --clash-ink: {{ $event->readableInk($clashBg) }};
+            --clash-hl: {{ $event->fanclash_accent_color ? $event->fanClashAccentColor() : 'var(--clash-ink)' }};
             --font-h: '{{ $event->headingFont() }}', 'Syne', sans-serif;
             --font-b: '{{ $event->bodyFont() }}', 'DM Sans', sans-serif;
             --frame-c: {{ $frameColor }};
@@ -609,7 +613,8 @@
             justify-content: center;
             gap: clamp(14px, 2.8vh, 40px);
             padding: clamp(26px, 5vw, 90px);
-            background: var(--bg)
+            background: var(--clash-bg);
+            color: var(--clash-ink)
         }
 
         .clash-head {
@@ -625,7 +630,7 @@
             font-size: clamp(14px, 2vw, 32px);
             letter-spacing: .2em;
             text-transform: uppercase;
-            color: var(--on-bg);
+            color: var(--clash-hl);
             opacity: .9;
             white-space: nowrap;
             overflow: hidden;
@@ -683,8 +688,8 @@
             position: relative;
             border-radius: 14px;
             overflow: hidden;
-            background: rgba(255, 255, 255, .06);
-            border: 1px solid rgba(255, 255, 255, .16)
+            background: color-mix(in srgb, var(--clash-ink) 6%, transparent);
+            border: 1px solid color-mix(in srgb, var(--clash-ink) 16%, transparent)
         }
 
         .clash-fill-a {
@@ -756,7 +761,7 @@
             font-size: clamp(10px, 1vw, 15px);
             letter-spacing: .16em;
             text-transform: uppercase;
-            color: var(--on-bg);
+            color: var(--clash-ink);
             opacity: .5;
             margin-top: 5px
         }
@@ -782,7 +787,7 @@
             font-weight: 800;
             font-size: clamp(30px, 4.4vw, 72px);
             font-variant-numeric: tabular-nums;
-            color: var(--on-bg);
+            color: var(--clash-ink);
             line-height: 1
         }
 
@@ -792,7 +797,7 @@
             font-size: clamp(12px, 1.5vw, 24px);
             letter-spacing: .2em;
             text-transform: uppercase;
-            color: var(--on-bg);
+            color: var(--clash-ink);
             opacity: .45
         }
 
@@ -806,7 +811,7 @@
             justify-content: center;
             gap: clamp(10px, 2.6vh, 28px);
             padding: clamp(24px, 5vw, 80px);
-            background: var(--bg);
+            background: var(--clash-bg);
             text-align: center;
             animation: clashWinIn .5s cubic-bezier(.22, 1, .36, 1)
         }
@@ -829,7 +834,7 @@
             font-size: clamp(12px, 1.6vw, 26px);
             letter-spacing: .3em;
             text-transform: uppercase;
-            color: var(--on-bg);
+            color: var(--clash-ink);
             opacity: .55
         }
 
@@ -839,7 +844,7 @@
             font-size: clamp(46px, 11vw, 170px);
             line-height: .95;
             text-transform: uppercase;
-            color: var(--cwin, #fff);
+            color: var(--cwin, var(--clash-ink));
             letter-spacing: -.01em
         }
 
@@ -849,7 +854,7 @@
             font-size: clamp(16px, 2.4vw, 42px);
             letter-spacing: .28em;
             text-transform: uppercase;
-            color: var(--on-bg);
+            color: var(--clash-ink);
             opacity: .7
         }
 
@@ -2964,11 +2969,11 @@
                 if (d.winner_side === 'tie') {
                     winnerName.textContent = "It's a tie";
                     winnerTag.style.display = 'none';
-                    overlay.style.setProperty('--cwin', '#ffffff');
+                    overlay.style.setProperty('--cwin', 'var(--clash-ink)');
                 } else {
                     winnerName.textContent = (d.winner_side === 'a' ? d.side_a_name : d.side_b_name) || '—';
                     winnerTag.style.display = '';
-                    overlay.style.setProperty('--cwin', (d.winner_side === 'a' ? d.side_a_color : d.side_b_color) || '#ffffff');
+                    overlay.style.setProperty('--cwin', (d.winner_side === 'a' ? d.side_a_color : d.side_b_color) || 'var(--clash-ink)');
                 }
                 if (d.sponsor_logo_url) {
                     winnerSpon.src = d.sponsor_logo_url;

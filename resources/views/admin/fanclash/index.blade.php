@@ -161,7 +161,7 @@
                         </div>
                         <div class="form-group mb-0">
                             <label class="form-label">Color</label>
-                            <input type="color" name="side_a_color" class="form-control" style="height:38px;padding:2px" value="{{ old('side_a_color', $event->primary_color ?: '#ef4444') }}">
+                            <input type="color" name="side_a_color" class="form-control" style="height:38px;padding:2px" value="{{ old('side_a_color', $event->fanClashAccentColor()) }}">
                         </div>
                     </div>
                     <div class="form-row" style="margin-top:12px">
@@ -220,7 +220,7 @@
                                 </div>
                                 <div class="form-group mb-0">
                                     <label class="form-label">Color</label>
-                                    <input type="color" name="side_a_color" class="form-control" style="height:38px;padding:2px" value="{{ $event->primary_color ?: '#ef4444' }}">
+                                    <input type="color" name="side_a_color" class="form-control" style="height:38px;padding:2px" value="{{ $event->fanClashAccentColor() }}">
                                 </div>
                             </div>
                             <div class="form-row" style="margin-top:12px">

@@ -1980,30 +1980,37 @@
     @endif
 
     @if ($event->module_fanclash)
-        <div class="module-screen" id="screen-fanclash">
+        @php
+            $fcBg = $event->fanClashBackgroundColor();
+            $fcAccent = $event->fanClashAccentColor();
+            $fcLight = $event->isLightColor($fcBg);
+        @endphp
+        <div class="module-screen" id="screen-fanclash"
+            style="--bg: {{ $fcBg }}; --p: {{ $fcAccent }}; --on-p: {{ $event->readableInk($fcAccent) }}; --text: {{ $fcLight ? '#16162a' : '#f0f0f8' }}; --muted: {{ $fcLight ? 'rgba(20, 20, 40, .6)' : 'rgba(240, 240, 248, .55)' }}; --border: {{ $fcLight ? 'rgba(0, 0, 0, .14)' : 'rgba(255, 255, 255, .12)' }}; --card: {{ $fcLight ? 'rgba(0, 0, 0, .05)' : 'rgba(255, 255, 255, .07)' }}">
             <div class="mod-header">
                 <button class="mod-back" onclick="closeModule('fanclash')"><i data-lucide="arrow-left" class="lucide-icon"></i></button>
                 <div class="mod-header-title"><i data-lucide="swords" class="lucide-icon"></i> {{ $event->fanclash_title }}</div>
             </div>
             <div class="mod-body">
                 <style>
+                    #screen-fanclash{color:var(--text)}
                     #screen-fanclash .mod-body{display:flex;flex-direction:column}
                     .fc-screen{flex:1;display:flex;flex-direction:column}
-                    .fc-eyebrow{font-size:11px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,.5);text-align:center;margin-bottom:20px;display:flex;align-items:center;justify-content:center;gap:9px}
+                    .fc-eyebrow{font-size:11px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:var(--muted);text-align:center;margin-bottom:20px;display:flex;align-items:center;justify-content:center;gap:9px}
                     .fc-eyebrow .fc-dot{width:7px;height:7px;border-radius:50%;background:#ef4444;box-shadow:0 0 10px #ef4444;animation:fcpip 1.6s infinite}
                     @keyframes fcpip{0%,100%{opacity:1}50%{opacity:.3}}
 
                     .fc-pick-title{font-family:'Syne',sans-serif;font-weight:800;font-size:32px;text-align:center;letter-spacing:-.02em;line-height:1.05}
-                    .fc-pick-sub{color:rgba(255,255,255,.55);text-align:center;font-size:14px;line-height:1.5;margin:10px 0 30px}
+                    .fc-pick-sub{color:var(--muted);text-align:center;font-size:14px;line-height:1.5;margin:10px 0 30px}
                     .fc-pick-btns{display:flex;flex-direction:column;gap:14px;margin-top:auto}
-                    .fc-vs{text-align:center;font-family:'Syne',sans-serif;font-weight:800;font-size:12px;letter-spacing:.3em;color:rgba(255,255,255,.35);margin:2px 0}
+                    .fc-vs{text-align:center;font-family:'Syne',sans-serif;font-weight:800;font-size:12px;letter-spacing:.3em;color:var(--muted);margin:2px 0}
                     .fc-pick-btn{border:none;border-radius:16px;padding:28px 18px;min-height:104px;cursor:pointer;font-family:'Syne',sans-serif;font-weight:800;font-size:23px;letter-spacing:.03em;text-transform:uppercase;position:relative;transition:transform .12s;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.1;-webkit-tap-highlight-color:transparent}
                     .fc-pick-btn:active{transform:scale(.98)}
 
                     .fc-tap-top{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px}
                     .fc-side-label{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;letter-spacing:.12em;text-transform:uppercase;color:var(--fc-me,#ef4444)}
-                    .fc-your-taps{font-size:13px;color:rgba(255,255,255,.5);font-variant-numeric:tabular-nums}
-                    .fc-your-taps b{font-family:'Syne',sans-serif;font-weight:800;color:#fff;font-size:17px}
+                    .fc-your-taps{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+                    .fc-your-taps b{font-family:'Syne',sans-serif;font-weight:800;color:var(--text);font-size:17px}
                     .fc-tap-btn{flex:1;min-height:46vh;border:none;border-radius:26px;background:var(--fc-me,#ef4444);color:var(--fc-me-ink,#fff);cursor:pointer;user-select:none;-webkit-user-select:none;position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;touch-action:manipulation;transition:transform .05s}
                     .fc-tap-btn:active{transform:scale(.985)}
                     .fc-tap-btn.fc-dis{opacity:.45;pointer-events:none}
@@ -2017,18 +2024,18 @@
                     .fc-waiting{text-align:center;margin:auto 0}
                     .fc-pulse{width:64px;height:64px;border-radius:50%;background:#ef4444;margin:0 auto 20px;animation:fcpulse 1.6s ease-in-out infinite}
                     @keyframes fcpulse{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.14);opacity:1}}
-                    .fc-muted{color:rgba(255,255,255,.5);font-size:14px;line-height:1.55}
+                    .fc-muted{color:var(--muted);font-size:14px;line-height:1.55}
 
                     .fc-result{text-align:center;margin:auto 0;width:100%}
                     .fc-result-spon{margin-bottom:24px}
                     .fc-result-spon img{max-height:56px;width:auto;max-width:70%;background:#fff;border-radius:10px;padding:8px 12px}
-                    .fc-result-eyebrow{font-size:11px;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:12px}
-                    .fc-winner-name{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(34px,11vw,46px);line-height:1.05;letter-spacing:-.01em;color:var(--fc-win,#fff)}
-                    .fc-winner-tag{font-size:13px;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-top:10px}
+                    .fc-result-eyebrow{font-size:11px;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+                    .fc-winner-name{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(34px,11vw,46px);line-height:1.05;letter-spacing:-.01em;color:var(--fc-win,var(--text))}
+                    .fc-winner-tag{font-size:13px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted);margin-top:10px}
                     .fc-score{font-family:'Syne',sans-serif;font-weight:800;font-size:28px;font-variant-numeric:tabular-nums;margin:26px 0 6px;letter-spacing:.04em}
                     .fc-score .a{color:var(--fc-a,#ef4444)}
                     .fc-score .b{color:var(--fc-b,#3B82F6)}
-                    .fc-score .sep{color:rgba(255,255,255,.3);margin:0 10px}
+                    .fc-score .sep{color:var(--muted);margin:0 10px}
                     #screen-fanclash .fc-again{margin-top:30px}
                 </style>
 
@@ -3023,7 +3030,7 @@
                 setVar('--fc-a', d.side_a_color || colA); setVar('--fc-b', d.side_b_color || colB);
                 const w = d.winner_side;
                 const winName = w === 'a' ? d.side_a_name : w === 'b' ? d.side_b_name : null;
-                const winCol = w === 'a' ? (d.side_a_color || colA) : w === 'b' ? (d.side_b_color || colB) : '#fff';
+                const winCol = w === 'a' ? (d.side_a_color || colA) : w === 'b' ? (d.side_b_color || colB) : 'var(--text)';
                 setVar('--fc-win', winCol);
                 if (w === 'tie') {
                     $('fcWinnerName').textContent = lang === 'de' ? 'Unentschieden!' : "It's a tie!";

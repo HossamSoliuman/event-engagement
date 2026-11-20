@@ -12,8 +12,6 @@ use Illuminate\Support\Facades\Storage;
 
 class FanClashController extends Controller
 {
-    private const DEFAULT_SIDE_A_COLOR = '#FF3D00';
-
     private const DEFAULT_SIDE_B_COLOR = '#3B82F6';
 
     public function index(Event $event)
@@ -210,7 +208,7 @@ class FanClashController extends Controller
                 'category' => ($data['category'] ?? '') ?: $matchup->category,
                 'side_a_name' => $matchup->side_a_name,
                 'side_b_name' => $matchup->side_b_name,
-                'side_a_color' => $matchup->side_a_color ?: ($event->primary_color ?: self::DEFAULT_SIDE_A_COLOR),
+                'side_a_color' => $matchup->side_a_color ?: $event->fanClashAccentColor(),
                 'side_b_color' => $matchup->side_b_color ?: self::DEFAULT_SIDE_B_COLOR,
                 'side_a_image_path' => $matchup->side_a_image_path,
                 'side_b_image_path' => $matchup->side_b_image_path,
@@ -227,7 +225,7 @@ class FanClashController extends Controller
             'category' => ($data['category'] ?? '') ?: null,
             'side_a_name' => $data['side_a_name'],
             'side_b_name' => $data['side_b_name'],
-            'side_a_color' => ($data['side_a_color'] ?? '') ?: ($event->primary_color ?: self::DEFAULT_SIDE_A_COLOR),
+            'side_a_color' => ($data['side_a_color'] ?? '') ?: $event->fanClashAccentColor(),
             'side_b_color' => ($data['side_b_color'] ?? '') ?: self::DEFAULT_SIDE_B_COLOR,
             'side_a_image_path' => null,
             'side_b_image_path' => null,
