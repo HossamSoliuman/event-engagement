@@ -17,7 +17,7 @@
     <title>{{ $event->name }} — Vidiwall</title>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;600&display=swap"
         rel="stylesheet">
-    @if ($event->hasQrScreenCallToAction() && ($brandFonts = $event->googleFontsUrl()))
+    @if ($brandFonts = $event->googleFontsUrl())
         <link href="{{ $brandFonts }}" rel="stylesheet">
     @endif
     @if ($event->hasVidiwallBackground())
@@ -57,7 +57,7 @@
             overflow: hidden;
             background: var(--bg);
             color: var(--on-bg);
-            font-family: 'DM Sans', sans-serif
+            font-family: var(--font-b)
         }
 
         .screen {
@@ -80,7 +80,7 @@
             white-space: nowrap;
             padding: 0 20px;
             color: var(--frame-t);
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 800;
             letter-spacing: .22em;
             text-transform: uppercase;
@@ -109,7 +109,7 @@
             justify-content: center;
             overflow: hidden;
             color: var(--frame-t);
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 700;
             letter-spacing: .3em;
             text-transform: uppercase;
@@ -161,7 +161,7 @@
         }
 
         .event-title {
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 800;
             font-size: clamp(30px, 5.4vw, 86px);
             line-height: 1.05;
@@ -271,7 +271,7 @@
             border: 1px solid var(--acc);
             border-radius: 40px;
             padding: 8px 24px;
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-size: clamp(14px, 1.6vw, 20px);
             font-weight: 700;
             color: var(--acc);
@@ -312,7 +312,7 @@
             z-index: 4;
             background: var(--p);
             color: var(--on-p);
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-size: 11px;
             font-weight: 800;
             padding: 5px 14px;
@@ -340,7 +340,7 @@
             z-index: 4;
             background: rgba(99, 102, 241, .9);
             color: #fff;
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-size: 11px;
             font-weight: 800;
             padding: 5px 14px;
@@ -418,7 +418,7 @@
             border: 1px solid var(--acc);
             border-radius: 40px;
             padding: 4px 14px;
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-size: clamp(11px, 1.1vw, 16px);
             font-weight: 700;
             color: var(--acc)
@@ -625,7 +625,7 @@
         }
 
         .clash-brand {
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 800;
             font-size: clamp(14px, 2vw, 32px);
             letter-spacing: .2em;
@@ -640,7 +640,7 @@
         .clash-live {
             flex: 0 0 auto;
             margin-left: 16px;
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 800;
             font-size: clamp(11px, 1.3vw, 20px);
             letter-spacing: .2em;
@@ -660,7 +660,7 @@
         }
 
         .clash-name {
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 800;
             font-size: clamp(26px, 5.4vw, 88px);
             letter-spacing: .01em;
@@ -750,7 +750,7 @@
         }
 
         .clash-tps b {
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 800;
             font-size: clamp(20px, 2.8vw, 46px);
             font-variant-numeric: tabular-nums;
@@ -783,7 +783,7 @@
         }
 
         .clash-count {
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 800;
             font-size: clamp(30px, 4.4vw, 72px);
             font-variant-numeric: tabular-nums;
@@ -792,7 +792,7 @@
         }
 
         .clash-hint {
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 700;
             font-size: clamp(12px, 1.5vw, 24px);
             letter-spacing: .2em;
@@ -829,7 +829,7 @@
         }
 
         .clash-winner-eyebrow {
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 700;
             font-size: clamp(12px, 1.6vw, 26px);
             letter-spacing: .3em;
@@ -839,7 +839,7 @@
         }
 
         .clash-winner-name {
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 800;
             font-size: clamp(46px, 11vw, 170px);
             line-height: .95;
@@ -849,7 +849,7 @@
         }
 
         .clash-winner-tag {
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 800;
             font-size: clamp(16px, 2.4vw, 42px);
             letter-spacing: .28em;
@@ -924,7 +924,7 @@
         }
 
         .lot-headline {
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 800;
             font-size: clamp(18px, 3vw, 52px);
             letter-spacing: .24em;
@@ -945,7 +945,7 @@
             border-radius: 999px;
             border: 2px solid color-mix(in srgb, var(--acc) 70%, transparent);
             background: color-mix(in srgb, var(--acc) 12%, transparent);
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 700;
             font-size: clamp(14px, 1.9vw, 32px);
             white-space: nowrap;
@@ -1014,7 +1014,7 @@
 
         .lot-intro-text {
             margin-top: clamp(10px, 2.4vh, 30px);
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 800;
             font-size: clamp(26px, 5vw, 90px);
             letter-spacing: .04em;
@@ -1048,7 +1048,7 @@
         }
 
         .lot-count-num {
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 800;
             font-size: calc(var(--ring) * .5);
             line-height: 1;
@@ -1107,7 +1107,7 @@
             align-items: center;
             justify-content: center;
             padding: 0 4%;
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 800;
             font-size: calc(var(--row) * .5);
             white-space: nowrap;
@@ -1146,7 +1146,7 @@
         }
 
         .lot-eyebrow {
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 800;
             font-size: clamp(16px, 2.6vw, 46px);
             letter-spacing: .34em;
@@ -1157,7 +1157,7 @@
         .lot-name {
             width: 100%;
             margin-top: clamp(6px, 1.6vh, 20px);
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 800;
             font-size: clamp(48px, 11vw, 220px);
             line-height: 1;
@@ -1251,7 +1251,7 @@
             width: calc(var(--bsz) * 1.5);
             height: calc(var(--bsz) * 1.5);
             border-radius: 50%;
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 800;
             font-size: calc(var(--bsz) * .6);
             background: var(--acc);
@@ -1263,7 +1263,7 @@
         }
 
         .lot-board-name {
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 800;
             font-size: var(--bsz);
             line-height: 1.1;
@@ -1286,7 +1286,7 @@
             position: relative;
             z-index: 2;
             flex: 0 0 auto;
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 700;
             font-size: clamp(13px, 1.6vw, 26px);
             letter-spacing: .22em;
@@ -1369,7 +1369,7 @@
         }
 
         .vot-headline {
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 800;
             font-size: clamp(18px, 3vw, 52px);
             letter-spacing: .24em;
@@ -1388,7 +1388,7 @@
             padding: .35em 1.1em;
             border-radius: 999px;
             background: color-mix(in srgb, var(--on-bg) 10%, transparent);
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 700;
             font-size: clamp(12px, 1.5vw, 24px);
             letter-spacing: .2em;
@@ -1502,7 +1502,7 @@
             height: calc(var(--row) * .64);
             border-radius: 50%;
             background: color-mix(in srgb, var(--on-bg) 12%, transparent);
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 800;
             font-size: calc(var(--row) * .28);
             font-variant-numeric: tabular-nums
@@ -1541,7 +1541,7 @@
         .vot-name {
             flex: 0 1 auto;
             min-width: 0;
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 800;
             font-size: calc(var(--row) * .32);
             line-height: 1.12;
@@ -1569,7 +1569,7 @@
         .vot-value {
             flex: 0 0 auto;
             margin-left: auto;
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 800;
             font-size: calc(var(--row) * .3);
             font-variant-numeric: tabular-nums;
@@ -1646,7 +1646,7 @@
         }
 
         .vot-timer-label {
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 700;
             font-size: clamp(12px, min(1.3vw, 2.4vh), 24px);
             letter-spacing: .2em;
@@ -1656,7 +1656,7 @@
         }
 
         .vot-timer-num {
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 800;
             font-size: 21cqw;
             line-height: 1;
@@ -1717,7 +1717,7 @@
         }
 
         .vot-qr-text {
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 800;
             font-size: clamp(16px, 2.2vw, 40px);
             letter-spacing: .14em;
@@ -1752,7 +1752,7 @@
 
         .vot-intro-text {
             margin-top: clamp(10px, 2.4vh, 30px);
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 800;
             font-size: clamp(26px, 5vw, 90px);
             letter-spacing: .04em;
@@ -1787,7 +1787,7 @@
         }
 
         .vot-count-num {
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 800;
             font-size: calc(var(--ring) * .5);
             line-height: 1;
@@ -1835,7 +1835,7 @@
         }
 
         .vot-eyebrow {
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 800;
             font-size: clamp(16px, 2.6vw, 46px);
             letter-spacing: .34em;
@@ -1859,7 +1859,7 @@
 
         .vot-winner-name {
             width: 100%;
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 800;
             font-size: clamp(48px, 11vw, 220px);
             line-height: 1;
@@ -2013,7 +2013,7 @@
 
         .vot-place-name {
             width: 100%;
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 800;
             font-size: calc(clamp(22px, min(5vw, 13cqh), 140px) * var(--k, 1));
             line-height: 1.04;
@@ -2049,7 +2049,7 @@
 
         .vot-pillar-value {
             position: relative;
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 800;
             font-size: min(58cqh, 25cqw);
             line-height: 1;
@@ -2061,7 +2061,7 @@
         .vot-pillar-unit {
             position: relative;
             margin-top: .2em;
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 700;
             font-size: min(12cqh, 6cqw);
             letter-spacing: .2em;
@@ -2153,7 +2153,7 @@
             z-index: 2;
             flex: 0 0 auto;
             margin-top: clamp(8px, 1.8vh, 24px);
-            font-family: 'Syne', sans-serif;
+            font-family: var(--font-h);
             font-weight: 700;
             font-size: clamp(13px, 1.6vw, 26px);
             letter-spacing: .22em;
