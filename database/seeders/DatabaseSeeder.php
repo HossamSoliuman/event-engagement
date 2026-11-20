@@ -46,7 +46,6 @@ class DatabaseSeeder extends Seeder
             'lottery_desc'      => 'Enter for a chance to win tonight\'s grand prize!',
             'voting_desc'       => 'Vote for your favourite athlete. Results shown live!',
             'membership_desc'   => 'Join the community and get exclusive member perks.',
-            'vidiwall_show_uploader'       => true,
             'vidiwall_slideshow_mode'      => false,
             'vidiwall_slideshow_interval'  => 8,
             'voting_options'    => json_encode([
