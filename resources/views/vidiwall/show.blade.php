@@ -644,6 +644,7 @@
             font-weight: 800;
             font-size: clamp(11px, 1.3vw, 20px);
             letter-spacing: .2em;
+            text-transform: uppercase;
             color: #fff;
             background: #ef4444;
             padding: 5px 18px;
@@ -662,7 +663,7 @@
         .clash-name {
             font-family: var(--font-h);
             font-weight: 800;
-            font-size: clamp(26px, 5.4vw, 88px);
+            font-size: clamp(26px, min(6vw, 12vh), 120px);
             letter-spacing: .01em;
             text-transform: uppercase;
             line-height: 1;
@@ -690,9 +691,9 @@
 
         .clash-bar {
             width: 100%;
-            height: clamp(42px, 7.5vh, 96px);
+            height: clamp(48px, 13vh, 170px);
             position: relative;
-            border-radius: 14px;
+            border-radius: clamp(12px, 1.4vw, 24px);
             overflow: hidden;
             background: color-mix(in srgb, var(--clash-ink) 6%, transparent);
             border: 1px solid color-mix(in srgb, var(--clash-ink) 16%, transparent)
@@ -731,10 +732,10 @@
 
         .clash-knot {
             position: absolute;
-            top: -7px;
-            bottom: -7px;
+            top: 0;
+            bottom: 0;
             left: 50%;
-            width: 6px;
+            width: clamp(6px, .5vw, 10px);
             background: #fff;
             border-radius: 4px;
             transform: translateX(-50%);
@@ -758,7 +759,7 @@
         .clash-tps b {
             font-family: var(--font-h);
             font-weight: 800;
-            font-size: clamp(20px, 2.8vw, 46px);
+            font-size: clamp(22px, min(3.6vw, 7vh), 68px);
             font-variant-numeric: tabular-nums;
             line-height: 1
         }
@@ -791,10 +792,28 @@
         .clash-count {
             font-family: var(--font-h);
             font-weight: 800;
-            font-size: clamp(30px, 4.4vw, 72px);
+            font-size: clamp(40px, min(7vw, 14vh), 140px);
             font-variant-numeric: tabular-nums;
             color: var(--clash-ink);
             line-height: 1
+        }
+
+        .clash-count.is-ending {
+            color: var(--clash-hl)
+        }
+
+        .clash-count.is-beat {
+            animation: clashBeat .6s cubic-bezier(.22, 1, .36, 1)
+        }
+
+        @keyframes clashBeat {
+            from {
+                transform: scale(1.25)
+            }
+
+            to {
+                transform: scale(1)
+            }
         }
 
         .clash-hint {
@@ -845,23 +864,20 @@
         }
 
         .clash-winner-name {
+            max-width: 100%;
             font-family: var(--font-h);
             font-weight: 800;
-            font-size: clamp(46px, 11vw, 170px);
+            font-size: clamp(46px, min(11vw, 26vh), 220px);
             line-height: .95;
             text-transform: uppercase;
+            white-space: nowrap;
             color: var(--cwin, var(--clash-ink));
             letter-spacing: -.01em
         }
 
-        .clash-winner-tag {
-            font-family: var(--font-h);
-            font-weight: 800;
-            font-size: clamp(16px, 2.4vw, 42px);
-            letter-spacing: .28em;
-            text-transform: uppercase;
-            color: var(--clash-ink);
-            opacity: .7
+        .clash-winner-name.is-wrapped {
+            white-space: normal;
+            overflow-wrap: anywhere
         }
 
         .clash-winner-spon {
@@ -891,24 +907,79 @@
         }
 
         .clash-vs {
+            display: none;
             flex: 0 0 auto;
             align-self: center;
             font-family: var(--font-h);
             font-weight: 800;
-            font-size: clamp(16px, 2.4vw, 40px);
-            letter-spacing: .3em;
-            opacity: .5
+            font-size: clamp(18px, min(2.6vw, 5vh), 48px);
+            letter-spacing: .2em;
+            text-transform: uppercase;
+            opacity: .55
         }
 
         .clash-ready {
-            display: flex;
+            display: none;
             flex-direction: column;
             align-items: center;
             gap: clamp(8px, 1.6vh, 18px)
         }
 
+        .clash-foot {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: clamp(12px, 1.6vw, 28px)
+        }
+
+        .clash-mini-qr {
+            display: none;
+            flex: 0 0 auto;
+            width: clamp(64px, 14vh, 160px);
+            aspect-ratio: 1;
+            padding: clamp(5px, .8vh, 10px);
+            border-radius: 12px;
+            background: #fff
+        }
+
+        .clash-mini-qr img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain
+        }
+
+        .clash-mini-url {
+            display: none;
+            font-family: var(--font-h);
+            font-weight: 700;
+            font-size: clamp(12px, 1.5vw, 24px);
+            color: var(--clash-ink)
+        }
+
+        .clash[data-scene="matchup"] .clash-vs,
+        .clash[data-scene="countdown"] .clash-vs {
+            display: block
+        }
+
+        .clash[data-scene="matchup"] .clash-bar,
+        .clash[data-scene="countdown"] .clash-bar,
+        .clash[data-scene="matchup"] .clash-tps,
+        .clash[data-scene="countdown"] .clash-tps {
+            display: none
+        }
+
+        .clash.has-qr[data-scene="matchup"] .clash-ready,
+        .clash.has-qr[data-scene="countdown"] .clash-ready {
+            display: flex
+        }
+
+        .clash.has-qr[data-scene="live"] .clash-mini-qr,
+        .clash.has-qr[data-scene="live"] .clash-mini-url {
+            display: block
+        }
+
         .clash-qr {
-            width: clamp(130px, 24vh, 320px);
+            width: clamp(150px, 34vh, 420px);
             aspect-ratio: 1;
             padding: clamp(8px, 1.2vh, 16px);
             border-radius: 16px;
@@ -934,10 +1005,22 @@
             inset: 0;
             z-index: 7;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: color-mix(in srgb, var(--clash-bg) 60%, transparent);
+            gap: clamp(6px, 1.4vh, 16px);
+            background: color-mix(in srgb, var(--clash-bg) 90%, transparent);
             pointer-events: none
+        }
+
+        .clash-go-label {
+            font-family: var(--font-h);
+            font-weight: 700;
+            font-size: clamp(14px, min(2vw, 4vh), 34px);
+            letter-spacing: .3em;
+            text-transform: uppercase;
+            color: var(--clash-ink);
+            opacity: .7
         }
 
         .clash-go-num {
@@ -973,7 +1056,7 @@
         .clash-winner-score {
             font-family: var(--font-h);
             font-weight: 800;
-            font-size: clamp(20px, 3vw, 52px);
+            font-size: clamp(24px, min(4vw, 8vh), 72px);
             font-variant-numeric: tabular-nums;
             letter-spacing: .04em
         }
@@ -2394,7 +2477,7 @@
                     </div>
                     <div class="clash-names">
                         <div class="clash-name clash-name-a" id="clashNameA">Side A</div>
-                        <div class="clash-vs" id="clashVs" hidden>VS</div>
+                        <div class="clash-vs">VS</div>
                         <div class="clash-name clash-name-b" id="clashNameB">Side B</div>
                     </div>
                     <div class="clash-bar" id="clashBar">
@@ -2408,23 +2491,30 @@
                         <div class="clash-count" id="clashCount">20</div>
                         <div class="clash-tps-b"><b id="clashTapsB">0</b><span>taps</span></div>
                     </div>
-                    <div class="clash-ready" id="clashReady" hidden>
+                    <div class="clash-ready">
                         @if ($event->qr_code_path)
                             <div class="clash-qr"><img src="{{ $event->qr_code_url }}" alt="QR code"></div>
                         @else
                             <div class="clash-qr-url">{{ $event->getGuestUrl() }}</div>
                         @endif
                     </div>
-                    <div class="clash-hint" id="clashHint">Scan &middot; pick a side &middot; tap to win</div>
+                    <div class="clash-foot">
+                        @if ($event->qr_code_path)
+                            <div class="clash-mini-qr"><img src="{{ $event->qr_code_url }}" alt="QR code"></div>
+                        @else
+                            <div class="clash-mini-url">{{ $event->getGuestUrl() }}</div>
+                        @endif
+                        <div class="clash-hint" id="clashHint">Scan &middot; pick a side &middot; tap to win</div>
+                    </div>
 
                     <div class="clash-go" id="clashGo" hidden>
+                        <div class="clash-go-label" id="clashGoLabel">Get ready</div>
                         <div class="clash-go-num" id="clashGoNum"></div>
                     </div>
 
                     <div class="clash-winner" id="clashWinner" style="display:none">
                         <div class="clash-winner-eyebrow" id="clashWinnerEyebrow">Winner</div>
                         <div class="clash-winner-name" id="clashWinnerName">&mdash;</div>
-                        <div class="clash-winner-tag" id="clashWinnerTag">wins</div>
                         <div class="clash-winner-score" id="clashWinnerScore"><span class="is-a"></span><span class="sep">&ndash;</span><span class="is-b"></span></div>
                         <img class="clash-winner-spon" id="clashWinnerSpon" alt="Sponsor" style="display:none">
                     </div>
@@ -3062,12 +3152,12 @@
 
             const el = id => document.getElementById(id);
             const brand = el('clashBrand'), live = el('clashLive'), countEl = el('clashCount'),
-                nameA = el('clashNameA'), nameB = el('clashNameB'), vs = el('clashVs'),
+                nameA = el('clashNameA'), nameB = el('clashNameB'),
                 fillA = el('clashFillA'), fillB = el('clashFillB'), knot = el('clashKnot'),
-                tps = el('clashTps'), tapsA = el('clashTapsA'), tapsB = el('clashTapsB'),
-                ready = el('clashReady'), hint = el('clashHint'), go = el('clashGo'), goNum = el('clashGoNum'),
+                tapsA = el('clashTapsA'), tapsB = el('clashTapsB'),
+                hint = el('clashHint'), go = el('clashGo'), goLabel = el('clashGoLabel'), goNum = el('clashGoNum'),
                 winner = el('clashWinner'), winnerEyebrow = el('clashWinnerEyebrow'), winnerName = el('clashWinnerName'),
-                winnerTag = el('clashWinnerTag'), winnerScore = el('clashWinnerScore'), winnerSpon = el('clashWinnerSpon');
+                winnerScore = el('clashWinnerScore'), winnerSpon = el('clashWinnerSpon');
             const confetti = makeConfetti(el('clashConfetti'), overlay);
             const GO_MS = 900;
 
@@ -3113,11 +3203,31 @@
                 node.classList.toggle('is-wrapped', size < base * .6);
             }
 
+            /* The winner's name fits on one line where it can and never
+               takes more than half the height of the screen. */
+            function fitWinner(text) {
+                const box = overlay.clientWidth + 'x' + overlay.clientHeight;
+                if (winnerName.textContent === text && winnerName.dataset.fitBox === box) return;
+                winnerName.dataset.fitWidth = '';
+                fitLine(winnerName, text);
+                winnerName.dataset.fitBox = box;
+                const maxHeight = overlay.clientHeight * .5;
+                let size = parseFloat(getComputedStyle(winnerName).fontSize);
+                for (let i = 0; i < 16 && winnerName.scrollHeight > maxHeight; i++) {
+                    size *= .9;
+                    winnerName.style.fontSize = Math.floor(size) + 'px';
+                }
+            }
+
             function refit() {
                 [brand, nameA, nameB].forEach(node => {
                     node.dataset.fitWidth = '';
                     fitLine(node, node.textContent);
                 });
+                if (winner.style.display !== 'none') {
+                    winnerName.dataset.fitBox = '';
+                    fitWinner(winnerName.textContent);
+                }
             }
 
             function open() {
@@ -3152,15 +3262,14 @@
 
             function showWinner(d) {
                 const side = d.winner_side;
+                winner.style.display = 'flex';
                 if (side === 'tie') {
                     winnerEyebrow.textContent = "It's a tie";
-                    winnerName.textContent = `${d.side_a_name} & ${d.side_b_name}`;
-                    winnerTag.style.display = 'none';
+                    fitWinner(`${d.side_a_name} & ${d.side_b_name}`);
                     overlay.style.setProperty('--cwin', 'var(--clash-ink)');
                 } else {
                     winnerEyebrow.textContent = 'Winner';
-                    winnerName.textContent = (side === 'a' ? d.side_a_name : d.side_b_name) || '—';
-                    winnerTag.style.display = '';
+                    fitWinner((side === 'a' ? d.side_a_name : d.side_b_name) || '—');
                     overlay.style.setProperty('--cwin', (side === 'a' ? d.side_a_color : d.side_b_color) || 'var(--clash-ink)');
                 }
                 winnerScore.hidden = !d.show_taps;
@@ -3172,7 +3281,6 @@
                 } else {
                     winnerSpon.style.display = 'none';
                 }
-                winner.style.display = 'flex';
 
                 if (d.confetti && side !== 'tie' && celebratedRound !== d.round_id) {
                     celebratedRound = d.round_id;
@@ -3186,6 +3294,7 @@
             function render(d) {
                 overlay.style.setProperty('--ca', d.side_a_color || '#ef4444');
                 overlay.style.setProperty('--cb', d.side_b_color || '#3B82F6');
+                overlay.classList.toggle('has-qr', !!d.qr);
                 fitLine(brand, (d.headline || 'Fan Clash') + (d.category ? ' · ' + d.category : ''));
                 fitLine(nameA, d.side_a_name || 'Side A');
                 fitLine(nameB, d.side_b_name || 'Side B');
@@ -3193,7 +3302,6 @@
                 tapsB.textContent = (d.side_b_taps ?? 0).toLocaleString();
                 tapsA.parentElement.style.visibility = d.show_taps ? '' : 'hidden';
                 tapsB.parentElement.style.visibility = d.show_taps ? '' : 'hidden';
-                ready.hidden = d.stage !== 'matchup' || !d.qr;
 
                 if (d.stage === 'result') {
                     setRope(d.winner_side === 'a' ? 1 : d.winner_side === 'b' ? 0 : 0.5);
@@ -3204,53 +3312,67 @@
                 }
             }
 
+            function setScene(name) {
+                if (overlay.dataset.scene !== name) overlay.dataset.scene = name;
+            }
+
             function setChip(text, state) {
                 if (live.textContent !== text) live.textContent = text;
                 live.classList.toggle('is-ready', state === 'ready');
                 live.classList.toggle('is-final', state === 'final');
             }
 
+            function setHint(text) {
+                if (hint.textContent !== text) hint.textContent = text;
+            }
+
             function setGo(text) {
-                go.hidden = text === null;
+                if (go.hidden !== (text === null)) go.hidden = text === null;
                 if (text === null || shownGo === text) {
                     shownGo = text;
                     return;
                 }
                 shownGo = text;
+                goLabel.hidden = text === 'Go!';
                 goNum.textContent = text;
                 goNum.classList.remove('is-tick');
                 goNum.offsetHeight;
                 goNum.classList.add('is-tick');
             }
 
+            function setCount(left) {
+                const second = String(Math.ceil(left / 1000));
+                const ending = left > 0 && left <= 5000;
+                countEl.classList.toggle('is-ending', ending);
+                if (countEl.textContent === second) return;
+                countEl.textContent = second;
+                if (ending) {
+                    countEl.classList.remove('is-beat');
+                    countEl.offsetHeight;
+                    countEl.classList.add('is-beat');
+                }
+            }
+
             /* The parts that move with the clock. */
             function paint(now) {
                 const d = show;
                 const counting = d.stage === 'live' && startAt !== null && now < startAt;
+                const scan = d.qr ? 'Scan · ' : '';
 
-                vs.hidden = !(d.stage === 'matchup' || counting);
-                tps.hidden = d.stage !== 'live' || counting;
-
-                if (d.stage === 'matchup') {
+                if (d.stage === 'matchup' || counting) {
+                    setScene(counting ? 'countdown' : 'matchup');
                     setChip('Get ready', 'ready');
-                    hint.hidden = false;
-                    hint.textContent = d.qr ? 'Scan · pick a side · get ready' : 'Pick a side · get ready';
-                    setGo(null);
-                } else if (counting) {
-                    setChip('Get ready', 'ready');
-                    hint.hidden = true;
-                    setGo(String(Math.ceil((startAt - now) / 1000)));
+                    setHint(scan + 'pick a side · get ready');
+                    setGo(counting ? String(Math.ceil((startAt - now) / 1000)) : null);
                 } else if (d.stage === 'live') {
-                    const left = Math.max(0, (endAt ?? now) - now);
-                    setChip('● LIVE', 'live');
-                    hint.hidden = false;
-                    hint.textContent = 'Scan · pick a side · tap to win';
-                    const second = String(Math.ceil(left / 1000));
-                    if (countEl.textContent !== second) countEl.textContent = second;
+                    setScene('live');
+                    setChip('● Live', 'live');
+                    setHint(scan + 'pick a side · tap to win');
+                    setCount(Math.max(0, (endAt ?? now) - now));
                     setGo(startAt !== null && now - startAt < GO_MS ? 'Go!' : null);
                 } else {
-                    setChip('● FINAL', 'final');
-                    hint.hidden = true;
+                    setScene('result');
+                    setChip('● Final', 'final');
                     setGo(null);
                 }
             }
