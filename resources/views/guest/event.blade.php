@@ -2044,9 +2044,9 @@
                     <p class="fc-pick-sub" data-en="Pick your side, then tap as fast as you can until the buzzer."
                         data-de="Wähle deine Seite und tippe so schnell du kannst, bis der Buzzer ertönt.">{{ $t('Pick your side, then tap as fast as you can until the buzzer.', 'Wähle deine Seite und tippe so schnell du kannst, bis der Buzzer ertönt.') }}</p>
                     <div class="fc-pick-btns">
-                        <button class="fc-pick-btn" id="fcPickA" onclick="fcChoose('a')">{{ $t('Side A', 'Seite A') }}</button>
+                        <button class="fc-pick-btn" id="fcPickA" translate="no" onclick="fcChoose('a')">{{ $t('Side A', 'Seite A') }}</button>
                         <div class="fc-vs">VS</div>
-                        <button class="fc-pick-btn" id="fcPickB" onclick="fcChoose('b')">{{ $t('Side B', 'Seite B') }}</button>
+                        <button class="fc-pick-btn" id="fcPickB" translate="no" onclick="fcChoose('b')">{{ $t('Side B', 'Seite B') }}</button>
                     </div>
                 </div>
 
@@ -2062,7 +2062,7 @@
 
                 <div id="fcTap" class="fc-screen" style="display:none">
                     <div class="fc-tap-top">
-                        <div class="fc-side-label" id="fcSideLabel">{{ $t('Your side', 'Deine Seite') }}</div>
+                        <div class="fc-side-label" id="fcSideLabel" translate="no">{{ $t('Your side', 'Deine Seite') }}</div>
                         <div class="fc-your-taps"><b id="fcYourTaps">0</b> <span data-en="taps" data-de="Taps">{{ $t('taps', 'Taps') }}</span></div>
                     </div>
                     <button class="fc-tap-btn" id="fcTapBtn">
@@ -2079,7 +2079,7 @@
                             <img id="fcResultSpon" alt="Sponsor">
                         </div>
                         <div class="fc-result-eyebrow" id="fcResultEyebrow" data-en="Winner" data-de="Gewinner">{{ $t('Winner', 'Gewinner') }}</div>
-                        <div class="fc-winner-name" id="fcWinnerName">—</div>
+                        <div class="fc-winner-name" id="fcWinnerName" translate="no">—</div>
                         <div class="fc-score" id="fcScore"></div>
                         <p class="fc-muted" id="fcResultNote" style="margin-top:14px">{{ $t('Stay for the next round.', 'Bleib dran für die nächste Runde.') }}</p>
                         <button class="btn-main fc-again" onclick="fcBackToStart()" data-en="Back to start"
