@@ -26,6 +26,8 @@ class VotingAdminController extends Controller
 
     private const LOTTERY_RUNNING = 'A lottery draw is still running on the vidiwall. Wait for its winner or hide it first.';
 
+    private const CLASH_RUNNING = 'A Fan Clash round is still running on the vidiwall. Wait for its winner or end it first.';
+
     public function index(Event $event): View
     {
         $event->closeVotingWhenTimeIsUp();
@@ -265,6 +267,7 @@ class VotingAdminController extends Controller
         return match (true) {
             (bool) $event->votingScreen?->setRelation('event', $event)->isRevealPending() => self::REVEAL_RUNNING,
             (bool) $event->lotteryScreen?->setRelation('event', $event)->isRevealPending() => self::LOTTERY_RUNNING,
+            (bool) $event->fanClashScreen?->setRelation('event', $event)->isRoundRunningOnScreen() => self::CLASH_RUNNING,
             default => null,
         };
     }
@@ -291,7 +294,11 @@ class VotingAdminController extends Controller
 
         return [
             ...$event->votingShow()->controlStatus(),
-            'blocked' => $event->lotteryScreen?->setRelation('event', $event)->isRevealPending() ? self::LOTTERY_RUNNING : null,
+            'blocked' => match (true) {
+                (bool) $event->lotteryScreen?->setRelation('event', $event)->isRevealPending() => self::LOTTERY_RUNNING,
+                (bool) $event->fanClashScreen?->setRelation('event', $event)->isRoundRunningOnScreen() => self::CLASH_RUNNING,
+                default => null,
+            },
             'voting_closed' => (bool) $event->voting_closed,
             'ends_in_ms' => $event->votingMsLeft(),
             'total' => array_sum(array_column($standings, 'votes')),

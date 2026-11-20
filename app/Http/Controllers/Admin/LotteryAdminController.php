@@ -25,6 +25,8 @@ class LotteryAdminController extends Controller
 
     private const VOTE_REVEALING = 'The vote winner is still being revealed on the vidiwall. Wait for it or hide it first.';
 
+    private const CLASH_RUNNING = 'A Fan Clash round is still running on the vidiwall. Wait for its winner or end it first.';
+
     public function index(Event $event, Request $request): View
     {
         $search = $request->get('search');
@@ -319,6 +321,7 @@ class LotteryAdminController extends Controller
         return match (true) {
             $event->lotteryShow()->isRevealPending() => self::DRAW_RUNNING,
             (bool) $event->votingScreen?->setRelation('event', $event)->isRevealPending() => self::VOTE_REVEALING,
+            (bool) $event->fanClashScreen?->setRelation('event', $event)->isRoundRunningOnScreen() => self::CLASH_RUNNING,
             default => null,
         };
     }

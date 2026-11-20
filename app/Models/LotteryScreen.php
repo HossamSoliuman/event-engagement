@@ -324,7 +324,8 @@ class LotteryScreen extends Model
     {
         $this->mutate(function (self $screen) use ($type, $winner, $timing): void {
             $voteHeldPlayer = $screen->takeScreenFromVoting();
-            $resumePlayer = $screen->pausePlayer() || $voteHeldPlayer || ($screen->show_type && $screen->resume_player);
+            $clashHeldPlayer = $screen->takeScreenFromFanClash();
+            $resumePlayer = $screen->pausePlayer() || $voteHeldPlayer || $clashHeldPlayer || ($screen->show_type && $screen->resume_player);
 
             $screen->forceFill([
                 'show_type' => $type,
@@ -385,6 +386,17 @@ class LotteryScreen extends Model
         $voting = $this->event->votingScreen;
 
         return $voting ? $voting->setRelation('event', $this->event)->yieldScreen() : false;
+    }
+
+    /**
+     * Takes the screen from Fan Clash. True when the clash was holding the
+     * playlist paused, which this show then holds instead.
+     */
+    protected function takeScreenFromFanClash(): bool
+    {
+        $clash = $this->event->fanClashScreen;
+
+        return $clash ? $clash->setRelation('event', $this->event)->yieldScreen() : false;
     }
 
     /**
