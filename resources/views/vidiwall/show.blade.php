@@ -2724,6 +2724,7 @@
 
     </div>
 
+    @include('layouts._server-clock')
     <script>
         const SLUG = '{{ $event->slug }}';
         const SHOW_NAME = {{ $event->vidiwall_show_uploader ? 'true' : 'false' }};
@@ -3185,11 +3186,13 @@
                 winner = el('clashWinner'), winnerEyebrow = el('clashWinnerEyebrow'), winnerName = el('clashWinnerName'),
                 winnerScore = el('clashWinnerScore'), winnerSpon = el('clashWinnerSpon');
             const confetti = makeConfetti(el('clashConfetti'), overlay);
+            const clock = serverClock();
             const GO_MS = 900;
 
             let show = null;
             let startAt = null;
             let endAt = null;
+            let closeAt = null;
             let shownGo = null;
             let celebratedRound = null;
             let timer = null;
@@ -3281,6 +3284,7 @@
                 show = null;
                 startAt = null;
                 endAt = null;
+                closeAt = null;
                 if (!clashActive) return;
                 clashActive = false;
                 overlay.style.display = 'none';
@@ -3407,7 +3411,7 @@
                     setScene(counting ? 'countdown' : 'matchup');
                     setChip('Get ready', 'ready');
                     setHint(d.qr ? 'Scan to pick your side' : 'Pick your side');
-                    setGo(counting ? String(Math.ceil((startAt - now) / 1000)) : null);
+                    setGo(counting ? String(Math.min(d.countdown_seconds || Infinity, Math.ceil((startAt - now) / 1000))) : null);
                 } else if (d.stage === 'live') {
                     setScene('live');
                     setChip('● Live', 'live');
@@ -3426,8 +3430,8 @@
                 requestAnimationFrame(frame);
             }
 
-            /* The round started duration_ms before it ends, so a round that is
-               already running keeps its start where it was on every poll. */
+            /* The round's moments come as server times, so the wall counts in
+               step with the phones and the console however late a poll lands. */
             function apply(data) {
                 const d = data.show;
                 if (!d) {
@@ -3435,16 +3439,9 @@
                     return;
                 }
 
-                const newRound = !show || show.round_id !== d.round_id;
-                if (d.stage === 'live') {
-                    const nextEnd = performance.now() + d.starts_in_ms + d.remaining_ms;
-                    const nextStart = nextEnd - d.duration_ms;
-                    if (newRound || startAt === null || Math.abs(nextStart - startAt) > 400) startAt = nextStart;
-                    if (newRound || endAt === null || Math.abs(nextEnd - endAt) > 400) endAt = nextEnd;
-                } else {
-                    startAt = null;
-                    endAt = null;
-                }
+                startAt = d.stage === 'live' ? clock.local(d.starts_at_ms) : null;
+                endAt = d.stage === 'live' ? clock.local(d.ends_at_ms) : null;
+                closeAt = d.stage === 'live' ? clock.local(d.closes_at_ms) : null;
 
                 show = d;
                 open();
@@ -3456,11 +3453,18 @@
                 timer = setTimeout(tick, ms);
             }
 
+            /* Asks again just after the round closes, so the winner goes up
+               the moment it is decided. */
             async function tick() {
                 try {
+                    const sentAt = performance.now();
                     const res = await fetch(`/screen/${SLUG}/clash/feed`, { cache: 'no-store' });
-                    apply(await res.json());
-                    schedule(show ? 700 : 1000);
+                    const receivedAt = performance.now();
+                    const data = await res.json();
+                    clock.read(sentAt, receivedAt, data.show?.server_now_ms);
+                    apply(data);
+                    const wait = show ? 700 : 1000;
+                    schedule(closeAt === null ? wait : Math.min(wait, Math.max(0, closeAt - performance.now()) + 150));
                 } catch (e) {
                     schedule(2000);
                 }
