@@ -8,6 +8,7 @@ use App\Models\Event;
 use App\Models\SiteSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class EventController extends Controller
 {
@@ -35,7 +36,7 @@ class EventController extends Controller
     public function store(Request $request)
     {
         $data = $this->validateEvent($request);
-        $data['slug'] = Str::slug($data['name']).'-'.Str::lower(Str::random(4));
+        $data['slug'] = ($data['slug'] ?? null) ?: Str::slug($data['name']).'-'.Str::lower(Str::random(4));
         $data = $this->handleUploads($request, $data, $event ?? null);
         $data['voting_options'] = $this->parseVotingOptions($request);
 
@@ -93,8 +94,15 @@ class EventController extends Controller
         $data['is_active'] = $request->boolean('is_active');
         $data = $this->handleUploads($request, $data, $event ?? null);
         $data['voting_options'] = $this->parseVotingOptions($request);
+        $linkChanged = isset($data['slug']) && $data['slug'] !== $event->slug;
 
         $event->update($data);
+        if ($linkChanged) {
+            try {
+                $event->generateQrCode();
+            } catch (\Exception $e) {
+            }
+        }
         ActivityLog::record('event.updated', ['name' => $event->name], $event->id);
 
         $tab = in_array($request->input('_tab'), self::FORM_TABS, true) ? $request->input('_tab') : 'details';
@@ -167,8 +175,13 @@ class EventController extends Controller
 
     private function validateEvent(Request $request, ?Event $event = null): array
     {
+        if ($request->has('slug')) {
+            $request->merge(['slug' => Str::slug((string) $request->input('slug'))]);
+        }
+
         return $request->validate([
             'name' => 'required|string|max:255',
+            'slug' => $event ? ['sometimes', 'required', 'string', 'max:100', Rule::unique('events', 'slug')->ignore($event->id)] : ['nullable', 'string', 'max:100', Rule::unique('events', 'slug')],
             'subtitle' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'primary_color' => 'nullable|string|max:7',
@@ -228,6 +241,8 @@ class EventController extends Controller
             'tile_fanclash_image' => 'nullable|image|max:3072',
             'tile_survey_image' => 'nullable|image|max:3072',
         ], [
+            'slug.required' => 'The event link cannot be empty.',
+            'slug.unique' => 'Another event already uses this link.',
             'vidiwall_qr_text_color.regex' => 'The QR screen text colour must be a hex colour like #FFFFFF.',
             'vidiwall_qr_panel_color.regex' => 'The QR screen panel colour must be a hex colour like #000000.',
             'vidiwall_qr_panel.in' => 'Choose none, solid or glass for the QR screen panel.',

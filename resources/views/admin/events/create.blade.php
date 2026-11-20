@@ -73,6 +73,16 @@
         .ev-unit span { position:absolute; right:13px; top:50%; transform:translateY(-50%); font-size:13px; color:var(--muted);
             pointer-events:none }
 
+        /* Link: the fixed address in front, the editable part after it */
+        .ev-prefix { display:flex; align-items:center; height:42px; padding:0 13px; border-radius:9px;
+            background:var(--field-bg); border:1px solid var(--field-edge); transition:border-color .15s, box-shadow .15s }
+        .ev-prefix:hover { border-color:var(--field-edge-hover) }
+        .ev-prefix:focus-within { border-color:var(--red); box-shadow:0 0 0 3px rgba(255,61,0,.16) }
+        .ev-prefix span { flex-shrink:0; color:var(--muted); font-size:13px; white-space:nowrap }
+        .ev-prefix input { flex:1; min-width:0; height:100%; padding:0; border:none; outline:none; background:none;
+            color:var(--text); font-size:13px }
+        .ev-prefix input::placeholder { color:#55557c }
+
         /* Fields the form switches off together */
         .ev-fieldset { min-width:0; margin:0; padding:0; border:0; transition:opacity .15s }
         .ev-fieldset:disabled { opacity:.4 }
@@ -127,6 +137,18 @@
                             <label class="form-label">Event Name *</label>
                             <input name="name" class="form-control" value="{{ old('name', $event->name ?? '') }}" required
                                 placeholder="Championship Night 2025">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="slug">Event Link</label>
+                            <div class="ev-prefix">
+                                <span>{{ url('/e') }}/</span>
+                                <input name="slug" id="slug" value="{{ old('slug', $event->slug ?? '') }}"
+                                    @required(isset($event)) maxlength="100" autocomplete="off" spellcheck="false"
+                                    placeholder="{{ isset($event) ? '' : 'Made from the event name' }}">
+                            </div>
+                            @error('slug')
+                                <div style="color:var(--red);font-size:12px;margin-top:4px">{{ $message }}</div>
+                            @enderror
                         </div>
                         <div class="form-group">
                             <label class="form-label">Subtitle</label>

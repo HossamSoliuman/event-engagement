@@ -542,9 +542,14 @@ class Event extends Model
         return url("/e/{$this->slug}");
     }
 
+    /**
+     * The QR file keeps its name when the link changes, so the link versions the URL past browser caches.
+     */
     public function getQrCodeUrlAttribute(): string
     {
-        return $this->qr_code_path ? Storage::disk('media')->url($this->qr_code_path) : '';
+        return $this->qr_code_path
+            ? Storage::disk('media')->url($this->qr_code_path).'?v='.substr(md5($this->slug), 0, 8)
+            : '';
     }
 
     public function getLogoUrlAttribute(): ?string
