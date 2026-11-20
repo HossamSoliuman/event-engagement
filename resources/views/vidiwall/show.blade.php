@@ -632,9 +632,9 @@
             text-transform: uppercase;
             color: var(--clash-hl);
             opacity: .9;
+            min-width: 0;
             white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis
+            overflow: hidden
         }
 
         .clash-live {
@@ -668,8 +668,14 @@
             line-height: 1;
             white-space: nowrap;
             overflow: hidden;
-            text-overflow: ellipsis;
             max-width: 46%
+        }
+
+        .clash-brand.is-wrapped,
+        .clash-name.is-wrapped {
+            white-space: normal;
+            overflow: visible;
+            overflow-wrap: break-word
         }
 
         .clash-name-a {
@@ -1377,8 +1383,12 @@
             color: var(--acc);
             max-width: 100%;
             overflow: hidden;
-            text-overflow: ellipsis;
             white-space: nowrap
+        }
+
+        .vot-headline.is-wrapped {
+            white-space: normal;
+            overflow-wrap: break-word
         }
 
         .vot-status {
@@ -1543,22 +1553,27 @@
             min-width: 0;
             font-family: var(--font-h);
             font-weight: 800;
-            font-size: calc(var(--row) * .32);
+            font-size: calc(var(--row) * .32 * var(--fit, 1));
             line-height: 1.12;
             white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis
+            overflow: hidden
         }
 
         .vot-pos {
             flex: 0 1 auto;
             min-width: 0;
-            font-size: calc(var(--row) * .19);
+            font-size: calc(var(--row) * .19 * var(--fit, 1));
             font-weight: 600;
             opacity: .6;
             white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis
+            overflow: hidden
+        }
+
+        .vot-row.is-wrapped .vot-name,
+        .vot-row.is-wrapped .vot-pos {
+            white-space: normal;
+            overflow: visible;
+            overflow-wrap: break-word
         }
 
         .vot-pos[hidden],
@@ -2933,11 +2948,36 @@
                 overlay.style.setProperty('--cb', d.side_b_color || '#3B82F6');
             }
 
+            /* Long text shrinks to fit its place, then takes more lines,
+               and is never cut off. */
+            function fitLine(node, text) {
+                const width = String(overlay.clientWidth);
+                if (node.textContent === text && node.dataset.fitWidth === width) return;
+                node.textContent = text;
+                node.dataset.fitWidth = width;
+                node.classList.remove('is-wrapped');
+                node.style.fontSize = '';
+                const available = node.clientWidth;
+                const needed = node.scrollWidth;
+                if (!available || needed <= available) return;
+                const base = parseFloat(getComputedStyle(node).fontSize);
+                const size = base * available / needed * .96;
+                node.style.fontSize = Math.floor(Math.max(size, base * .6)) + 'px';
+                node.classList.toggle('is-wrapped', size < base * .6);
+            }
+
+            function refit() {
+                [brand, nameA, nameB].forEach(node => {
+                    node.dataset.fitWidth = '';
+                    fitLine(node, node.textContent);
+                });
+            }
+
             function render(d) {
                 paintColors(d);
-                brand.textContent = 'FAN CLASH' + (d.category ? ' · ' + d.category : '');
-                nameA.textContent = d.side_a_name || 'Side A';
-                nameB.textContent = d.side_b_name || 'Side B';
+                fitLine(brand, 'FAN CLASH' + (d.category ? ' · ' + d.category : ''));
+                fitLine(nameA, d.side_a_name || 'Side A');
+                fitLine(nameB, d.side_b_name || 'Side B');
                 tapsA.textContent = (d.side_a_taps ?? 0).toLocaleString();
                 tapsB.textContent = (d.side_b_taps ?? 0).toLocaleString();
 
@@ -2955,7 +2995,7 @@
                 if (d.status === 'finished') {
                     countEl.textContent = '0';
                     live.textContent = '● FINAL';
-                    live.style.background = 'rgba(255,255,255,.18)';
+                    live.style.background = 'rgba(0,0,0,.35)';
                     showWinner(d);
                 } else {
                     countEl.textContent = Math.ceil((d.remaining_ms ?? 0) / 1000);
@@ -3019,6 +3059,13 @@
                     schedule(3000);
                 }
             }
+
+            window.addEventListener('resize', () => {
+                if (clashActive) refit();
+            });
+            document.fonts?.ready.then(() => {
+                if (clashActive) refit();
+            });
 
             tick();
         })();
@@ -3492,7 +3539,10 @@
             }
 
             function renderHead() {
-                headline.textContent = show.headline;
+                if (headline.textContent !== show.headline) {
+                    headline.textContent = show.headline;
+                    fitText(headline, 20);
+                }
                 const final = !show.open;
                 statusChip.hidden = show.type === 'reveal';
                 statusChip.classList.toggle('is-final', final);
@@ -3547,7 +3597,7 @@
                 const q = selector => row.querySelector(selector);
 
                 return {
-                    el: row, rank: q('.vot-rank'), name: q('.vot-name'), pos: q('.vot-pos'),
+                    el: row, rank: q('.vot-rank'), main: q('.vot-main'), name: q('.vot-name'), pos: q('.vot-pos'), fitKey: null,
                     value: q('.vot-value'), votes: q('.vot-votes'), pct: q('.vot-pct'), fill: q('.vot-fill'),
                     share: 0, shown: 0, target: null, tween: null, settling: null,
                 };
@@ -3644,11 +3694,47 @@
                 const offset = Math.max(0, (height - rowHeight * rows.size) / 2);
                 chart.style.setProperty('--row', rowHeight.toFixed(1) + 'px');
                 rows.forEach(row => {
+                    fitRow(row);
                     row.el.style.transform = `translate3d(0, ${(offset + row.index * rowHeight).toFixed(1)}px, 0)`;
                     if (row.el.classList.contains('is-entering') && !row.settling) {
                         row.settling = setTimeout(() => row.el.classList.remove('is-entering'), 900 + row.index * 70);
                     }
                 });
+            }
+
+            /* A long name or position shrinks to fit its row, then breaks onto
+               a second line, and is never cut off. */
+            function fitRow(row) {
+                const finalVotes = row.target !== null ? row.target.toLocaleString() : row.votes.textContent;
+                const key = [row.name.textContent, row.pos.textContent, finalVotes, row.pct.textContent,
+                    chart.style.getPropertyValue('--row'), chart.clientWidth].join('|');
+                if (row.fitKey === key) return;
+                row.el.classList.remove('is-wrapped');
+                row.el.style.removeProperty('--fit');
+                if (!row.name.clientWidth) return;
+                row.fitKey = key;
+
+                /* Measured with the count it is rolling up to, so the row
+                   still fits once the count gets there. */
+                const rolling = row.votes.textContent;
+                row.votes.textContent = finalVotes;
+
+                let fit = 1;
+                const setFit = () => row.el.style.setProperty('--fit', fit.toFixed(2));
+                const cut = () => [row.name, row.pos].some(node => !node.hidden && node.scrollWidth > node.clientWidth + 1);
+                while (cut() && fit > .8) {
+                    fit -= .05;
+                    setFit();
+                }
+                if (cut()) {
+                    row.el.classList.add('is-wrapped');
+                    while (row.main.offsetHeight > row.el.clientHeight && fit > .45) {
+                        fit -= .05;
+                        setFit();
+                    }
+                }
+
+                row.votes.textContent = rolling;
             }
 
             /* ── Winner reveal ── */
@@ -3933,7 +4019,14 @@
                 }
             }
 
+            document.fonts?.ready.then(() => {
+                rows.forEach(row => row.fitKey = null);
+                if (scene === 'live') layoutChart();
+                if (show) fitText(headline, 20);
+            });
+
             window.addEventListener('resize', () => {
+                if (show) fitText(headline, 20);
                 if (scene === 'live') layoutChart();
                 if (scene === 'result') winnersBox.querySelectorAll('.vot-winner-name').forEach(n => fitText(n, 40));
                 if (scene === 'podium') fitPodium();
