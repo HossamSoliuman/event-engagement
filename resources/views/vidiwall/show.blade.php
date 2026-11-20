@@ -612,7 +612,7 @@
             align-items: center;
             justify-content: center;
             gap: clamp(14px, 2.8vh, 40px);
-            padding: clamp(26px, 5vw, 90px);
+            padding: clamp(20px, 5vh, 64px) clamp(26px, 5vw, 90px);
             background: var(--clash-bg);
             color: var(--clash-ink)
         }
@@ -621,7 +621,8 @@
             width: 100%;
             display: flex;
             align-items: center;
-            justify-content: space-between
+            justify-content: space-between;
+            margin-bottom: auto
         }
 
         .clash-brand {
@@ -823,7 +824,7 @@
             letter-spacing: .2em;
             text-transform: uppercase;
             color: var(--clash-ink);
-            opacity: .45
+            opacity: .7
         }
 
         .clash-winner {
@@ -908,14 +909,19 @@
 
         .clash-vs {
             display: none;
-            flex: 0 0 auto;
-            align-self: center;
+            align-items: center;
+            justify-content: center;
+            width: clamp(52px, min(6.4vw, 12vh), 128px);
+            aspect-ratio: 1;
+            border-radius: 50%;
+            border: clamp(2px, .2vw, 4px) solid color-mix(in srgb, var(--clash-ink) 28%, transparent);
             font-family: var(--font-h);
             font-weight: 800;
-            font-size: clamp(18px, min(2.6vw, 5vh), 48px);
-            letter-spacing: .2em;
+            font-size: clamp(16px, min(2.2vw, 4.2vh), 42px);
+            letter-spacing: .06em;
+            text-indent: .06em;
             text-transform: uppercase;
-            opacity: .55
+            color: var(--clash-hl)
         }
 
         .clash-ready {
@@ -929,7 +935,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: clamp(12px, 1.6vw, 28px)
+            gap: clamp(12px, 1.6vw, 28px);
+            margin-bottom: auto
         }
 
         .clash-mini-qr {
@@ -958,7 +965,22 @@
 
         .clash[data-scene="matchup"] .clash-vs,
         .clash[data-scene="countdown"] .clash-vs {
-            display: block
+            display: flex
+        }
+
+        .clash[data-scene="matchup"] .clash-names,
+        .clash[data-scene="countdown"] .clash-names {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+            align-items: center;
+            gap: clamp(20px, 3vw, 64px);
+            margin-bottom: clamp(4px, 2vh, 28px)
+        }
+
+        .clash[data-scene="matchup"] .clash-name,
+        .clash[data-scene="countdown"] .clash-name {
+            max-width: none;
+            text-align: center
         }
 
         .clash[data-scene="matchup"] .clash-bar,
@@ -979,12 +1001,12 @@
         }
 
         .clash-qr {
-            width: clamp(150px, 34vh, 420px);
+            width: clamp(150px, 36vh, 440px);
             aspect-ratio: 1;
-            padding: clamp(8px, 1.2vh, 16px);
-            border-radius: 16px;
+            padding: clamp(10px, 1.6vh, 20px);
+            border-radius: clamp(12px, 1.8vh, 22px);
             background: #fff;
-            box-shadow: 0 0 0 4px var(--clash-hl)
+            box-shadow: 0 0 0 clamp(3px, .4vh, 6px) color-mix(in srgb, var(--clash-hl) 45%, transparent), 0 18px 50px rgba(0, 0, 0, .3)
         }
 
         .clash-qr img {
@@ -2479,7 +2501,7 @@
                         <span class="clash-brand" id="clashBrand">FAN CLASH</span>
                         <span class="clash-live" id="clashLive">&#9679; LIVE</span>
                     </div>
-                    <div class="clash-names">
+                    <div class="clash-names" id="clashNames">
                         <div class="clash-name clash-name-a" id="clashNameA">Side A</div>
                         <div class="clash-vs">VS</div>
                         <div class="clash-name clash-name-b" id="clashNameB">Side B</div>
@@ -2508,7 +2530,7 @@
                         @else
                             <div class="clash-mini-url">{{ $event->getGuestUrl() }}</div>
                         @endif
-                        <div class="clash-hint" id="clashHint">Scan &middot; pick a side &middot; tap to win</div>
+                        <div class="clash-hint" id="clashHint">Scan to pick your side</div>
                     </div>
 
                     <div class="clash-go" id="clashGo" hidden>
@@ -3156,7 +3178,7 @@
 
             const el = id => document.getElementById(id);
             const brand = el('clashBrand'), live = el('clashLive'), countEl = el('clashCount'),
-                nameA = el('clashNameA'), nameB = el('clashNameB'),
+                names = el('clashNames'), nameA = el('clashNameA'), nameB = el('clashNameB'),
                 fillA = el('clashFillA'), fillB = el('clashFillB'), knot = el('clashKnot'),
                 tapsA = el('clashTapsA'), tapsB = el('clashTapsB'),
                 hint = el('clashHint'), go = el('clashGo'), goLabel = el('clashGoLabel'), goNum = el('clashGoNum'),
@@ -3207,6 +3229,20 @@
                 node.classList.toggle('is-wrapped', size < base * .6);
             }
 
+            /* Both side names share the size of whichever needs the smaller
+               one, so neither side looks bigger than the other. */
+            function fitNames(a, b) {
+                const key = [overlay.clientWidth, overlay.dataset.scene, a, b].join('|');
+                if (names.dataset.fit === key) return;
+                names.dataset.fit = key;
+                nameA.dataset.fitWidth = '';
+                nameB.dataset.fitWidth = '';
+                fitLine(nameA, a);
+                fitLine(nameB, b);
+                const size = Math.min(parseFloat(getComputedStyle(nameA).fontSize), parseFloat(getComputedStyle(nameB).fontSize));
+                nameA.style.fontSize = nameB.style.fontSize = size + 'px';
+            }
+
             /* The winner's name fits on one line where it can and never
                takes more than half the height of the screen. */
             function fitWinner(text) {
@@ -3224,10 +3260,10 @@
             }
 
             function refit() {
-                [brand, nameA, nameB].forEach(node => {
-                    node.dataset.fitWidth = '';
-                    fitLine(node, node.textContent);
-                });
+                brand.dataset.fitWidth = '';
+                fitLine(brand, brand.textContent);
+                names.dataset.fit = '';
+                fitNames(nameA.textContent, nameB.textContent);
                 if (winner.style.display !== 'none') {
                     winnerName.dataset.fitBox = '';
                     fitWinner(winnerName.textContent);
@@ -3300,8 +3336,7 @@
                 overlay.style.setProperty('--cb', d.side_b_color || '#3B82F6');
                 overlay.classList.toggle('has-qr', !!d.qr);
                 fitLine(brand, (d.headline || 'Fan Clash') + (d.category ? ' · ' + d.category : ''));
-                fitLine(nameA, d.side_a_name || 'Side A');
-                fitLine(nameB, d.side_b_name || 'Side B');
+                fitNames(d.side_a_name || 'Side A', d.side_b_name || 'Side B');
                 tapsA.textContent = (d.side_a_taps ?? 0).toLocaleString();
                 tapsB.textContent = (d.side_b_taps ?? 0).toLocaleString();
                 tapsA.parentElement.style.visibility = d.show_taps ? '' : 'hidden';
@@ -3316,8 +3351,12 @@
                 }
             }
 
+            /* The names sit in their own columns on the matchup and above the
+               rope once it is live, so they fit again when the scene changes. */
             function setScene(name) {
-                if (overlay.dataset.scene !== name) overlay.dataset.scene = name;
+                if (overlay.dataset.scene === name) return;
+                overlay.dataset.scene = name;
+                fitNames(nameA.textContent, nameB.textContent);
             }
 
             function setChip(text, state) {
@@ -3367,7 +3406,7 @@
                 if (d.stage === 'matchup' || counting) {
                     setScene(counting ? 'countdown' : 'matchup');
                     setChip('Get ready', 'ready');
-                    setHint(scan + 'pick a side · get ready');
+                    setHint(d.qr ? 'Scan to pick your side' : 'Pick your side');
                     setGo(counting ? String(Math.ceil((startAt - now) / 1000)) : null);
                 } else if (d.stage === 'live') {
                     setScene('live');
