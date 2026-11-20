@@ -24,7 +24,7 @@
         .fc-pv-chip { flex: 0 0 auto; padding: .35em 1.1em; border-radius: 999px; background: #ef4444; color: #fff; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.5cqw; letter-spacing: .2em; text-transform: uppercase; }
         .fc-pv-chip.is-ready { background: color-mix(in srgb, var(--cink) 14%, transparent); color: var(--cink); }
         .fc-pv-names { width: 100%; display: flex; align-items: flex-end; justify-content: space-between; gap: 3cqw; }
-        .fc-pv-name { max-width: 44%; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 5cqw; line-height: 1; text-transform: uppercase; overflow-wrap: anywhere; }
+        .fc-pv-name { max-width: 44%; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 5cqw; line-height: 1; text-transform: uppercase; }
         .fc-pv-name.is-a { color: var(--ca); text-align: left; }
         .fc-pv-name.is-b { color: var(--cb); text-align: right; }
         .fc-pv-vs { align-self: center; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 2.4cqw; letter-spacing: .3em; opacity: .55; }
@@ -40,10 +40,12 @@
         .fc-pv-qr { width: 14cqw; aspect-ratio: 1; padding: 1cqw; border-radius: 1.4cqw; background: #fff; display: flex; align-items: center; justify-content: center; color: #111; }
         .fc-pv-qr img { width: 100%; height: 100%; object-fit: contain; }
         .fc-pv-qr .lucide-icon { width: 70%; height: 70%; }
+        .fc-pv-qr.is-mini { width: 7cqw; padding: .5cqw; border-radius: .8cqw; }
+        .fc-pv-foot { display: flex; align-items: center; justify-content: center; gap: 1.6cqw; }
         .fc-pv-hint { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.6cqw; letter-spacing: .2em; text-transform: uppercase; opacity: .55; }
         .fc-pv-big { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 16cqw; line-height: 1; font-variant-numeric: tabular-nums; color: var(--chl); }
         .fc-pv-eyebrow { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 2.2cqw; letter-spacing: .3em; text-transform: uppercase; opacity: .6; }
-        .fc-pv-winner { max-width: 100%; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 8cqw; line-height: 1; text-transform: uppercase; overflow-wrap: anywhere; color: var(--cwin, var(--cink)); }
+        .fc-pv-winner { max-width: 100%; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 8cqw; line-height: 1; text-transform: uppercase; color: var(--cwin, var(--cink)); }
         .fc-pv-score { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 3cqw; font-variant-numeric: tabular-nums; }
         .fc-pv-score .is-a { color: var(--ca); }
         .fc-pv-score .is-b { color: var(--cb); }
@@ -84,6 +86,12 @@
         .fc-link:hover { color: var(--text); }
         .fc-link:disabled { opacity: .35; cursor: default; }
         .fc-link .lucide-icon { width: 14px; height: 14px; }
+        .fc-main.is-busy, .fc-btn.is-busy, .fc-link.is-busy { cursor: progress; }
+        .fc-main.is-busy:disabled, .fc-btn.is-busy:disabled, .fc-link.is-busy:disabled { opacity: .8; }
+        .fc-main.is-busy [data-icon], .fc-btn.is-busy .lucide-icon, .fc-link.is-busy .lucide-icon { display: none !important; }
+        .fc-main.is-busy::before, .fc-btn.is-busy::before, .fc-link.is-busy::before { content: ''; flex: 0 0 auto; width: 16px; height: 16px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: fcSpin .7s linear infinite; }
+        .fc-main.is-busy::before { width: 20px; height: 20px; }
+        @keyframes fcSpin { to { transform: rotate(360deg); } }
 
         .fc-setup { display: flex; flex-direction: column; gap: 10px; padding-top: 16px; border-top: 1px solid var(--border); }
         .fc-setup .form-label { margin-bottom: 0; }
@@ -124,7 +132,8 @@
 
         .fc-options > summary { list-style: none; cursor: pointer; }
         .fc-options > summary::-webkit-details-marker { display: none; }
-        .fc-options > summary h3 { display: flex; align-items: center; gap: 8px; }
+        .fc-options > summary h3 { flex: 1; display: flex; align-items: center; gap: 8px; }
+        .fc-options:not([open]) > summary { border-bottom: none; }
         .fc-options-chevron { margin-left: auto; transition: transform .2s; }
         .fc-options[open] .fc-options-chevron { transform: rotate(180deg); }
         .fc-saved { font-size: 12px; font-weight: 600; color: #4ade80; opacity: 0; transition: opacity .2s; }
@@ -204,10 +213,7 @@
             </div>
 
             <div class="fc-pv" data-pv="countdown" hidden>
-                <div class="fc-pv-names">
-                    <div class="fc-pv-name is-a" data-pv-a></div>
-                    <div class="fc-pv-name is-b" data-pv-b></div>
-                </div>
+                <div class="fc-pv-eyebrow">Get ready</div>
                 <div class="fc-pv-big" id="fcPvCount"></div>
             </div>
 
@@ -229,6 +235,16 @@
                     <span class="is-a" id="fcPvTapsA"></span>
                     <span class="fc-pv-count" id="fcPvLeft"></span>
                     <span class="is-b" id="fcPvTapsB"></span>
+                </div>
+                <div class="fc-pv-foot" id="fcPvFoot">
+                    <div class="fc-pv-qr is-mini">
+                        @if ($event->qr_code_path)
+                            <img src="{{ $event->qr_code_url }}" alt="QR code">
+                        @else
+                            <i data-lucide="qr-code" class="lucide-icon"></i>
+                        @endif
+                    </div>
+                    <div class="fc-pv-hint">Scan &middot; pick a side &middot; tap to win</div>
                 </div>
             </div>
 
@@ -580,6 +596,7 @@
             let startAt = null;
             let endAt = null;
             let busy = false;
+            let pressed = null;
             let seq = 0;
             let navigating = false;
             let pollTimer = null;
@@ -696,6 +713,7 @@
                 $('fcSetup').hidden = stage !== 'ready';
                 $('fcLengthSetting').hidden = stage !== 'ready' && stage !== 'matchup';
                 [extendBtn, wallBtn, cancelBtn].forEach(button => button.disabled = busy || navigating);
+                [main, extendBtn, wallBtn, cancelBtn].forEach(button => button.classList.toggle('is-busy', (busy || navigating) && pressed === button));
                 if (!onWall && status.blocked) wallBtn.disabled = true;
 
                 const big = $('fcBig');
@@ -762,6 +780,20 @@
                 scenes.forEach(node => node.hidden = node.dataset.pv !== name);
             }
 
+            /* Text shrinks until its longest word fits its place, then wraps between words, as on the wall. */
+            function fitText(node, text) {
+                const width = String(preview.clientWidth);
+                if (node.textContent === text && node.dataset.fitWidth === width) return;
+                node.textContent = text;
+                node.dataset.fitWidth = width;
+                node.style.fontSize = '';
+                let size = parseFloat(getComputedStyle(node).fontSize);
+                for (let i = 0; i < 14 && node.scrollWidth > node.clientWidth + 1; i++) {
+                    size *= .9;
+                    node.style.fontSize = size + 'px';
+                }
+            }
+
             function renderPreview(view) {
                 const { round, stage, onWall, startsIn, left, counting } = view;
                 $('fcTag').hidden = !onWall || !round;
@@ -773,8 +805,6 @@
 
                 preview.style.setProperty('--ca', round.side_a_color || '#ef4444');
                 preview.style.setProperty('--cb', round.side_b_color || '#3B82F6');
-                root.querySelectorAll('[data-pv-a]').forEach(node => setText(node, round.side_a_name));
-                root.querySelectorAll('[data-pv-b]').forEach(node => setText(node, round.side_b_name));
                 root.querySelectorAll('[data-pv-brand]').forEach(node => setText(node, 'Fan Clash' + (round.category ? ' · ' + round.category : '')));
 
                 const showTaps = checked('show_taps');
@@ -787,6 +817,7 @@
                     setText($('fcPvCount'), String(Math.ceil(startsIn / 1000)));
                 } else if (stage === 'live') {
                     setScene('live');
+                    $('fcPvFoot').hidden = !checked('show_qr');
                     const total = round.side_a_taps + round.side_b_taps;
                     const share = total <= 0 ? .5 : Math.max(.04, Math.min(.96, round.side_a_taps / total));
                     $('fcPvFillA').style.width = (share * 100).toFixed(2) + '%';
@@ -799,13 +830,17 @@
                     setScene('result');
                     const name = winnerName(round);
                     setText($('fcPvEyebrow'), name ? 'Winner' : "It's a tie");
-                    setText($('fcPvWinner'), name || `${round.side_a_name} & ${round.side_b_name}`);
+                    fitText($('fcPvWinner'), name || `${round.side_a_name} & ${round.side_b_name}`);
                     preview.style.setProperty('--cwin', round.winner_side === 'a' ? round.side_a_color : (round.winner_side === 'b' ? round.side_b_color : 'var(--cink)'));
                     const scoreLine = $('fcPvScore');
                     scoreLine.hidden = !showTaps;
                     setText(scoreLine.querySelector('.is-a'), round.side_a_taps.toLocaleString());
                     setText(scoreLine.querySelector('.is-b'), round.side_b_taps.toLocaleString());
                 }
+
+                const shown = root.querySelector(`[data-pv="${scene}"]`);
+                shown.querySelectorAll('[data-pv-a]').forEach(node => fitText(node, round.side_a_name));
+                shown.querySelectorAll('[data-pv-b]').forEach(node => fitText(node, round.side_b_name));
             }
 
             function renderSeconds() {
@@ -830,9 +865,8 @@
                     endAt = null;
                     return;
                 }
-                const now = performance.now();
-                const nextStart = now + round.starts_in_ms;
-                const nextEnd = nextStart + round.remaining_ms;
+                const nextEnd = performance.now() + round.starts_in_ms + round.remaining_ms;
+                const nextStart = nextEnd - round.duration_ms;
                 if (startAt === null || Math.abs(nextStart - startAt) > 400) startAt = nextStart;
                 if (endAt === null || Math.abs(nextEnd - endAt) > 400) endAt = nextEnd;
             }
@@ -878,9 +912,11 @@
                 schedulePoll(status.stage === 'ready' ? 3000 : 1000);
             }
 
-            async function send(name, body = {}) {
+            /** The pressed button spins until the answer is back, so a slow connection never looks like a dead button. */
+            async function send(name, body = {}, button = main) {
                 if (busy) return null;
                 busy = true;
+                pressed = button;
                 seq++;
                 let data = null;
                 try {
@@ -902,6 +938,7 @@
                     showToast('Could not reach the server. Try again.', true);
                 } finally {
                     busy = false;
+                    if (!navigating) pressed = null;
                     schedulePoll(1000);
                 }
                 return data;
@@ -921,9 +958,9 @@
                 else send(action);
             });
 
-            extendBtn.addEventListener('click', () => send('extend'));
-            wallBtn.addEventListener('click', () => send(wallBtn.getAttribute('aria-pressed') === 'true' ? 'hide' : 'show'));
-            cancelBtn.addEventListener('click', () => send('cancel'));
+            extendBtn.addEventListener('click', () => send('extend', {}, extendBtn));
+            wallBtn.addEventListener('click', () => send(wallBtn.getAttribute('aria-pressed') === 'true' ? 'hide' : 'show', {}, wallBtn));
+            cancelBtn.addEventListener('click', () => send('cancel', {}, cancelBtn));
 
             if (select) {
                 select.addEventListener('change', () => $('fcAdhoc').hidden = select.value !== '');
