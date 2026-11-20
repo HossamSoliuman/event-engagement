@@ -477,6 +477,27 @@ class Event extends Model
         return $this->fanClashRounds()->where('status', 'active')->latest()->first();
     }
 
+    /**
+     * The finished round whose result the big screen holds until the operator
+     * sends it back to the photos.
+     */
+    public function fanClashRoundOnScreen(): ?FanClashRound
+    {
+        return $this->fanClashRounds()
+            ->where('status', 'finished')
+            ->whereNull('screen_cleared_at')
+            ->latest('finished_at')
+            ->first();
+    }
+
+    public function clearFanClashScreen(): void
+    {
+        $this->fanClashRounds()
+            ->where('status', 'finished')
+            ->whereNull('screen_cleared_at')
+            ->update(['screen_cleared_at' => now()]);
+    }
+
     public function surveyQuestions(): HasMany
     {
         return $this->hasMany(SurveyQuestion::class)->orderBy('position')->orderBy('id');

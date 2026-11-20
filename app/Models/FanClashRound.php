@@ -33,6 +33,7 @@ class FanClashRound extends Model
         'winner_side',
         'started_at',
         'finished_at',
+        'screen_cleared_at',
     ];
 
     protected $casts = [
@@ -41,6 +42,7 @@ class FanClashRound extends Model
         'side_b_taps' => 'integer',
         'started_at' => 'datetime',
         'finished_at' => 'datetime',
+        'screen_cleared_at' => 'datetime',
     ];
 
     public function event(): BelongsTo

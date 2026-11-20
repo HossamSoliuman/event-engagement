@@ -134,8 +134,8 @@ class VidiwallController extends Controller
 
     /**
      * Fan Clash rope feed. Reads the two round counters (O(1)), finalizes the
-     * round lazily on expiry, and keeps a freshly finished round visible for a
-     * short window so the big screen can hold the winner reveal.
+     * round lazily on expiry, and keeps the finished round's winner on the big
+     * screen until the operator sends the screen back to the photos.
      */
     public function clashFeed(string $slug)
     {
@@ -147,11 +147,7 @@ class VidiwallController extends Controller
         }
 
         if (! $round) {
-            $round = $event->fanClashRounds()
-                ->where('status', 'finished')
-                ->where('finished_at', '>=', now()->subSeconds(10))
-                ->latest('finished_at')
-                ->first();
+            $round = $event->fanClashRoundOnScreen();
         }
 
         if (! $round) {
