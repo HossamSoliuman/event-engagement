@@ -82,6 +82,17 @@
         .ev-prefix input { flex:1; min-width:0; height:100%; padding:0; border:none; outline:none; background:none;
             color:var(--text); font-size:13px }
         .ev-prefix input::placeholder { color:#55557c }
+        .ev-prefix.is-ok, .ev-prefix.is-ok:focus-within { border-color:var(--green); box-shadow:0 0 0 3px rgba(34,197,94,.16) }
+        .ev-prefix.is-taken { border-color:var(--red) }
+
+        /* Live result of the link check */
+        .ev-link-status { display:none; align-items:flex-start; gap:6px; margin-top:6px; font-size:12px; line-height:16px }
+        .ev-link-status[data-state=ok] { display:flex; color:var(--green) }
+        .ev-link-status[data-state=taken] { display:flex; color:var(--red) }
+        .ev-link-status[data-state=checking] { display:flex; color:var(--muted) }
+        .ev-link-status .lucide-icon { display:none; flex-shrink:0; width:16px; height:16px }
+        .ev-link-status[data-state=ok] .is-ok,
+        .ev-link-status[data-state=taken] .is-bad { display:block }
 
         /* Fields the form switches off together */
         .ev-fieldset { min-width:0; margin:0; padding:0; border:0; transition:opacity .15s }
@@ -146,9 +157,12 @@
                                     @required(isset($event)) maxlength="100" autocomplete="off" spellcheck="false"
                                     placeholder="{{ isset($event) ? '' : 'Made from the event name' }}">
                             </div>
-                            @error('slug')
-                                <div style="color:var(--red);font-size:12px;margin-top:4px">{{ $message }}</div>
-                            @enderror
+                            <div class="ev-link-status" id="slugStatus" data-state="{{ $errors->has('slug') ? 'taken' : '' }}"
+                                aria-live="polite">
+                                <i data-lucide="check-circle" class="lucide-icon is-ok"></i>
+                                <i data-lucide="x-circle" class="lucide-icon is-bad"></i>
+                                <span>{{ $errors->first('slug') }}</span>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Subtitle</label>
@@ -731,6 +745,58 @@
                     activate(panel.dataset.panel);
                 }
             }, true);
+        })();
+
+        // The event link is checked as it is typed, so a taken link shows before saving.
+        (function () {
+            const input = document.getElementById('slug');
+            const status = document.getElementById('slugStatus');
+            if (!input || !status) return;
+
+            const label = status.querySelector('span');
+            const box = input.closest('.ev-prefix');
+            const checkUrl = @json(route('admin.events.link-check'));
+            const eventId = @json($event->id ?? null);
+            let timer = null;
+            let request = null;
+
+            function show(state, message) {
+                status.dataset.state = state;
+                label.textContent = message;
+                box.classList.toggle('is-ok', state === 'ok');
+                box.classList.toggle('is-taken', state === 'taken');
+                input.setCustomValidity(state === 'taken' ? message : '');
+            }
+
+            async function check() {
+                request?.abort();
+                if (input.value.trim() === '' && !eventId) {
+                    show('', '');
+                    return;
+                }
+
+                request = new AbortController();
+                show('checking', 'Checking…');
+                const params = new URLSearchParams({ slug: input.value });
+                if (eventId) params.set('event', eventId);
+
+                try {
+                    const res = await fetch(checkUrl + '?' + params, {
+                        headers: { Accept: 'application/json' },
+                        signal: request.signal,
+                    });
+                    if (!res.ok) throw new Error(res.statusText);
+                    const data = await res.json();
+                    show(data.available ? 'ok' : 'taken', data.message);
+                } catch (e) {
+                    if (e.name !== 'AbortError') show('', '');
+                }
+            }
+
+            input.addEventListener('input', () => {
+                clearTimeout(timer);
+                timer = setTimeout(check, 300);
+            });
         })();
 
         function addCandidate() {
