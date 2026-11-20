@@ -44,9 +44,25 @@ class FanClashController extends Controller
                 'side_b_color' => $round->side_b_color,
                 'duration_seconds' => $round->duration_seconds,
                 'started_at' => $round->started_at?->toIso8601String(),
-                'remaining_ms' => $round->remainingMs(),
+                'starts_in_ms' => $round->startsInMs(),
+                'remaining_ms' => min($round->duration_seconds * 1000, $round->remainingMs()),
                 'side_a_taps' => $round->side_a_taps,
                 'side_b_taps' => $round->side_b_taps,
+            ]);
+        }
+
+        $upNext = $event->fanClashScreen?->round;
+
+        if ($upNext && $upNext->status === 'waiting') {
+            return response()->json([
+                'status' => 'ready',
+                'round_id' => $upNext->id,
+                'category' => $upNext->category,
+                'side_a_name' => $upNext->side_a_name,
+                'side_b_name' => $upNext->side_b_name,
+                'side_a_color' => $upNext->side_a_color,
+                'side_b_color' => $upNext->side_b_color,
+                'duration_seconds' => $upNext->duration_seconds,
             ]);
         }
 
@@ -79,6 +95,10 @@ class FanClashController extends Controller
 
         if ($round->finalizeIfExpired()) {
             return response()->json(['error' => 'Round has ended.', 'status' => 'finished'], 422);
+        }
+
+        if (! $round->hasStarted()) {
+            return response()->json(['error' => 'Round has not started yet.', 'status' => 'active', 'starts_in_ms' => $round->startsInMs()], 422);
         }
 
         $elapsedSeconds = $round->started_at
@@ -118,7 +138,7 @@ class FanClashController extends Controller
             'your_taps' => $participant->taps,
             'side_a_taps' => $round->side_a_taps,
             'side_b_taps' => $round->side_b_taps,
-            'remaining_ms' => $round->remainingMs(),
+            'remaining_ms' => min($round->duration_seconds * 1000, $round->remainingMs()),
         ]);
     }
 
