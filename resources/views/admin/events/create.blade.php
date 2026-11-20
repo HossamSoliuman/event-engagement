@@ -316,8 +316,8 @@
                             </div>
                         </div>
                         <div class="form-hint">Any Google Fonts name works, e.g. Oswald, Bebas Neue, Raleway, Montserrat,
-                            Playfair Display or Inter. System fonts like Arial and Helvetica work too. The vidiwall QR
-                            screen text uses these fonts as well.</div>
+                            Playfair Display or Inter. System fonts like Arial and Helvetica work too. Every vidiwall
+                            screen uses these fonts as well.</div>
                         <div
                             style="margin-top:14px;padding:12px 14px;background:var(--dark);border:1px solid var(--border);border-radius:8px">
                             <div id="fontPreviewHeading" style="font-size:20px;font-weight:800;margin-bottom:4px">Championship
