@@ -166,6 +166,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::delete('fanclash/matchups/{matchup}', [FanClashAdminController::class, 'destroyMatchup'])->name('fanclash.matchups.destroy');
         Route::post('events/{event}/fanclash/start', [FanClashAdminController::class, 'startRound'])->name('fanclash.start');
         Route::post('events/{event}/fanclash/end', [FanClashAdminController::class, 'endRound'])->name('fanclash.end');
+        Route::post('events/{event}/fanclash/clear-screen', [FanClashAdminController::class, 'clearScreen'])->name('fanclash.clear-screen');
         Route::post('fanclash/rounds/{round}/reset', [FanClashAdminController::class, 'resetRound'])->name('fanclash.rounds.reset');
         Route::get('events/{event}/fanclash/export', [FanClashAdminController::class, 'export'])->name('fanclash.export');
 
@@ -289,6 +290,7 @@ Route::prefix('moderator')->name('moderator.')->middleware(['auth', 'event.moder
     Route::delete('{event}/fanclash/matchups/{matchup}', [ModeratorFanClashController::class, 'destroyMatchup'])->name('fanclash.matchups.destroy');
     Route::post('{event}/fanclash/start', [ModeratorFanClashController::class, 'startRound'])->name('fanclash.start');
     Route::post('{event}/fanclash/end', [ModeratorFanClashController::class, 'endRound'])->name('fanclash.end');
+    Route::post('{event}/fanclash/clear-screen', [ModeratorFanClashController::class, 'clearScreen'])->name('fanclash.clear-screen');
     Route::post('{event}/fanclash/rounds/{round}/reset', [ModeratorFanClashController::class, 'resetRound'])->name('fanclash.rounds.reset');
     Route::get('{event}/fanclash/export', [ModeratorFanClashController::class, 'export'])->name('fanclash.export');
 

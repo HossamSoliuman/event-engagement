@@ -19,8 +19,9 @@ class FanClashController extends Controller
         $matchups = $event->fanClashMatchups()->latest()->get();
         $rounds = $event->fanClashRounds()->latest()->withCount('participants')->get();
         $activeRound = $event->activeFanClashRound();
+        $screenRound = $activeRound ? null : $event->fanClashRoundOnScreen();
 
-        return view('admin.fanclash.index', compact('event', 'matchups', 'rounds', 'activeRound'));
+        return view('admin.fanclash.index', compact('event', 'matchups', 'rounds', 'activeRound', 'screenRound'));
     }
 
     public function storeMatchup(Request $request, Event $event)
@@ -91,6 +92,8 @@ class FanClashController extends Controller
             return back()->with('error', 'Pick a matchup or type both contender names.');
         }
 
+        $event->clearFanClashScreen();
+
         $round = FanClashRound::create(array_merge($snapshot, [
             'event_id' => $event->id,
             'status' => 'active',
@@ -122,6 +125,13 @@ class FanClashController extends Controller
         ActivityLog::record('fanclash.round_ended', ['round_id' => $round->id], $event->id);
 
         return back()->with('success', 'Round ended.');
+    }
+
+    public function clearScreen(Event $event)
+    {
+        $event->clearFanClashScreen();
+
+        return back()->with('success', 'The screen is back to the photos.');
     }
 
     public function resetRound(FanClashRound $round)

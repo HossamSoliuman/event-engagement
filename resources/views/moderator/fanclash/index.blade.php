@@ -34,6 +34,26 @@
             </form>
         </div>
     </div>
+@elseif ($screenRound)
+    <div class="card mb-3" style="border-color:rgba(245,158,11,.35);background:rgba(245,158,11,.05)">
+        <div class="card-body" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+            <div>
+                <div style="font-weight:700;font-size:15px;color:#f59e0b;display:flex;align-items:center;gap:8px">
+                    <i data-lucide="monitor" class="lucide-icon"></i> Round #{{ $screenRound->id }} result on screen
+                </div>
+                <div class="text-sm" style="margin-top:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                    <span style="font-weight:700;color:{{ $screenRound->side_a_color }}">{{ $screenRound->side_a_name }}</span>
+                    <span class="text-muted">{{ $screenRound->side_a_taps }} vs {{ $screenRound->side_b_taps }}</span>
+                    <span style="font-weight:700;color:{{ $screenRound->side_b_color }}">{{ $screenRound->side_b_name }}</span>
+                    <span class="text-muted text-xs">({{ $screenRound->winner_side === 'a' ? $screenRound->side_a_name . ' wins' : ($screenRound->winner_side === 'b' ? $screenRound->side_b_name . ' wins' : 'Tie') }})</span>
+                </div>
+            </div>
+            <form method="POST" action="{{ route('moderator.fanclash.clear-screen', $event) }}">
+                @csrf
+                <button class="btn btn-primary btn-sm"><i data-lucide="image" class="lucide-icon"></i> Back to photos</button>
+            </form>
+        </div>
+    </div>
 @endif
 
 @if (session('success'))
