@@ -254,6 +254,36 @@
 
                 <div class="card mb-3">
                     <div class="card-header">
+                        <h3><i data-lucide="swords" class="lucide-icon"></i> Fan Clash Colours</h3>
+                    </div>
+                    <div class="card-body ev-grid-2">
+                        <div>
+                            <label class="form-label" for="fanclash_bg_color">Background</label>
+                            <div class="ev-color">
+                                <input type="color" data-target="fanclash_bg_color" aria-label="Fan Clash background"
+                                    data-fallback="{{ $event->secondary_color ?? '#0A0A18' }}"
+                                    value="{{ old('fanclash_bg_color', ($event->fanclash_bg_color ?? null) ?: ($event->secondary_color ?? '#0A0A18')) }}">
+                                <input type="text" name="fanclash_bg_color" id="fanclash_bg_color" maxlength="7"
+                                    value="{{ old('fanclash_bg_color', $event->fanclash_bg_color ?? '') }}"
+                                    placeholder="Event background">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="form-label" for="fanclash_accent_color">Highlight</label>
+                            <div class="ev-color">
+                                <input type="color" data-target="fanclash_accent_color" aria-label="Fan Clash highlight"
+                                    data-fallback="{{ $event->primary_color ?? '#FF3D00' }}"
+                                    value="{{ old('fanclash_accent_color', ($event->fanclash_accent_color ?? null) ?: ($event->primary_color ?? '#FF3D00')) }}">
+                                <input type="text" name="fanclash_accent_color" id="fanclash_accent_color" maxlength="7"
+                                    value="{{ old('fanclash_accent_color', $event->fanclash_accent_color ?? '') }}"
+                                    placeholder="Event primary colour">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header">
                         <h3><i data-lucide="type" class="lucide-icon"></i> Fonts &amp; Typography</h3>
                     </div>
                     <div class="card-body">

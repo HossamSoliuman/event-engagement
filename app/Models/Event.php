@@ -84,6 +84,8 @@ class Event extends Model
         'membership_desc',
         'quiz_desc',
         'fanclash_desc',
+        'fanclash_bg_color',
+        'fanclash_accent_color',
         'survey_desc',
         'quiz_winner_text',
         'quiz_end_sponsor_logo_path',
@@ -1211,6 +1213,22 @@ class Event extends Model
     private function hexColorOr(?string $value, string $fallback): string
     {
         return preg_match('/^#(?:[0-9a-fA-F]{3}){1,2}$/', (string) $value) ? $value : $fallback;
+    }
+
+    /**
+     * The Fan Clash screens' own background, so a module run by another sponsor can leave the event colours.
+     */
+    public function fanClashBackgroundColor(): string
+    {
+        return $this->hexColorOr($this->fanclash_bg_color, $this->hexColorOr($this->secondary_color, '#0A0A18'));
+    }
+
+    /**
+     * The Fan Clash highlight, for buttons and the first side's default colour.
+     */
+    public function fanClashAccentColor(): string
+    {
+        return $this->hexColorOr($this->fanclash_accent_color, $this->hexColorOr($this->primary_color, '#FF3D00'));
     }
 
     public function readableInk(?string $hex, string $light = '#111827', string $dark = '#ffffff'): string

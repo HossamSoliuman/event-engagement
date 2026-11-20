@@ -200,6 +200,8 @@ class EventController extends Controller
             'membership_desc' => 'nullable|string|max:255',
             'quiz_desc' => 'nullable|string|max:255',
             'fanclash_desc' => 'nullable|string|max:255',
+            'fanclash_bg_color' => 'nullable|string|regex:'.self::HEX_COLOR,
+            'fanclash_accent_color' => 'nullable|string|regex:'.self::HEX_COLOR,
             'survey_desc' => 'nullable|string|max:255',
             'vidiwall_overlay_text' => 'nullable|string|max:255',
             'vidiwall_photo_seconds' => 'sometimes|required|integer|min:1|max:60',
@@ -243,6 +245,8 @@ class EventController extends Controller
         ], [
             'slug.required' => 'The event link cannot be empty.',
             'slug.unique' => 'Another event already uses this link.',
+            'fanclash_bg_color.regex' => 'The Fan Clash background must be a hex colour like #E30613.',
+            'fanclash_accent_color.regex' => 'The Fan Clash highlight must be a hex colour like #FFFFFF.',
             'vidiwall_qr_text_color.regex' => 'The QR screen text colour must be a hex colour like #FFFFFF.',
             'vidiwall_qr_panel_color.regex' => 'The QR screen panel colour must be a hex colour like #000000.',
             'vidiwall_qr_panel.in' => 'Choose none, solid or glass for the QR screen panel.',
