@@ -1009,8 +1009,12 @@
             align-items: center;
             justify-content: center;
             gap: clamp(6px, 1.4vh, 16px);
-            background: color-mix(in srgb, var(--clash-bg) 90%, transparent);
+            background: var(--clash-bg);
             pointer-events: none
+        }
+
+        .clash-go.is-go {
+            background: color-mix(in srgb, var(--clash-bg) 60%, transparent)
         }
 
         .clash-go-label {
@@ -3334,6 +3338,7 @@
                 }
                 shownGo = text;
                 goLabel.hidden = text === 'Go!';
+                go.classList.toggle('is-go', text === 'Go!');
                 goNum.textContent = text;
                 goNum.classList.remove('is-tick');
                 goNum.offsetHeight;
