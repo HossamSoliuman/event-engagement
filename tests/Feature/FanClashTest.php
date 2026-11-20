@@ -217,24 +217,27 @@ class FanClashTest extends TestCase
     public function test_clash_feed_returns_expected_shape(): void
     {
         $event = $this->event();
-        $round = $this->activeRound($event, ['side_a_taps' => 6, 'side_b_taps' => 4]);
+        $screen = $event->fanClashShow();
+        $round = $screen->prepare(['side_a_name' => 'Odermatt', 'side_b_name' => 'Kilde', 'side_a_color' => '#FF3D00', 'side_b_color' => '#3B82F6']);
+        $screen->start();
+        $round->update(['side_a_taps' => 6, 'side_b_taps' => 4]);
 
         $this->getJson("/screen/{$event->slug}/clash/feed")
             ->assertOk()
-            ->assertJson([
-                'status' => 'active',
+            ->assertJson(['show' => [
+                'stage' => 'live',
                 'round_id' => $round->id,
                 'side_a_name' => 'Odermatt',
                 'side_b_name' => 'Kilde',
                 'side_a_taps' => 6,
                 'side_b_taps' => 4,
-            ])
-            ->assertJsonStructure([
-                'status', 'round_id', 'category',
+            ]])
+            ->assertJsonStructure(['revision', 'show' => [
+                'stage', 'round_id', 'category',
                 'side_a_name', 'side_b_name', 'side_a_color', 'side_b_color',
-                'side_a_taps', 'side_b_taps', 'headcount_a', 'headcount_b',
-                'remaining_ms', 'winner_side', 'sponsor_logo_url', 'event_name',
-            ]);
+                'side_a_taps', 'side_b_taps', 'duration_ms', 'starts_in_ms',
+                'remaining_ms', 'winner_side', 'sponsor_logo_url', 'headline',
+            ]]);
     }
 
     public function test_clash_feed_is_idle_without_a_round(): void
@@ -242,10 +245,10 @@ class FanClashTest extends TestCase
         $event = $this->event();
 
         $this->getJson("/screen/{$event->slug}/clash/feed")
-            ->assertOk()->assertExactJson(['status' => 'idle']);
+            ->assertOk()->assertExactJson(['revision' => 0, 'show' => null]);
     }
 
-    public function test_admin_can_start_end_and_reset_a_round(): void
+    public function test_admin_can_start_end_and_delete_a_round(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $event = $this->event();
@@ -276,16 +279,16 @@ class FanClashTest extends TestCase
         $this->assertSame('finished', $round->status);
         $this->assertSame('a', $round->winner_side);
 
-        // Reset clears the counters and participants.
+        // Done takes it off the console, then it can be deleted.
         $this->actingAs($admin)
-            ->post(route('admin.fanclash.rounds.reset', $round))
+            ->post(route('admin.fanclash.finish', $event))
             ->assertRedirect();
 
-        $round->refresh();
-        $this->assertSame('waiting', $round->status);
-        $this->assertSame(0, $round->side_a_taps);
-        $this->assertNull($round->winner_side);
-        $this->assertNull($round->started_at);
+        $this->actingAs($admin)
+            ->delete(route('admin.fanclash.rounds.destroy', [$event, $round]))
+            ->assertRedirect();
+
+        $this->assertModelMissing($round);
     }
 
     public function test_admin_cannot_start_two_active_rounds(): void
