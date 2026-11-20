@@ -21,8 +21,6 @@ class FotoBombController extends Controller
             'photo' => 'required_without:video|image|mimes:jpeg,png,jpg,webp|max:10240',
             'video' => 'required_without:photo|mimetypes:video/mp4,video/webm,video/quicktime|max:25600',
             'video_duration' => 'required_with:video|numeric|min:0.1|max:'.FotoUpload::maxVideoSecondsAccepted(),
-            'uploader_name' => 'nullable|string|max:100',
-            'uploader_phone' => 'nullable|string|max:30',
         ]);
 
         $directory = "fotos/event-{$event->id}";
@@ -41,13 +39,11 @@ class FotoBombController extends Controller
                 'original_filename' => $videoFile->getClientOriginalName(),
                 'file_size' => $videoFile->getSize(),
                 'mime_type' => $videoFile->getMimeType(),
-                'uploader_name' => $request->input('uploader_name'),
-                'uploader_phone' => $request->input('uploader_phone'),
                 'uploader_session' => $request->cookie("eb_session_{$event->id}"),
                 'status' => 'pending',
             ]);
 
-            ActivityLog::record('foto.uploaded', ['uploader' => $foto->uploader_name, 'type' => 'video'], $event->id);
+            ActivityLog::record('foto.uploaded', ['type' => 'video'], $event->id);
 
             return response()->json(['success' => true, 'message' => 'Video submitted! Watch the big screen.', 'foto_id' => $foto->id]);
         }
@@ -72,13 +68,11 @@ class FotoBombController extends Controller
             'original_filename' => $file->getClientOriginalName(),
             'file_size' => $file->getSize(),
             'mime_type' => $file->getMimeType(),
-            'uploader_name' => $request->input('uploader_name'),
-            'uploader_phone' => $request->input('uploader_phone'),
             'uploader_session' => $request->cookie("eb_session_{$event->id}"),
             'status' => 'pending',
         ]);
 
-        ActivityLog::record('foto.uploaded', ['uploader' => $foto->uploader_name, 'type' => 'photo'], $event->id);
+        ActivityLog::record('foto.uploaded', ['type' => 'photo'], $event->id);
 
         return response()->json(['success' => true, 'message' => 'Photo submitted! Watch the big screen.', 'foto_id' => $foto->id]);
     }

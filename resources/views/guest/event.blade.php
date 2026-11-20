@@ -1690,12 +1690,6 @@
                     </div>
 
                     <div style="margin-top:16px">
-                        <div class="field-group">
-                            <label class="field-label" data-en="Your Name" data-de="Dein Name">{{ $t('Your Name', 'Dein Name') }}</label>
-                            <input type="text" class="field" id="fotoName" data-ph-en="e.g. Ahmed from Row D"
-                                data-ph-de="z.B. Max aus Reihe D" placeholder="{{ $t('e.g. Ahmed from Row D', 'z.B. Max aus Reihe D') }}"
-                                autocomplete="name">
-                        </div>
                         <button class="btn-main" id="uploadBtn" onclick="submitFoto()" disabled>
                             <span id="uploadBtnText" data-en="Send to Vidiwall" data-de="Auf die Vidiwall">{{ $t('Send to Vidiwall', 'Auf die Vidiwall') }}</span>
                         </button>
@@ -2428,8 +2422,6 @@
             } else {
                 fd.append('photo', selFile);
             }
-            fd.append('uploader_name', document.getElementById('fotoName')?.value || '');
-            fd.append('uploader_phone', document.getElementById('fotoPhone')?.value || '');
             fd.append('_token', CSRF);
             try {
                 const d = await post(`/e/${SLUG}/foto/upload`, fd, true);
