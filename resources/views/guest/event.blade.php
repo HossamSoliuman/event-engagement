@@ -2067,8 +2067,9 @@
                         <div class="fc-your-taps"><b id="fcYourTaps">0</b> <span data-en="taps" data-de="Taps">{{ $t('taps', 'Taps') }}</span></div>
                     </div>
                     <button class="fc-tap-btn" id="fcTapBtn">
-                        <div class="fc-tap-word">TAP</div>
-                        <div class="fc-tap-rate"><span id="fcRate">0</span>/s</div>
+                        <div class="fc-tap-word" id="fcTapWord">TAP</div>
+                        <div class="fc-tap-rate" id="fcTapRateLine"><span id="fcRate">0</span>/s</div>
+                        <div class="fc-tap-rate" id="fcTapWait" style="display:none" data-en="Get ready" data-de="Mach dich bereit">{{ $t('Get ready', 'Mach dich bereit') }}</div>
                     </button>
                     <div class="fc-count" id="fcCount">20</div>
                 </div>
@@ -2911,15 +2912,15 @@
             if (!root) return;
 
             const MAX_TPS = 25;
-            let state = 'idle';           // idle | pick | waiting | tap | ending | result
+            let state = 'idle';           // idle | pick | waiting | armed | tap | ending | result
             let side = null;              // 'a' | 'b'
             let roundId = null;
             let resultRoundId = null;
             let colA = '#ef4444', colB = '#3B82F6',
                 nameA = lang === 'de' ? 'Seite A' : 'Side A', nameB = lang === 'de' ? 'Seite B' : 'Side B';
             let localTaps = 0, pendingTaps = 0, stamps = [];
-            let syncPerf = 0, syncRemaining = 20000;
-            let rafId = null, flushId = null, pollId = null, celebrated = false;
+            let startPerf = null, endPerf = null, durationMs = 20000;
+            let rafId = null, flushId = null, pollId = null, pollMs = null, celebrated = false;
 
             const token = localStorage.getItem('eb_clash_token') || (() => {
                 const t = Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -2928,7 +2929,8 @@
             })();
 
             const $ = id => document.getElementById(id);
-            const tapBtn = $('fcTapBtn'), countEl = $('fcCount'), rateEl = $('fcRate'),
+            const tapBtn = $('fcTapBtn'), countEl = $('fcCount'), rateEl = $('fcRate'), tapWord = $('fcTapWord'),
+                rateLine = $('fcTapRateLine'), waitLine = $('fcTapWait'),
                 yourTapsEl = $('fcYourTaps'), sideLabel = $('fcSideLabel');
 
             function ink(hex) {
@@ -2945,7 +2947,27 @@
                 });
             }
             function remainingNow() {
-                return Math.max(0, syncRemaining - (performance.now() - syncPerf));
+                return endPerf === null ? durationMs : Math.max(0, endPerf - performance.now());
+            }
+            function startsInNow() {
+                return startPerf === null ? Infinity : Math.max(0, startPerf - performance.now());
+            }
+            /* The round's clock: unknown while the matchup waits for the start,
+               then the countdown and the taps run on the phone's own time. */
+            function syncClock(d) {
+                durationMs = (d.duration_seconds || 20) * 1000;
+                if (d.status !== 'active') { startPerf = null; endPerf = null; return; }
+                const now = performance.now();
+                const start = now + (d.starts_in_ms || 0);
+                const end = start + (d.remaining_ms ?? durationMs);
+                if (startPerf === null || Math.abs(start - startPerf) > 400) startPerf = start;
+                if (endPerf === null || Math.abs(end - endPerf) > 400) endPerf = end;
+            }
+            function setPoll(ms) {
+                if (ms === pollMs) return;
+                clearInterval(pollId);
+                pollMs = ms;
+                pollId = setInterval(poll, ms);
             }
 
             function renderPick(d) {
@@ -2955,8 +2977,11 @@
                 const a = $('fcPickA'), b = $('fcPickB');
                 a.style.background = colA; a.style.color = ink(colA); a.textContent = nameA;
                 b.style.background = colB; b.style.color = ink(colB); b.textContent = nameB;
-                $('fcPickCat').innerHTML = '<span class="fc-dot"></span> ' + (d.category ? d.category : (lang === 'de' ? 'Jetzt live' : 'Live now'));
-                syncPerf = performance.now(); syncRemaining = d.remaining_ms ?? (d.duration_seconds || 20) * 1000;
+                const early = d.status === 'ready' || (d.starts_in_ms || 0) > 0;
+                const when = early ? (lang === 'de' ? 'Mach dich bereit' : 'Get ready') : (lang === 'de' ? 'Jetzt live' : 'Live now');
+                $('fcPickCat').innerHTML = '<span class="fc-dot"></span> ';
+                $('fcPickCat').append((d.category ? d.category + ' · ' : '') + when);
+                syncClock(d);
             }
 
             window.fcChoose = function (s) {
@@ -2969,12 +2994,27 @@
                 yourTapsEl.textContent = '0'; rateEl.textContent = '0';
                 countEl.textContent = Math.ceil(remainingNow() / 1000);
                 countEl.classList.remove('fc-low');
-                tapBtn.classList.remove('fc-dis');
-                state = 'tap';
                 show('fcTap');
-                clearInterval(flushId); flushId = setInterval(flush, 800);
+                if (startsInNow() > 0) {
+                    state = 'armed';
+                    tapBtn.classList.add('fc-dis');
+                    setPoll(700);
+                } else {
+                    goTap();
+                }
                 cancelAnimationFrame(rafId); rafId = requestAnimationFrame(frame);
             };
+
+            /* The buzzer: taps count from here. */
+            function goTap() {
+                state = 'tap';
+                tapWord.textContent = 'TAP';
+                rateEl.textContent = '0';
+                rateLine.style.display = ''; waitLine.style.display = 'none';
+                tapBtn.classList.remove('fc-dis');
+                clearInterval(flushId); flushId = setInterval(flush, 800);
+                setPoll(1500);
+            }
 
             function registerTap(e) {
                 if (state !== 'tap') return;
@@ -2992,6 +3032,17 @@
             }
 
             function frame() {
+                if (state === 'armed') {
+                    const wait = startsInNow();
+                    if (wait <= 0) { goTap(); }
+                    else {
+                        tapWord.textContent = wait === Infinity ? '…' : String(Math.ceil(wait / 1000));
+                        rateLine.style.display = 'none'; waitLine.style.display = '';
+                        countEl.textContent = Math.ceil(remainingNow() / 1000);
+                        rafId = requestAnimationFrame(frame);
+                        return;
+                    }
+                }
                 if (state !== 'tap') return;
                 const rem = remainingNow();
                 countEl.textContent = Math.ceil(rem / 1000);
@@ -3008,7 +3059,8 @@
                 const batch = pendingTaps; pendingTaps = 0;
                 try {
                     const d = await post(`/e/${SLUG}/clash/tap`, { session_token: token, side, taps: batch });
-                    if (d && d.remaining_ms !== undefined) { syncPerf = performance.now(); syncRemaining = d.remaining_ms; }
+                    if (d && d.error && d.starts_in_ms !== undefined) { pendingTaps += batch; return; }
+                    if (d && d.remaining_ms !== undefined) { endPerf = performance.now() + d.remaining_ms; }
                     if (d && d.status === 'finished') { endLocal(); }
                 } catch { pendingTaps += batch; }
             }
@@ -3021,7 +3073,7 @@
                 tapBtn.classList.add('fc-dis');
                 countEl.textContent = '0';
                 flush();
-                clearInterval(pollId); pollId = setInterval(poll, 700); poll();
+                setPoll(700); poll();
             }
 
             function showResult(d) {
@@ -3049,21 +3101,28 @@
                     (won ? 'Your side won it. Stay for the next round.' : 'Stay for the next round.');
                 show('fcResult');
                 if (won && !celebrated) { celebrated = true; confettiBurst(winCol); }
-                clearInterval(pollId); pollId = setInterval(poll, 1500);
+                setPoll(1500);
             }
 
             function applyStatus(d) {
-                if (d.status === 'active') {
+                if (d.status === 'active' || d.status === 'ready') {
                     if (roundId !== d.round_id) {
                         roundId = d.round_id; side = null; celebrated = false;
+                        cancelAnimationFrame(rafId); clearInterval(flushId);
                         renderPick(d); show('fcPick'); state = 'pick';
+                        setPoll(700);
                     } else if (state === 'pick') {
                         renderPick(d);
-                    } else if (state === 'tap') {
-                        syncPerf = performance.now(); syncRemaining = d.remaining_ms;
+                    } else if (state === 'armed' || state === 'tap') {
+                        syncClock(d);
                     }
                 } else if (d.status === 'finished') {
-                    if (state === 'tap' || state === 'ending' || state === 'idle' ||
+                    if ((state === 'pick' || state === 'armed') && roundId !== null && roundId !== d.round_id) {
+                        roundId = null;
+                        cancelAnimationFrame(rafId);
+                        show('fcWaiting'); state = 'waiting';
+                        setPoll(1500);
+                    } else if (state === 'tap' || state === 'ending' || state === 'idle' || state === 'armed' ||
                         (state === 'result' && resultRoundId !== d.round_id) ||
                         (state === 'pick') || (state === 'waiting')) {
                         showResult(d);
@@ -3071,7 +3130,9 @@
                 } else { // waiting
                     if (state !== 'tap' && state !== 'ending') {
                         roundId = null;
+                        cancelAnimationFrame(rafId);
                         show('fcWaiting'); state = 'waiting';
+                        setPoll(1500);
                     }
                 }
             }
@@ -3086,10 +3147,10 @@
             window.fcOpen = function () {
                 celebrated = false;
                 if (state === 'idle') { show('fcWaiting'); state = 'waiting'; }
-                clearInterval(pollId); pollId = setInterval(poll, 1500); poll();
+                setPoll(state === 'pick' || state === 'armed' ? 700 : 1500); poll();
             };
             window.fcClose = function () {
-                clearInterval(pollId); clearInterval(flushId); cancelAnimationFrame(rafId);
+                clearInterval(pollId); pollMs = null; clearInterval(flushId); cancelAnimationFrame(rafId);
             };
 
             tapBtn.addEventListener('pointerdown', registerTap);
