@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Event;
 use App\Models\SiteSetting;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -169,6 +170,42 @@ class EventController extends Controller
         ActivityLog::record('event.copied', ['name' => $new->name], $new->id);
 
         return redirect()->route('admin.events.edit', $new)->with('success', 'Event copied. You are now editing the copy, which stays inactive until you switch it on.');
+    }
+
+    /**
+     * Checks an event link while it is typed, with the same rules the save
+     * applies, so a taken link shows before the form is sent.
+     */
+    public function checkLink(Request $request): JsonResponse
+    {
+        $slug = Str::slug((string) $request->query('slug'));
+        $eventId = $request->integer('event');
+
+        if ($slug === '') {
+            return response()->json(['slug' => '', 'available' => false, 'message' => 'The event link cannot be empty.']);
+        }
+
+        if (strlen($slug) > 100) {
+            return response()->json(['slug' => $slug, 'available' => false, 'message' => 'The event link can be at most 100 characters.']);
+        }
+
+        $owner = Event::withTrashed()->where('slug', $slug)->first();
+
+        if ($owner && $owner->id !== $eventId) {
+            $message = $owner->trashed()
+                ? 'A deleted event still uses this link.'
+                : 'Another event already uses this link: '.$owner->name.'.';
+
+            return response()->json(['slug' => $slug, 'available' => false, 'message' => $message]);
+        }
+
+        $message = match (true) {
+            $owner !== null => 'This is the current link.',
+            $slug !== trim((string) $request->query('slug')) => 'This link is available and will be saved as '.$slug.'.',
+            default => 'This link is available.',
+        };
+
+        return response()->json(['slug' => $slug, 'available' => true, 'message' => $message]);
     }
 
     // ── Private Helpers ───────────────────────────────────────────────────────

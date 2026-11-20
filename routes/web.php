@@ -82,6 +82,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('media-downloads', [MediaDownloadController::class, 'index'])->name('media-downloads.index');
         Route::post('media-downloads', [MediaDownloadController::class, 'download'])->name('media-downloads.download');
 
+        Route::get('events/link-check', [EventController::class, 'checkLink'])->name('events.link-check');
         Route::resource('events', EventController::class);
         Route::post('events/{event}/generate-qr', [EventController::class, 'generateQr'])->name('events.generate-qr');
         Route::post('events/{event}/toggle-module', [EventController::class, 'toggleModule'])->name('events.toggle-module');
