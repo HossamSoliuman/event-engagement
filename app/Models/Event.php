@@ -477,25 +477,22 @@ class Event extends Model
         return $this->fanClashRounds()->where('status', 'active')->latest()->first();
     }
 
-    /**
-     * The finished round whose result the big screen holds until the operator
-     * sends it back to the photos.
-     */
-    public function fanClashRoundOnScreen(): ?FanClashRound
+    public function fanClashScreen(): HasOne
     {
-        return $this->fanClashRounds()
-            ->where('status', 'finished')
-            ->whereNull('screen_cleared_at')
-            ->latest('finished_at')
-            ->first();
+        return $this->hasOne(FanClashScreen::class);
     }
 
-    public function clearFanClashScreen(): void
+    /**
+     * Fan Clash's vidiwall settings and show, created with the defaults the
+     * first time they are needed.
+     */
+    public function fanClashShow(): FanClashScreen
     {
-        $this->fanClashRounds()
-            ->where('status', 'finished')
-            ->whereNull('screen_cleared_at')
-            ->update(['screen_cleared_at' => now()]);
+        $screen = $this->fanClashScreen ?? $this->fanClashScreen()->createOrFirst([]);
+        $screen->setRelation('event', $this);
+        $this->setRelation('fanClashScreen', $screen);
+
+        return $screen;
     }
 
     public function surveyQuestions(): HasMany

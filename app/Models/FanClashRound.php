@@ -33,7 +33,6 @@ class FanClashRound extends Model
         'winner_side',
         'started_at',
         'finished_at',
-        'screen_cleared_at',
     ];
 
     protected $casts = [
@@ -42,7 +41,6 @@ class FanClashRound extends Model
         'side_b_taps' => 'integer',
         'started_at' => 'datetime',
         'finished_at' => 'datetime',
-        'screen_cleared_at' => 'datetime',
     ];
 
     public function event(): BelongsTo
@@ -84,6 +82,23 @@ class FanClashRound extends Model
     public function isExpired(): bool
     {
         return $this->started_at !== null && $this->remainingMs() <= 0;
+    }
+
+    /**
+     * Milliseconds until the taps start counting, while the room is counted in.
+     */
+    public function startsInMs(): int
+    {
+        if (! $this->isActive() || ! $this->started_at) {
+            return 0;
+        }
+
+        return max(0, $this->started_at->getTimestampMs() - (int) (microtime(true) * 1000));
+    }
+
+    public function hasStarted(): bool
+    {
+        return $this->started_at !== null && ! $this->started_at->isFuture();
     }
 
     /**
