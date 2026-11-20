@@ -874,6 +874,133 @@
             margin-top: 10px
         }
 
+        .clash [hidden] {
+            display: none !important
+        }
+
+        .clash-live.is-ready {
+            background: color-mix(in srgb, var(--clash-ink) 16%, transparent);
+            color: var(--clash-ink);
+            animation: none
+        }
+
+        .clash-live.is-final {
+            background: color-mix(in srgb, var(--clash-ink) 22%, transparent);
+            color: var(--clash-ink);
+            animation: none
+        }
+
+        .clash-vs {
+            flex: 0 0 auto;
+            align-self: center;
+            font-family: var(--font-h);
+            font-weight: 800;
+            font-size: clamp(16px, 2.4vw, 40px);
+            letter-spacing: .3em;
+            opacity: .5
+        }
+
+        .clash-ready {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: clamp(8px, 1.6vh, 18px)
+        }
+
+        .clash-qr {
+            width: clamp(130px, 24vh, 320px);
+            aspect-ratio: 1;
+            padding: clamp(8px, 1.2vh, 16px);
+            border-radius: 16px;
+            background: #fff;
+            box-shadow: 0 0 0 4px var(--clash-hl)
+        }
+
+        .clash-qr img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain
+        }
+
+        .clash-qr-url {
+            font-family: var(--font-h);
+            font-weight: 700;
+            font-size: clamp(14px, 1.8vw, 28px);
+            color: var(--clash-ink)
+        }
+
+        .clash-go {
+            position: absolute;
+            inset: 0;
+            z-index: 7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: color-mix(in srgb, var(--clash-bg) 60%, transparent);
+            pointer-events: none
+        }
+
+        .clash-go-num {
+            font-family: var(--font-h);
+            font-weight: 800;
+            font-size: clamp(120px, 34vh, 420px);
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+            text-transform: uppercase;
+            color: var(--clash-hl)
+        }
+
+        .clash-go-num.is-tick {
+            animation: clashTick .9s cubic-bezier(.22, 1, .36, 1)
+        }
+
+        @keyframes clashTick {
+            from {
+                opacity: 0;
+                transform: scale(1.4)
+            }
+
+            30% {
+                opacity: 1
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1)
+            }
+        }
+
+        .clash-winner-score {
+            font-family: var(--font-h);
+            font-weight: 800;
+            font-size: clamp(20px, 3vw, 52px);
+            font-variant-numeric: tabular-nums;
+            letter-spacing: .04em
+        }
+
+        .clash-winner-score .is-a {
+            color: var(--ca, #ef4444)
+        }
+
+        .clash-winner-score .is-b {
+            color: var(--cb, #3B82F6)
+        }
+
+        .clash-winner-score .sep {
+            margin: 0 .4em;
+            color: var(--clash-ink);
+            opacity: .45
+        }
+
+        .clash-confetti {
+            position: absolute;
+            inset: 0;
+            z-index: 9;
+            width: 100%;
+            height: 100%;
+            pointer-events: none
+        }
+
         /* ── Lottery show ──────────────────────────────────────────── */
         .lot {
             position: absolute;
@@ -2267,6 +2394,7 @@
                     </div>
                     <div class="clash-names">
                         <div class="clash-name clash-name-a" id="clashNameA">Side A</div>
+                        <div class="clash-vs" id="clashVs" hidden>VS</div>
                         <div class="clash-name clash-name-b" id="clashNameB">Side B</div>
                     </div>
                     <div class="clash-bar" id="clashBar">
@@ -2275,19 +2403,32 @@
                         <div class="clash-mid"></div>
                         <div class="clash-knot" id="clashKnot"></div>
                     </div>
-                    <div class="clash-tps">
+                    <div class="clash-tps" id="clashTps">
                         <div class="clash-tps-a"><b id="clashTapsA">0</b><span>taps</span></div>
                         <div class="clash-count" id="clashCount">20</div>
                         <div class="clash-tps-b"><b id="clashTapsB">0</b><span>taps</span></div>
                     </div>
-                    <div class="clash-hint">Scan &middot; pick a side &middot; tap to win</div>
+                    <div class="clash-ready" id="clashReady" hidden>
+                        @if ($event->qr_code_path)
+                            <div class="clash-qr"><img src="{{ $event->qr_code_url }}" alt="QR code"></div>
+                        @else
+                            <div class="clash-qr-url">{{ $event->getGuestUrl() }}</div>
+                        @endif
+                    </div>
+                    <div class="clash-hint" id="clashHint">Scan &middot; pick a side &middot; tap to win</div>
+
+                    <div class="clash-go" id="clashGo" hidden>
+                        <div class="clash-go-num" id="clashGoNum"></div>
+                    </div>
 
                     <div class="clash-winner" id="clashWinner" style="display:none">
-                        <div class="clash-winner-eyebrow">Winner</div>
+                        <div class="clash-winner-eyebrow" id="clashWinnerEyebrow">Winner</div>
                         <div class="clash-winner-name" id="clashWinnerName">&mdash;</div>
                         <div class="clash-winner-tag" id="clashWinnerTag">wins</div>
+                        <div class="clash-winner-score" id="clashWinnerScore"><span class="is-a"></span><span class="sep">&ndash;</span><span class="is-b"></span></div>
                         <img class="clash-winner-spon" id="clashWinnerSpon" alt="Sponsor" style="display:none">
                     </div>
+                    <canvas class="clash-confetti" id="clashConfetti"></canvas>
                 </div>
             @endif
 
@@ -2909,7 +3050,10 @@
             setTimeout(pollLoop, 400);
         })();
 
-        /* ── Fan Clash rope: fast poll while a round is live ──────── */
+        /* ── Fan Clash: the matchup with the QR code, the countdown, the rope
+              and the winner, for as long as the console keeps it on the wall.
+              The countdown and the clock run on the screen's own time from
+              how far into the round the room is, re-synced on every poll. ── */
         (function () {
             if (!HAS_FANCLASH) return;
 
@@ -2918,12 +3062,20 @@
 
             const el = id => document.getElementById(id);
             const brand = el('clashBrand'), live = el('clashLive'), countEl = el('clashCount'),
-                nameA = el('clashNameA'), nameB = el('clashNameB'),
+                nameA = el('clashNameA'), nameB = el('clashNameB'), vs = el('clashVs'),
                 fillA = el('clashFillA'), fillB = el('clashFillB'), knot = el('clashKnot'),
-                tapsA = el('clashTapsA'), tapsB = el('clashTapsB'),
-                winner = el('clashWinner'), winnerName = el('clashWinnerName'),
-                winnerTag = el('clashWinnerTag'), winnerSpon = el('clashWinnerSpon');
+                tps = el('clashTps'), tapsA = el('clashTapsA'), tapsB = el('clashTapsB'),
+                ready = el('clashReady'), hint = el('clashHint'), go = el('clashGo'), goNum = el('clashGoNum'),
+                winner = el('clashWinner'), winnerEyebrow = el('clashWinnerEyebrow'), winnerName = el('clashWinnerName'),
+                winnerTag = el('clashWinnerTag'), winnerScore = el('clashWinnerScore'), winnerSpon = el('clashWinnerSpon');
+            const confetti = makeConfetti(el('clashConfetti'), overlay);
+            const GO_MS = 900;
 
+            let show = null;
+            let startAt = null;
+            let endAt = null;
+            let shownGo = null;
+            let celebratedRound = null;
             let timer = null;
 
             function ratio(a, b) {
@@ -2941,11 +3093,6 @@
                 if (v) { v.pause(); }
                 clearTimeout(queueTimer);
                 setQrScreen(false);
-            }
-
-            function paintColors(d) {
-                overlay.style.setProperty('--ca', d.side_a_color || '#ef4444');
-                overlay.style.setProperty('--cb', d.side_b_color || '#3B82F6');
             }
 
             /* Long text shrinks to fit its place, then takes more lines,
@@ -2973,48 +3120,52 @@
                 });
             }
 
-            function render(d) {
-                paintColors(d);
-                fitLine(brand, 'FAN CLASH' + (d.category ? ' · ' + d.category : ''));
-                fitLine(nameA, d.side_a_name || 'Side A');
-                fitLine(nameB, d.side_b_name || 'Side B');
-                tapsA.textContent = (d.side_a_taps ?? 0).toLocaleString();
-                tapsB.textContent = (d.side_b_taps ?? 0).toLocaleString();
+            function open() {
+                if (clashActive) return;
+                clashActive = true;
+                hideStage();
+                overlay.style.display = 'flex';
+            }
 
-                let r;
-                if (d.status === 'finished') {
-                    r = d.winner_side === 'a' ? 1 : d.winner_side === 'b' ? 0 : 0.5;
-                } else {
-                    r = Math.max(0.04, Math.min(0.96, ratio(d.side_a_taps ?? 0, d.side_b_taps ?? 0)));
-                }
+            function close() {
+                show = null;
+                startAt = null;
+                endAt = null;
+                if (!clashActive) return;
+                clashActive = false;
+                overlay.style.display = 'none';
+                winner.style.display = 'none';
+                go.hidden = true;
+                shownGo = null;
+                confetti.stop();
+                resetPlayerView();
+                slideFotos = [];
+                poll();
+            }
+
+            function setRope(r) {
                 const pct = (r * 100).toFixed(2) + '%';
                 fillA.style.width = pct;
                 fillB.style.width = (100 - r * 100).toFixed(2) + '%';
                 knot.style.left = pct;
-
-                if (d.status === 'finished') {
-                    countEl.textContent = '0';
-                    live.textContent = '● FINAL';
-                    live.style.background = 'rgba(0,0,0,.35)';
-                    showWinner(d);
-                } else {
-                    countEl.textContent = Math.ceil((d.remaining_ms ?? 0) / 1000);
-                    live.textContent = '● LIVE';
-                    live.style.background = '#ef4444';
-                    winner.style.display = 'none';
-                }
             }
 
             function showWinner(d) {
-                if (d.winner_side === 'tie') {
-                    winnerName.textContent = "It's a tie";
+                const side = d.winner_side;
+                if (side === 'tie') {
+                    winnerEyebrow.textContent = "It's a tie";
+                    winnerName.textContent = `${d.side_a_name} & ${d.side_b_name}`;
                     winnerTag.style.display = 'none';
                     overlay.style.setProperty('--cwin', 'var(--clash-ink)');
                 } else {
-                    winnerName.textContent = (d.winner_side === 'a' ? d.side_a_name : d.side_b_name) || '—';
+                    winnerEyebrow.textContent = 'Winner';
+                    winnerName.textContent = (side === 'a' ? d.side_a_name : d.side_b_name) || '—';
                     winnerTag.style.display = '';
-                    overlay.style.setProperty('--cwin', (d.winner_side === 'a' ? d.side_a_color : d.side_b_color) || 'var(--clash-ink)');
+                    overlay.style.setProperty('--cwin', (side === 'a' ? d.side_a_color : d.side_b_color) || 'var(--clash-ink)');
                 }
+                winnerScore.hidden = !d.show_taps;
+                winnerScore.querySelector('.is-a').textContent = (d.side_a_taps ?? 0).toLocaleString();
+                winnerScore.querySelector('.is-b').textContent = (d.side_b_taps ?? 0).toLocaleString();
                 if (d.sponsor_logo_url) {
                     winnerSpon.src = d.sponsor_logo_url;
                     winnerSpon.style.display = '';
@@ -3022,26 +3173,115 @@
                     winnerSpon.style.display = 'none';
                 }
                 winner.style.display = 'flex';
+
+                if (d.confetti && side !== 'tie' && celebratedRound !== d.round_id) {
+                    celebratedRound = d.round_id;
+                    overlay.style.setProperty('--acc', side === 'a' ? d.side_a_color : d.side_b_color);
+                    overlay.style.setProperty('--p', side === 'a' ? d.side_b_color : d.side_a_color);
+                    confetti.burst();
+                }
             }
 
-            function handle(d) {
-                if (d.status === 'active' || d.status === 'finished') {
-                    if (!clashActive) {
-                        clashActive = true;
-                        hideStage();
-                        overlay.style.display = 'flex';
-                    }
-                    render(d);
-                } else { // idle
-                    if (clashActive) {
-                        clashActive = false;
-                        overlay.style.display = 'none';
-                        winner.style.display = 'none';
-                        resetPlayerView();
-                        slideFotos = [];
-                        poll();
-                    }
+            /* The parts that only change with a poll. */
+            function render(d) {
+                overlay.style.setProperty('--ca', d.side_a_color || '#ef4444');
+                overlay.style.setProperty('--cb', d.side_b_color || '#3B82F6');
+                fitLine(brand, (d.headline || 'Fan Clash') + (d.category ? ' · ' + d.category : ''));
+                fitLine(nameA, d.side_a_name || 'Side A');
+                fitLine(nameB, d.side_b_name || 'Side B');
+                tapsA.textContent = (d.side_a_taps ?? 0).toLocaleString();
+                tapsB.textContent = (d.side_b_taps ?? 0).toLocaleString();
+                tapsA.parentElement.style.visibility = d.show_taps ? '' : 'hidden';
+                tapsB.parentElement.style.visibility = d.show_taps ? '' : 'hidden';
+                ready.hidden = d.stage !== 'matchup' || !d.qr;
+
+                if (d.stage === 'result') {
+                    setRope(d.winner_side === 'a' ? 1 : d.winner_side === 'b' ? 0 : 0.5);
+                    showWinner(d);
+                } else {
+                    winner.style.display = 'none';
+                    setRope(d.stage === 'live' ? Math.max(0.04, Math.min(0.96, ratio(d.side_a_taps ?? 0, d.side_b_taps ?? 0))) : 0.5);
                 }
+            }
+
+            function setChip(text, state) {
+                if (live.textContent !== text) live.textContent = text;
+                live.classList.toggle('is-ready', state === 'ready');
+                live.classList.toggle('is-final', state === 'final');
+            }
+
+            function setGo(text) {
+                go.hidden = text === null;
+                if (text === null || shownGo === text) {
+                    shownGo = text;
+                    return;
+                }
+                shownGo = text;
+                goNum.textContent = text;
+                goNum.classList.remove('is-tick');
+                goNum.offsetHeight;
+                goNum.classList.add('is-tick');
+            }
+
+            /* The parts that move with the clock. */
+            function paint(now) {
+                const d = show;
+                const counting = d.stage === 'live' && startAt !== null && now < startAt;
+
+                vs.hidden = !(d.stage === 'matchup' || counting);
+                tps.hidden = d.stage !== 'live' || counting;
+
+                if (d.stage === 'matchup') {
+                    setChip('Get ready', 'ready');
+                    hint.hidden = false;
+                    hint.textContent = d.qr ? 'Scan · pick a side · get ready' : 'Pick a side · get ready';
+                    setGo(null);
+                } else if (counting) {
+                    setChip('Get ready', 'ready');
+                    hint.hidden = true;
+                    setGo(String(Math.ceil((startAt - now) / 1000)));
+                } else if (d.stage === 'live') {
+                    const left = Math.max(0, (endAt ?? now) - now);
+                    setChip('● LIVE', 'live');
+                    hint.hidden = false;
+                    hint.textContent = 'Scan · pick a side · tap to win';
+                    const second = String(Math.ceil(left / 1000));
+                    if (countEl.textContent !== second) countEl.textContent = second;
+                    setGo(startAt !== null && now - startAt < GO_MS ? 'Go!' : null);
+                } else {
+                    setChip('● FINAL', 'final');
+                    hint.hidden = true;
+                    setGo(null);
+                }
+            }
+
+            function frame(now) {
+                if (show) paint(now);
+                requestAnimationFrame(frame);
+            }
+
+            function apply(data) {
+                const d = data.show;
+                if (!d) {
+                    close();
+                    return;
+                }
+
+                const newRound = !show || show.round_id !== d.round_id;
+                if (d.stage === 'live') {
+                    const now = performance.now();
+                    const nextStart = now + d.starts_in_ms;
+                    const nextEnd = nextStart + d.remaining_ms;
+                    if (newRound || startAt === null || Math.abs(nextStart - startAt) > 400) startAt = nextStart;
+                    if (newRound || endAt === null || Math.abs(nextEnd - endAt) > 400) endAt = nextEnd;
+                } else {
+                    startAt = null;
+                    endAt = null;
+                }
+
+                show = d;
+                open();
+                render(d);
             }
 
             function schedule(ms) {
@@ -3051,12 +3291,11 @@
 
             async function tick() {
                 try {
-                    const res = await fetch(`/screen/${SLUG}/clash/feed`);
-                    const d = await res.json();
-                    handle(d);
-                    schedule(d.status === 'idle' ? 3000 : 700);
+                    const res = await fetch(`/screen/${SLUG}/clash/feed`, { cache: 'no-store' });
+                    apply(await res.json());
+                    schedule(show ? 700 : 1000);
                 } catch (e) {
-                    schedule(3000);
+                    schedule(2000);
                 }
             }
 
@@ -3067,6 +3306,7 @@
                 if (clashActive) refit();
             });
 
+            requestAnimationFrame(frame);
             tick();
         })();
 

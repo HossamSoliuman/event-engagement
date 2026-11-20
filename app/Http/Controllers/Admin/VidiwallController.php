@@ -133,45 +133,15 @@ class VidiwallController extends Controller
     }
 
     /**
-     * Fan Clash rope feed. Reads the two round counters (O(1)), finalizes the
-     * round lazily on expiry, and keeps the finished round's winner on the big
-     * screen until the operator sends the screen back to the photos.
+     * Fan Clash on the vidiwall: the matchup, the round with its two counters
+     * (O(1) reads, closed lazily when time is up) and the winner, for as long
+     * as the console keeps it on the wall.
      */
-    public function clashFeed(string $slug)
+    public function clashFeed(string $slug): JsonResponse
     {
         $event = Event::where('slug', $slug)->firstOrFail();
+        $screen = $event->fanClashScreen?->setRelation('event', $event);
 
-        $round = $event->activeFanClashRound();
-        if ($round) {
-            $round->finalizeIfExpired();
-        }
-
-        if (! $round) {
-            $round = $event->fanClashRoundOnScreen();
-        }
-
-        if (! $round) {
-            return response()->json(['status' => 'idle']);
-        }
-
-        $headcounts = $round->headcounts();
-
-        return response()->json([
-            'status' => $round->status,
-            'round_id' => $round->id,
-            'category' => $round->category,
-            'side_a_name' => $round->side_a_name,
-            'side_b_name' => $round->side_b_name,
-            'side_a_color' => $round->side_a_color,
-            'side_b_color' => $round->side_b_color,
-            'side_a_taps' => $round->side_a_taps,
-            'side_b_taps' => $round->side_b_taps,
-            'headcount_a' => $headcounts['a'],
-            'headcount_b' => $headcounts['b'],
-            'remaining_ms' => $round->remainingMs(),
-            'winner_side' => $round->winner_side,
-            'sponsor_logo_url' => $round->sponsor_logo_url,
-            'event_name' => $event->name,
-        ]);
+        return response()->json($screen ? $screen->screenFeed() : ['revision' => 0, 'show' => null]);
     }
 }
