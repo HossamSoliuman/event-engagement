@@ -127,7 +127,7 @@ class FanClashController extends Controller
         if ($screen->stage() === FanClashScreen::STAGE_LIVE) {
             $screen->end();
         } elseif ($round = $event->activeFanClashRound()) {
-            $round->update(['status' => 'finished', 'winner_side' => $round->getWinnerSide(), 'finished_at' => now()]);
+            $round->finish();
         } else {
             return $this->screenResponse($request, $event, 'No round is running.', 422);
         }

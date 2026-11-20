@@ -6,6 +6,7 @@ use App\Traits\ReferencesMediaFiles;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class FanClashRound extends Model
@@ -127,13 +128,42 @@ class FanClashRound extends Model
             return false;
         }
 
-        $this->update([
-            'status' => 'finished',
-            'winner_side' => $this->getWinnerSide(),
-            'finished_at' => now(),
-        ]);
+        $this->finish();
 
         return true;
+    }
+
+    /**
+     * Closes the round in one statement that also picks the winner, so the
+     * result always matches the counters even while taps are arriving.
+     * False when another request closed it first.
+     */
+    public function finish(): bool
+    {
+        $closed = static::query()
+            ->whereKey($this->getKey())
+            ->where('status', 'active')
+            ->update([
+                'status' => 'finished',
+                'winner_side' => DB::raw("CASE WHEN side_a_taps > side_b_taps THEN 'a' WHEN side_b_taps > side_a_taps THEN 'b' ELSE 'tie' END"),
+                'finished_at' => now(),
+            ]) > 0;
+
+        $this->refresh();
+
+        return $closed;
+    }
+
+    /**
+     * Counts taps for one side only while the round is still open, so a tap
+     * that races the end of the round can never change a decided result.
+     */
+    public function addTaps(string $side, int $taps): bool
+    {
+        return static::query()
+            ->whereKey($this->getKey())
+            ->where('status', 'active')
+            ->increment($side === 'a' ? 'side_a_taps' : 'side_b_taps', $taps) > 0;
     }
 
     /**

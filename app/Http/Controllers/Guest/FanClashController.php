@@ -122,13 +122,12 @@ class FanClashController extends Controller
         $cumulative = min($participant->taps + $data['taps'], $maxTaps);
         $delta = $cumulative - $participant->taps;
 
+        if ($delta > 0 && ! $round->addTaps($participant->side, $delta)) {
+            return response()->json(['error' => 'Round has ended.', 'status' => 'finished'], 422);
+        }
+
         $participant->taps = $cumulative;
         $participant->save();
-
-        if ($delta > 0) {
-            $column = $participant->side === 'a' ? 'side_a_taps' : 'side_b_taps';
-            $round->increment($column, $delta);
-        }
 
         $round->refresh();
 

@@ -174,11 +174,7 @@ class FanClashScreen extends Model
                 return;
             }
 
-            $round->update([
-                'status' => 'finished',
-                'winner_side' => $round->getWinnerSide(),
-                'finished_at' => now(),
-            ]);
+            $round->finish();
         });
     }
 
