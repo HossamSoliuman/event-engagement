@@ -2031,7 +2031,6 @@
                     .fc-result-spon img{max-height:56px;width:auto;max-width:70%;background:#fff;border-radius:10px;padding:8px 12px}
                     .fc-result-eyebrow{font-size:11px;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
                     .fc-winner-name{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(34px,11vw,46px);line-height:1.05;letter-spacing:-.01em;color:var(--fc-win,var(--text))}
-                    .fc-winner-tag{font-size:13px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted);margin-top:10px}
                     .fc-score{font-family:'Syne',sans-serif;font-weight:800;font-size:28px;font-variant-numeric:tabular-nums;margin:26px 0 6px;letter-spacing:.04em}
                     .fc-score .a{color:var(--fc-a,#ef4444)}
                     .fc-score .b{color:var(--fc-b,#3B82F6)}
@@ -2081,7 +2080,6 @@
                         </div>
                         <div class="fc-result-eyebrow" id="fcResultEyebrow" data-en="Winner" data-de="Gewinner">{{ $t('Winner', 'Gewinner') }}</div>
                         <div class="fc-winner-name" id="fcWinnerName">—</div>
-                        <div class="fc-winner-tag" id="fcWinnerTag" data-en="wins" data-de="gewinnt">{{ $t('wins', 'gewinnt') }}</div>
                         <div class="fc-score" id="fcScore"></div>
                         <p class="fc-muted" id="fcResultNote" style="margin-top:14px">{{ $t('Stay for the next round.', 'Bleib dran für die nächste Runde.') }}</p>
                         <button class="btn-main fc-again" onclick="fcBackToStart()" data-en="Back to start"
@@ -2947,7 +2945,7 @@
                 });
             }
             function remainingNow() {
-                return endPerf === null ? durationMs : Math.max(0, endPerf - performance.now());
+                return endPerf === null ? durationMs : Math.min(durationMs, Math.max(0, endPerf - performance.now()));
             }
             function startsInNow() {
                 return startPerf === null ? Infinity : Math.max(0, startPerf - performance.now());
@@ -3084,13 +3082,8 @@
                 const winName = w === 'a' ? d.side_a_name : w === 'b' ? d.side_b_name : null;
                 const winCol = w === 'a' ? (d.side_a_color || colA) : w === 'b' ? (d.side_b_color || colB) : 'var(--text)';
                 setVar('--fc-win', winCol);
-                if (w === 'tie') {
-                    $('fcWinnerName').textContent = lang === 'de' ? 'Unentschieden!' : "It's a tie!";
-                    $('fcWinnerTag').style.display = 'none';
-                } else {
-                    $('fcWinnerName').textContent = winName || '—';
-                    $('fcWinnerTag').style.display = '';
-                }
+                $('fcResultEyebrow').style.display = w === 'tie' ? 'none' : '';
+                $('fcWinnerName').textContent = w === 'tie' ? (lang === 'de' ? 'Unentschieden!' : "It's a tie!") : (winName || '—');
                 $('fcScore').innerHTML = `<span class="a">${d.side_a_taps ?? 0}</span><span class="sep">–</span><span class="b">${d.side_b_taps ?? 0}</span>`;
                 const spon = $('fcResultSponWrap');
                 if (d.sponsor_logo_url) { $('fcResultSpon').src = d.sponsor_logo_url; spon.style.display = ''; }
