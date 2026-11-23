@@ -1,6 +1,8 @@
 {{-- The Foto Queue, shared by the admin and moderator pages. $urls holds the routes the script calls; action urls carry an __ID__ placeholder. --}}
 @php
     $emptyLabels = ['pending' => 'Nothing waiting for review', 'approved' => 'No approved items yet', 'rejected' => 'Nothing rejected'];
+    $typeLabels = ['' => ['All', 'layout-grid'], 'photo' => ['Photos', 'image'], 'video' => ['Videos', 'video']];
+    $emptyText = $type ? 'No '.strtolower($typeLabels[$type][0]).' in '.ucfirst($status) : $emptyLabels[$status];
 @endphp
 
 @push('styles')
@@ -8,6 +10,14 @@
     <style>
         [hidden] { display: none !important; }
         .fq { --fq-accent: var(--mod, var(--red)); }
+
+        .fq-toolbar { display: flex; margin: -4px 0 16px; }
+        .fq-seg { display: inline-flex; gap: 2px; padding: 3px; background: var(--card2); border: 1px solid var(--border); border-radius: 10px; }
+        .fq-seg button { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border: 0; border-radius: 7px; background: none; color: var(--muted); font: 600 12.5px 'DM Sans', sans-serif; cursor: pointer; transition: background .15s, color .15s; }
+        .fq-seg button:hover { color: var(--text); }
+        .fq-seg button.active { background: rgba(255, 255, 255, .09); color: var(--text); }
+        .fq-seg button:focus-visible { outline: 2px solid var(--fq-accent); outline-offset: 1px; }
+        .fq-seg .lucide-icon { width: 14px; height: 14px; }
 
         .fq-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 16px; transition: opacity .15s; }
         .fq-grid.is-loading { opacity: .4; pointer-events: none; }
@@ -55,7 +65,17 @@
 
 @include('admin.fotos._tabs', ['routePrefix' => $routePrefix, 'active' => $status])
 
-<div class="fq" id="fq" data-status="{{ $status }}" data-has-more="{{ $hasMore ? 1 : 0 }}" data-cursor="{{ now()->getTimestamp() }}">
+<div class="fq-toolbar">
+    <div class="fq-seg" role="group" aria-label="Show">
+        @foreach($typeLabels as $typeKey => [$typeLabel, $typeIcon])
+            <button type="button" class="{{ (string) $type === $typeKey ? 'active' : '' }}" data-fq-type="{{ $typeKey }}" aria-pressed="{{ (string) $type === $typeKey ? 'true' : 'false' }}">
+                <i data-lucide="{{ $typeIcon }}" class="lucide-icon"></i>{{ $typeLabel }}
+            </button>
+        @endforeach
+    </div>
+</div>
+
+<div class="fq" id="fq" data-status="{{ $status }}" data-type="{{ $type }}" data-has-more="{{ $hasMore ? 1 : 0 }}" data-cursor="{{ now()->getTimestamp() }}">
     <div class="fq-grid" id="fqGrid">
         @foreach($fotos as $foto)
             @include('admin.fotos._card', ['foto' => $foto])
@@ -64,7 +84,7 @@
 
     <div class="empty-state fq-empty" id="fqEmpty" @if($fotos->isNotEmpty()) hidden @endif>
         <div class="empty-icon"><i data-lucide="images" class="lucide-icon"></i></div>
-        <h3 id="fqEmptyText">{{ $emptyLabels[$status] }}</h3>
+        <h3 id="fqEmptyText">{{ $emptyText }}</h3>
     </div>
 
     <div class="fq-more" id="fqMore" @if(! $hasMore) hidden @endif><span class="fq-spinner"></span></div>
@@ -117,7 +137,11 @@
             const lightbox = $('fqLightbox');
             const baseTitle = document.title;
 
+            const TYPE_LABELS = { photo: 'photos', video: 'videos' };
+            const STATUS_LABELS = { pending: 'Pending', approved: 'Approved', rejected: 'Rejected' };
+
             let status = root.dataset.status;
+            let type = root.dataset.type;
             let hasMore = root.dataset.hasMore === '1';
             let cursor = Number(root.dataset.cursor);
             let counts = @json($counts);
@@ -154,6 +178,11 @@
             function withQuery(url, params) {
                 const query = new URLSearchParams(params).toString();
                 return url + (url.includes('?') ? '&' : '?') + query;
+            }
+
+            /** The query naming a tab and, when filtered, the media type. */
+            function viewQuery(forStatus, forType, extra = {}) {
+                return { status: forStatus, ...(forType ? { type: forType } : {}), ...extra };
             }
 
             function ago(ms) {
@@ -226,7 +255,7 @@
             }
 
             function syncEmpty() {
-                $('fqEmptyText').textContent = EMPTY[status];
+                $('fqEmptyText').textContent = type ? 'No ' + TYPE_LABELS[type] + ' in ' + STATUS_LABELS[status] : EMPTY[status];
                 $('fqEmpty').hidden = grid.children.length > 0;
                 $('fqMore').hidden = !hasMore;
             }
@@ -362,7 +391,7 @@
                 const img = $('fqLbImg');
                 const video = $('fqLbVideo');
 
-                $('fqLbPos').textContent = (index + 1) + ' / ' + counts[status];
+                $('fqLbPos').textContent = (index + 1) + ' / ' + (type ? cards.length + (hasMore ? '+' : '') : counts[status]);
                 $('fqLbName').textContent = card.dataset.name;
                 $('fqLbMeta').textContent = [card.querySelector('.fq-kind')?.textContent.trim(), card.querySelector('.fq-sub')?.textContent.replace(/\s+/g, ' ').trim(), card.querySelector('.fq-chip:not([hidden])')?.textContent]
                     .filter(Boolean).join(' · ');
@@ -495,12 +524,13 @@
 
             /* ── Tabs and paging ─────────────────────────────────────── */
 
-            function fetchTab(next) {
-                const cached = tabCache.get(next);
+            function fetchTab(next, nextType) {
+                const key = next + '|' + nextType;
+                const cached = tabCache.get(key);
                 if (cached && Date.now() - cached.at < 4000) return cached.promise;
-                const promise = request(withQuery(URLS.list, { status: next }));
-                tabCache.set(next, { promise, at: Date.now() });
-                promise.catch(() => tabCache.delete(next));
+                const promise = request(withQuery(URLS.list, viewQuery(next, nextType)));
+                tabCache.set(key, { promise, at: Date.now() });
+                promise.catch(() => tabCache.delete(key));
                 return promise;
             }
 
@@ -512,25 +542,32 @@
                 grid.appendChild(fragment);
             }
 
-            function markTab(next) {
+            function markTab(next, nextType) {
                 document.querySelectorAll('[data-fq-tab]').forEach(tab => tab.classList.toggle('active', tab.dataset.fqTab === next));
+                document.querySelectorAll('[data-fq-type]').forEach(button => {
+                    button.classList.toggle('active', button.dataset.fqType === nextType);
+                    button.setAttribute('aria-pressed', button.dataset.fqType === nextType ? 'true' : 'false');
+                });
             }
 
-            async function switchTab(next, push = true) {
-                if (next === status && push) return;
+            async function switchTab(next, nextType = type, push = true) {
+                if (next === status && nextType === type && push) return;
                 const seq = ++tabSeq;
                 const previous = status;
+                const previousType = type;
                 changeSeq++;
                 closeLightbox();
                 status = next;
+                type = nextType;
                 root.dataset.status = next;
-                markTab(next);
-                if (push) history.pushState({ fqStatus: next }, '', withQuery(URLS.list, { status: next }));
+                root.dataset.type = nextType;
+                markTab(next, nextType);
+                if (push) history.pushState({ fqStatus: next, fqType: nextType }, '', withQuery(URLS.list, viewQuery(next, nextType)));
                 grid.classList.add('is-loading');
 
                 try {
-                    const data = await fetchTab(next);
-                    tabCache.delete(next);
+                    const data = await fetchTab(next, nextType);
+                    tabCache.delete(next + '|' + nextType);
                     if (seq !== tabSeq) return;
                     grid.replaceChildren();
                     appendCards(data.cards);
@@ -544,9 +581,11 @@
                 } catch (error) {
                     if (seq !== tabSeq) return;
                     status = previous;
+                    type = previousType;
                     root.dataset.status = previous;
-                    markTab(previous);
-                    if (push) history.replaceState({ fqStatus: previous }, '', withQuery(URLS.list, { status: previous }));
+                    root.dataset.type = previousType;
+                    markTab(previous, previousType);
+                    if (push) history.replaceState({ fqStatus: previous, fqType: previousType }, '', withQuery(URLS.list, viewQuery(previous, previousType)));
                     if (error.message !== 'session') toast('Could not open that tab. Try again.', true);
                 } finally {
                     if (seq === tabSeq) grid.classList.remove('is-loading');
@@ -559,13 +598,20 @@
                     event.preventDefault();
                     switchTab(tab.dataset.fqTab);
                 });
-                tab.addEventListener('pointerenter', () => { if (tab.dataset.fqTab !== status) fetchTab(tab.dataset.fqTab).catch(() => {}); });
+                tab.addEventListener('pointerenter', () => { if (tab.dataset.fqTab !== status) fetchTab(tab.dataset.fqTab, type).catch(() => {}); });
             });
 
-            history.replaceState({ fqStatus: status }, '', location.href);
+            document.querySelectorAll('[data-fq-type]').forEach(button => {
+                button.addEventListener('click', () => switchTab(status, button.dataset.fqType));
+                button.addEventListener('pointerenter', () => { if (button.dataset.fqType !== type) fetchTab(status, button.dataset.fqType).catch(() => {}); });
+            });
+
+            history.replaceState({ fqStatus: status, fqType: type }, '', location.href);
             window.addEventListener('popstate', event => {
-                const next = event.state?.fqStatus || new URLSearchParams(location.search).get('status') || 'pending';
-                if (next !== status) switchTab(next, false);
+                const params = new URLSearchParams(location.search);
+                const next = event.state?.fqStatus || params.get('status') || 'pending';
+                const nextType = event.state ? (event.state.fqType || '') : (params.get('type') || '');
+                if (next !== status || nextType !== type) switchTab(next, nextType, false);
             });
 
             async function loadMore() {
@@ -574,7 +620,7 @@
                 const seq = tabSeq;
                 let loaded = false;
                 try {
-                    const data = await request(withQuery(URLS.list, { status, before: lowestId() }));
+                    const data = await request(withQuery(URLS.list, viewQuery(status, type, { before: lowestId() })));
                     if (seq === tabSeq) {
                         appendCards(data.cards);
                         hasMore = data.has_more;
@@ -643,12 +689,13 @@
             async function poll() {
                 const seq = changeSeq;
                 const tab = status;
+                const tabType = type;
                 const ids = liveCards().slice(0, 300).map(card => card.dataset.id);
                 try {
-                    const data = await request(withQuery(URLS.status, { status: tab, since: cursor, ids: ids.join(',') }));
+                    const data = await request(withQuery(URLS.status, viewQuery(tab, tabType, { since: cursor, ids: ids.join(',') })));
                     failures = 0;
                     $('fqOffline').hidden = true;
-                    if (seq !== changeSeq || tab !== status) return;
+                    if (seq !== changeSeq || tab !== status || tabType !== type) return;
                     cursor = data.cursor;
                     applySnapshot(data, new Set(ids));
                 } catch (error) {

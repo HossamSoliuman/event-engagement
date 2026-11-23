@@ -25,14 +25,16 @@ trait ServesFotoQueue
     protected function showFotoQueue(Request $request, Event $event, string $view): View|JsonResponse
     {
         $status = $this->fotoQueueStatus($request);
+        $type = $this->fotoQueueType($request);
 
         $event->syncPlayer();
 
-        [$fotos, $hasMore] = $this->fotoQueuePage($event, $status, $request->integer('before') ?: null);
+        [$fotos, $hasMore] = $this->fotoQueuePage($event, $status, $type, $request->integer('before') ?: null);
 
         if ($request->wantsJson()) {
             return response()->json([
                 'status' => $status,
+                'type' => $type,
                 'cards' => $this->renderFotoCards($fotos),
                 'has_more' => $hasMore,
                 'counts' => $event->fotoStatusCounts(),
@@ -43,6 +45,7 @@ trait ServesFotoQueue
         return view($view, [
             'event' => $event,
             'status' => $status,
+            'type' => $type,
             'fotos' => $fotos,
             'hasMore' => $hasMore,
             'counts' => $event->fotoStatusCounts(),
@@ -53,8 +56,9 @@ trait ServesFotoQueue
 
     /**
      * Live snapshot polled by the page: counts, what is on screen, the state of
-     * the cards shown (`ids`) and the cards of the open tab (`status`) that
-     * changed since the last poll (`since`, the `cursor` it was given).
+     * the cards shown (`ids`) and the cards of the open tab (`status`, and
+     * `type` when filtered) that changed since the last poll (`since`, the
+     * `cursor` it was given).
      */
     protected function fotoQueueSnapshot(Request $request, Event $event): JsonResponse
     {
@@ -67,6 +71,7 @@ trait ServesFotoQueue
         if ($request->filled('since')) {
             $changed = $event->fotoUploads()
                 ->where('status', $this->fotoQueueStatus($request))
+                ->when($this->fotoQueueType($request), fn (Builder $query, string $type) => $query->where('media_type', $type))
                 ->where('updated_at', '>=', Carbon::createFromTimestamp($request->integer('since') - 2))
                 ->orderByDesc('id')
                 ->limit(60)
@@ -105,16 +110,27 @@ trait ServesFotoQueue
     }
 
     /**
+     * The media type the queue is filtered to, or null for photos and videos together.
+     */
+    protected function fotoQueueType(Request $request): ?string
+    {
+        $type = (string) $request->query('type', '');
+
+        return in_array($type, ['photo', 'video'], true) ? $type : null;
+    }
+
+    /**
      * Newest first; `$beforeId` continues below the last card shown.
      *
      * @return array{0: Collection<int, FotoUpload>, 1: bool}
      */
-    protected function fotoQueuePage(Event $event, string $status, ?int $beforeId = null): array
+    protected function fotoQueuePage(Event $event, string $status, ?string $type = null, ?int $beforeId = null): array
     {
         $perPage = 40;
 
         $fotos = $event->fotoUploads()
             ->where('status', $status)
+            ->when($type, fn (Builder $query) => $query->where('media_type', $type))
             ->when($beforeId, fn (Builder $query) => $query->where('id', '<', $beforeId))
             ->orderByDesc('id')
             ->limit($perPage + 1)
