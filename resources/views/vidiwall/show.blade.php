@@ -238,8 +238,6 @@
 
         .photo-frame img {
             display: block;
-            max-height: 88vh;
-            max-width: 90vw;
             object-fit: contain
         }
 
@@ -256,8 +254,6 @@
 
         .video-frame video {
             display: block;
-            max-height: 88vh;
-            max-width: 90vw;
             object-fit: contain;
             background: #000
         }
@@ -423,12 +419,6 @@
             max-width: none;
             max-height: none;
             box-shadow: 0 24px 70px rgba(0, 0, 0, .5), 0 0 0 1px rgba(255, 255, 255, .14)
-        }
-
-        .screen.has-bg .photo-frame img,
-        .screen.has-bg .video-frame video {
-            max-width: calc(100vw - 2 * var(--safe-x));
-            max-height: calc(100vh - 2 * var(--safe-y))
         }
 
         .screen.has-bg .photo-grid {
@@ -2717,6 +2707,21 @@
             }
         }
 
+        /** Sizes the live photo or video as large as the stage allows, so small phone clips fill the screen like photos do. */
+        function fitLive(media) {
+            const width = media.naturalWidth || media.videoWidth;
+            const height = media.naturalHeight || media.videoHeight;
+            const box = document.getElementById('safeArea');
+            if (!width || !height || !box.clientWidth) {
+                return;
+            }
+            const roomX = HAS_WALL_BG ? 1 : .92;
+            const roomY = HAS_WALL_BG ? 1 : .9;
+            const scale = Math.min(box.clientWidth * roomX / width, box.clientHeight * roomY / height);
+            media.style.width = Math.floor(width * scale) + 'px';
+            media.style.height = Math.floor(height * scale) + 'px';
+        }
+
         function showPhoto(url, slideNum, total) {
             document.getElementById('idleState').style.display = 'none';
             document.getElementById('videoFrame').style.display = 'none';
@@ -2737,6 +2742,7 @@
             frame.style.display = 'none';
             img.src = url;
             img.onload = () => {
+                fitLive(img);
                 frame.style.display = 'block';
                 frame.style.animation = 'none';
                 frame.offsetHeight;
@@ -2759,11 +2765,17 @@
             const liveVideo = document.getElementById('liveVideo');
             liveVideo.onended = onEnded || null;
             liveVideo.onerror = onEnded || null;
+            liveVideo.onloadedmetadata = () => {
+                fitLive(liveVideo);
+                if (!clashActive) {
+                    frame.style.display = 'block';
+                }
+            };
+            frame.style.display = 'none';
             liveVideo.src = videoUrl;
             if (autoplay) {
                 liveVideo.play().catch(() => {});
             }
-            frame.style.display = 'block';
 
             setBackground(null);
         }
@@ -2857,7 +2869,11 @@
             document.querySelectorAll('#photoGrid .photo-tile').forEach(fitTile);
         }
 
-        window.addEventListener('resize', fitGrid);
+        window.addEventListener('resize', () => {
+            fitGrid();
+            fitLive(document.getElementById('liveImg'));
+            fitLive(document.getElementById('liveVideo'));
+        });
 
         function tileKey(item) {
             return item.id + '|' + item.url;
