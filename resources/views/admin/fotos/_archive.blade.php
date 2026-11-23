@@ -28,8 +28,10 @@
         .fa-chip { position: absolute; top: 8px; left: 8px; padding: 3px 8px; border-radius: 20px; font-size: 9.5px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; background: rgba(10, 10, 24, .75); color: #c9c9de; backdrop-filter: blur(6px); }
         .fa-chip[data-status="approved"] { color: #4ade80; }
         .fa-chip[data-status="rejected"] { color: #f87171; }
-        .fa-media .fq-kind { position: absolute; top: 8px; right: 8px; display: inline-flex; align-items: center; gap: 3px; padding: 3px 8px; border-radius: 20px; font-size: 9.5px; font-weight: 800; background: rgba(10, 10, 24, .75); color: #fff; }
-        .fa-media .fq-kind .lucide-icon { width: 10px; height: 10px; fill: currentColor; }
+        .fa-media .fq-kind { left: 8px; bottom: 8px; padding: 3px 8px; font-size: 9.5px; }
+        .fa-media .fq-preview { right: 8px; bottom: 8px; width: 26px; height: 26px; padding: 0; justify-content: center; }
+        .fa-media .fq-preview-label { display: none; }
+        .fa-media .fq-play { width: 44px; height: 44px; margin: -22px 0 0 -22px; }
         .fa-info { padding: 8px 10px 0; min-width: 0; }
         .fa-name { font-weight: 700; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .fa-time { margin-top: 1px; font-size: 11px; color: var(--muted); }
@@ -78,12 +80,13 @@
             <div class="fa-grid">
                 @foreach($fotos as $foto)
                     @php
-                        $name = $foto->uploader_name ?: 'Anonymous';
+                        $kind = $foto->isVideo() ? 'video' : 'photo';
+                        $name = $foto->uploader_name ?: ucfirst($kind);
                         $statusLabel = $statusLabels[$foto->status] ?? $foto->status;
                     @endphp
-                    <article class="fa-card" data-id="{{ $foto->id }}" data-kind="{{ $foto->isVideo() ? 'video' : 'photo' }}" data-src="{{ $foto->media_url }}"
+                    <article class="fa-card" data-id="{{ $foto->id }}" data-kind="{{ $kind }}" data-src="{{ $foto->media_url }}"
                              data-name="{{ $name }}" data-meta="{{ $statusLabel }} · Uploaded {{ $foto->created_at->format('j M, H:i') }}">
-                        <button type="button" class="fa-media" data-act="view" aria-label="Open {{ $name }}'s {{ $foto->isVideo() ? 'video' : 'photo' }}">
+                        <button type="button" class="fa-media" data-act="view" aria-label="Preview {{ $kind }}">
                             @include('admin.fotos._media')
                             <span class="fa-chip" data-status="{{ $foto->status }}">{{ $statusLabel }}</span>
                         </button>
@@ -136,6 +139,7 @@
 <div class="fq-toasts" id="faToasts" aria-live="polite"></div>
 
 @push('scripts')
+    @include('admin.fotos._hover-play')
     <script>
         (() => {
             const RESTORE_URL = @json(route($routePrefix . 'fotos.restore-archived', [$event, '__ID__']));
@@ -237,7 +241,7 @@
 
                 $('faLbPos').textContent = (index + 1) + ' / ' + list.length;
                 $('faLbName').textContent = lbCard.dataset.name;
-                $('faLbMeta').textContent = lbCard.dataset.meta;
+                $('faLbMeta').textContent = [lbCard.querySelector('.fq-kind')?.textContent.trim(), lbCard.dataset.meta].filter(Boolean).join(' · ');
                 $('faLbOpen').href = lbCard.dataset.src;
                 $('faLbPrev').disabled = index <= 0;
                 $('faLbNext').disabled = index >= list.length - 1;

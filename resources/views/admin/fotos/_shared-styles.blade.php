@@ -17,6 +17,16 @@
     .fq-btn-icon.is-armed .fq-btn-label { display: inline; }
     .fq-btn kbd { margin-left: 2px; padding: 2px 5px; border-radius: 4px; border: 1px solid currentColor; font: 700 10px/1 'DM Sans', sans-serif; opacity: .55; }
 
+    .fq-kind { position: absolute; left: 10px; bottom: 10px; z-index: 1; display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border-radius: 20px; font-size: 10px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; background: rgba(10, 10, 24, .75); color: #fff; backdrop-filter: blur(6px); }
+    .fq-kind .lucide-icon { width: 12px; height: 12px; }
+    .fq-kind.is-video { background: #06b6d4; color: #03181d; }
+    .fq-play { position: absolute; top: 50%; left: 50%; z-index: 1; display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; margin: -26px 0 0 -26px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .9); background: rgba(10, 10, 24, .5); color: #fff; box-shadow: 0 6px 20px rgba(0, 0, 0, .45); backdrop-filter: blur(4px); pointer-events: none; transition: opacity .15s, transform .15s; }
+    .fq-play .lucide-icon { width: 22px; height: 22px; margin-left: 3px; fill: currentColor; }
+    .is-playing .fq-play { opacity: 0; transform: scale(.85); }
+    .fq-preview { position: absolute; right: 10px; bottom: 10px; z-index: 1; display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 11px; border-radius: 20px; background: rgba(10, 10, 24, .75); color: #fff; font-size: 11.5px; font-weight: 700; backdrop-filter: blur(6px); transition: background .15s, color .15s; }
+    .fq-preview .lucide-icon { width: 14px; height: 14px; flex-shrink: 0; }
+    .fq-media:hover .fq-preview, .fa-media:hover .fq-preview { background: #fff; color: #0A0A18; }
+
     .fq-spinner { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border); border-top-color: var(--fq-accent); animation: fqSpin .7s linear infinite; }
     @keyframes fqSpin { to { transform: rotate(360deg); } }
 

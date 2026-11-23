@@ -25,15 +25,9 @@
         .fq-card:hover .fq-media img, .fq-card:hover .fq-media video { transform: scale(1.04); }
         .fq-media::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0, 0, 0, .4) 0, transparent 28%, transparent 72%, rgba(0, 0, 0, .3)); pointer-events: none; }
         .fq-media:focus-visible { outline: 2px solid var(--fq-accent); outline-offset: -2px; }
-        .fq-chip, .fq-kind { position: absolute; top: 10px; z-index: 1; display: inline-flex; align-items: center; gap: 4px; padding: 4px 9px; border-radius: 20px; font-size: 10px; font-weight: 800; letter-spacing: .6px; background: rgba(10, 10, 24, .75); color: #fff; backdrop-filter: blur(6px); }
-        .fq-chip { left: 10px; text-transform: uppercase; color: #c9c9de; }
-        .fq-kind { right: 10px; }
-        .fq-kind .lucide-icon { width: 11px; height: 11px; fill: currentColor; }
+        .fq-chip { position: absolute; top: 10px; left: 10px; z-index: 1; display: inline-flex; align-items: center; gap: 4px; padding: 4px 9px; border-radius: 20px; font-size: 10px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; background: rgba(10, 10, 24, .75); color: #c9c9de; backdrop-filter: blur(6px); }
         .fq-card[data-state="live"] .fq-chip { background: var(--gold); color: #0A0A18; }
         .fq-card[data-state="queued"] .fq-chip { background: rgba(99, 102, 241, .92); color: #fff; }
-        .fq-zoom { position: absolute; right: 10px; bottom: 10px; z-index: 1; display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; background: rgba(10, 10, 24, .75); color: #fff; opacity: 0; transform: translateY(4px); transition: opacity .15s, transform .15s; }
-        .fq-zoom .lucide-icon { width: 14px; height: 14px; }
-        .fq-card:hover .fq-zoom, .fq-media:focus-visible .fq-zoom { opacity: 1; transform: none; }
 
         .fq-info { display: flex; align-items: flex-start; gap: 8px; padding: 11px 13px 2px; min-width: 0; }
         .fq-info-text { flex: 1; min-width: 0; }
@@ -53,6 +47,8 @@
             .fq-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
             .fq-info { padding: 9px 10px 2px; }
             .fq-actions { gap: 6px; padding: 8px 10px 10px; }
+            .fq-preview { width: 28px; padding: 0; justify-content: center; }
+            .fq-preview-label { display: none; }
         }
     </style>
 @endpush
@@ -99,6 +95,7 @@
 </div>
 
 @push('scripts')
+    @include('admin.fotos._hover-play')
     <script>
         (() => {
             const URLS = @json($urls);
@@ -337,7 +334,7 @@
                     setCounts({ [from]: counts[from] + 1, ...(to ? { [to]: counts[to] - 1 } : {}) });
                     if (status === from) restoreCard(card);
                     if (error.message !== 'session') {
-                        toast('Could not ' + VERBS[action] + ' ' + card.dataset.name + '. Try again.', true);
+                        toast('Could not ' + VERBS[action] + ' this ' + card.dataset.kind + '. Try again.', true);
                     }
                 } finally {
                     inFlight--;
@@ -367,7 +364,7 @@
 
                 $('fqLbPos').textContent = (index + 1) + ' / ' + counts[status];
                 $('fqLbName').textContent = card.dataset.name;
-                $('fqLbMeta').textContent = [card.querySelector('.fq-sub')?.textContent.replace(/\s+/g, ' ').trim(), card.querySelector('.fq-chip:not([hidden])')?.textContent]
+                $('fqLbMeta').textContent = [card.querySelector('.fq-kind')?.textContent.trim(), card.querySelector('.fq-sub')?.textContent.replace(/\s+/g, ' ').trim(), card.querySelector('.fq-chip:not([hidden])')?.textContent]
                     .filter(Boolean).join(' · ');
                 $('fqLbPrev').disabled = index <= 0;
                 $('fqLbNext').disabled = index >= cards.length - 1 && !hasMore;
